@@ -51,7 +51,7 @@ similar = "2"
 include_dir = "0.7"
 toml = "0.8"
 # Store marketplace: content hashing + ed25519 index signing/verification.
-sha2 = "0.10"
+sha2 = "0.11"
 ed25519-dalek = { version = "2", features = ["rand_core"] }
 hex = "0.4"
 ureq = "2"
