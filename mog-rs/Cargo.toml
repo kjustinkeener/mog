@@ -86,7 +86,7 @@ winresource = "0.1"
 # HKCU (no admin). winreg gives typed, non-truncating registry access (unlike
 # `setx`, which caps PATH at 1024 chars). Windows-only.
 [target.'cfg(windows)'.dependencies]
-winreg = "0.52"
+winreg = "0.56"
 
 # Size-optimized profile for shipping artifacts (the downloadable mog.exe, which
 # is also the exe Studio embeds and lays down on install). Inherits release (opt-level 3, so runtime perf is
