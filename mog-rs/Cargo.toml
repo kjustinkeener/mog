@@ -54,7 +54,7 @@ toml = "0.8"
 sha2 = "0.10"
 ed25519-dalek = { version = "2", features = ["rand_core"] }
 hex = "0.4"
-ureq = "2"
+ureq = "3"
 # In-place binary self-replacement for `mog update`'s engine track. Handles the
 # Windows "can't overwrite a running exe" case by renaming self aside first.
 self-replace = "1"
