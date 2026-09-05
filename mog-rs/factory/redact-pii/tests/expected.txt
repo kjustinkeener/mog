@@ -1,0 +1,5 @@
+Contact: [email] or [phone]
+SSN [ssn], card [card]
+Server [ip], key [secret]
+stripe [secret]
+Bob Smith called

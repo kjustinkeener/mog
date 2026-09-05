@@ -1,0 +1,4 @@
+color
+Color
+COLOR
+the color red

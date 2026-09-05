@@ -1,0 +1,39 @@
+{
+  "name": ".env to k8s ConfigMap",
+  "description": "Turn a .env file into a Kubernetes ConfigMap manifest (YAML), with the variables under data. Set the name with -D name=... (default app-config).",
+  "summary": "Convert .env to a Kubernetes ConfigMap",
+  "tags": [
+    "convert",
+    "env",
+    "dotenv",
+    "k8s",
+    "yaml"
+  ],
+  "constants": {
+    "name": "app-config"
+  },
+  "steps": [
+    {
+      "description": "Parse the .env into a JSON object.",
+      "action": "env_to_json"
+    },
+    {
+      "description": "Nest the vars under data.",
+      "action": "json_wrap",
+      "options": {
+        "path": "data"
+      }
+    },
+    {
+      "description": "Add the ConfigMap envelope.",
+      "action": "json_merge",
+      "options": {
+        "object": "{\"apiVersion\":\"v1\",\"kind\":\"ConfigMap\",\"metadata\":{\"name\":\"{{name}}\"}}"
+      }
+    },
+    {
+      "description": "Render as YAML.",
+      "action": "json_to_yaml"
+    }
+  ]
+}

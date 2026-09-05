@@ -1,0 +1,70 @@
+{
+  "name": "JSON-escape text",
+  "description": "Escape arbitrary text into a valid JSON string literal: backslash and double-quote escaped, control characters escaped (\\n \\t \\r \\b \\f, and \\u00XX for the rest), and the whole wrapped in double quotes. Paste-ready for embedding a text blob (a log line, a message, multi-line content) into JSON or code. One pass, no chaining.",
+  "summary": "Escape text into a JSON string literal",
+  "tags": [
+    "json",
+    "escape",
+    "encode",
+    "string",
+    "quote"
+  ],
+  "steps": [
+    {
+      "action": "replace_map",
+      "description": "Escape backslash, quote, and control characters in one pass",
+      "options": {
+        "map": {
+          "\\": "\\\\",
+          "\"": "\\\"",
+          "\b": "\\b",
+          "\f": "\\f",
+          "\n": "\\n",
+          "\r": "\\r",
+          "\t": "\\t",
+          "\u0000": "\\u0000",
+          "\u0001": "\\u0001",
+          "\u0002": "\\u0002",
+          "\u0003": "\\u0003",
+          "\u0004": "\\u0004",
+          "\u0005": "\\u0005",
+          "\u0006": "\\u0006",
+          "\u0007": "\\u0007",
+          "\u000b": "\\u000b",
+          "\u000e": "\\u000e",
+          "\u000f": "\\u000f",
+          "\u0010": "\\u0010",
+          "\u0011": "\\u0011",
+          "\u0012": "\\u0012",
+          "\u0013": "\\u0013",
+          "\u0014": "\\u0014",
+          "\u0015": "\\u0015",
+          "\u0016": "\\u0016",
+          "\u0017": "\\u0017",
+          "\u0018": "\\u0018",
+          "\u0019": "\\u0019",
+          "\u001a": "\\u001a",
+          "\u001b": "\\u001b",
+          "\u001c": "\\u001c",
+          "\u001d": "\\u001d",
+          "\u001e": "\\u001e",
+          "\u001f": "\\u001f"
+        }
+      }
+    },
+    {
+      "action": "prepend",
+      "description": "Open the JSON string",
+      "options": {
+        "text": "\""
+      }
+    },
+    {
+      "action": "append",
+      "description": "Close the JSON string",
+      "options": {
+        "text": "\""
+      }
+    }
+  ]
+}

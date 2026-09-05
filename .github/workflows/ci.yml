@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    paths: ["mog-rs/**", ".github/workflows/ci.yml"]
+  pull_request:
+    paths: ["mog-rs/**", ".github/workflows/ci.yml"]
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    defaults:
+      run:
+        working-directory: mog-rs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: mog-rs
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+      # Keep the criterion benchmarks compiling (they back the perf-regression
+      # gate; tests/perf_scaling.rs is the actual pass/fail guard, run above).
+      - run: cargo bench --no-run

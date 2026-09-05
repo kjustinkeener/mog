@@ -1,0 +1,417 @@
+{
+  "name": "BigQuery tables to TypeScript interfaces",
+  "summary": "Generate TypeScript interfaces from a BigQuery DDL export",
+  "description": "Generate TypeScript 'export interface' declarations from a BigQuery DDL export (INFORMATION_SCHEMA.TABLES.ddl or 'bq show'), one interface per table, 2-space indented. Discards non-table statements (CREATE SCHEMA, views, ALTERs) and BigQuery's physical-layout trailers (PARTITION BY, CLUSTER BY, table and column OPTIONS). Column/member names are kept exactly as in the table (snake_case, matching the keys the BigQuery client returns); only the interface name is PascalCased. BigQuery types map to TypeScript types (INT64/NUMERIC/BIGNUMERIC/FLOAT64 -> number, BOOL -> boolean, STRING/BYTES-as-base64 aside, DATE/DATETIME/TIME/TIMESTAMP -> string as ISO-8601 text, BYTES -> Uint8Array, JSON -> unknown, STRUCT<...> -> Record<string,unknown>, ARRAY<T> -> T[]). BigQuery columns are NULLABLE by default -- only an explicit NOT NULL makes a column required -- so the '<type> | null' union is driven by the ABSENCE of NOT NULL. ARRAY columns are never null and stay a plain array. Semi-structured and lossy types (JSON, STRUCT, BIGNUMERIC) are flagged inline with a // TODO(mog): comment. Assumes LF.",
+  "tags": [
+    "sql",
+    "bigquery",
+    "typescript",
+    "codegen",
+    "convert",
+    "migration"
+  ],
+  "steps": [
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop the export's leading '--' comment banners and per-table headers.",
+      "options": {
+        "find": "(?m)^--.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CREATE SCHEMA / CREATE DATASET statements.",
+      "options": {
+        "find": "(?im)^CREATE (?:SCHEMA|DATASET)\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop DROP TABLE / DROP VIEW statements.",
+      "options": {
+        "find": "(?im)^DROP (?:TABLE|VIEW)\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CREATE VIEW / MATERIALIZED VIEW statements (multi-line, to the first ';').",
+      "options": {
+        "find": "(?ims)^CREATE (?:OR REPLACE )?(?:MATERIALIZED )?VIEW\\b.*?;[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop ALTER TABLE statements (SET OPTIONS, ADD COLUMN, drops).",
+      "options": {
+        "find": "(?ims)^ALTER TABLE\\b.*?;[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop the table-level OPTIONS(...) trailer (description, labels, expiration).",
+      "options": {
+        "find": "(?ims)^OPTIONS\\(.*?\\);[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop PARTITION BY trailers (BigQuery physical layout, not part of the row type).",
+      "options": {
+        "find": "(?im)^PARTITION BY\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CLUSTER BY trailers (BigQuery physical layout, not part of the row type).",
+      "options": {
+        "find": "(?im)^CLUSTER BY\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Strip the backtick quoting BigQuery puts around table and column identifiers.",
+      "options": {
+        "find": "`",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Collapse the blank lines the removals left behind.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Interface shell",
+      "action": "replace_regex",
+      "description": "Rewrite each 'CREATE OR REPLACE TABLE <project>.<dataset>.<tbl>' plus its own-line '(' into the type header.",
+      "options": {
+        "find": "(?m)^CREATE (?:OR REPLACE )?TABLE (?:IF NOT EXISTS )?(?:[\\w-]+\\.)*(\\w+)\\n\\($",
+        "replace_with": "export interface ${1} {"
+      }
+    },
+    {
+      "section": "Interface shell",
+      "action": "replace_regex",
+      "description": "Rewrite each table-closing ')' (with or without a trailing ';') into the closing form.",
+      "options": {
+        "find": "(?m)^\\)[ \\t]*;?[ \\t]*$",
+        "replace_with": "}"
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop per-column OPTIONS(...) clauses (column descriptions and policy tags).",
+      "options": {
+        "find": "(?im)\\s+OPTIONS\\([^)]*\\)(?=,?[ \\t]*$)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop DEFAULT clauses from column lines (literals, CURRENT_TIMESTAMP(), GENERATE_UUID()).",
+      "options": {
+        "find": "(?im)\\s+DEFAULT\\s+.+?(?=(?:\\s+NOT\\s+NULL)?,?\\s*$)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop trailing commas that separated columns.",
+      "options": {
+        "find": "(?m),[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "BigQuery ARRAY columns are never NULL (an absent value is the empty array), so mark them NOT NULL before the nullability pass.",
+      "options": {
+        "find": "(?m)^(    \\w+ ARRAY<[^\\n]*>)(?! NOT NULL)$",
+        "replace_with": "${1} NOT NULL"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Mark nullable columns with a sentinel: in BigQuery a column is NULLABLE unless it explicitly says NOT NULL, so nullability is driven by the ABSENCE of the constraint.",
+      "options": {
+        "find": "(?m)^(    \\w[^\\n]*?)(?<! NOT NULL)$",
+        "replace_with": "${1}@@N@@"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Remove the NOT NULL constraint marker from non-nullable columns.",
+      "options": {
+        "find": "(?m) NOT NULL$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery JSON columns: mapped to unknown.",
+      "options": {
+        "pattern": "\\bJSON\\b",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "BigQuery semi-structured column; typed as unknown -- narrow it with a parser or a hand-written interface.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery STRUCT columns: mapped to an index signature.",
+      "options": {
+        "pattern": "\\bSTRUCT<",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "BigQuery record type; flattened to an index signature -- declare a nested interface for typed field access.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery ARRAY columns: mapped to a TypeScript array.",
+      "options": {
+        "pattern": "\\bARRAY<",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "BigQuery repeated column; never null (an absent value is the empty array) -- verify the element mapping.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery BIGNUMERIC columns: mapped to number.",
+      "options": {
+        "pattern": "\\bBIGNUMERIC\\b",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "BigQuery 76-digit exact numbers exceed JavaScript's IEEE-754 precision; carry the value as text if exactness matters.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "STRUCT<...> -> Record<string,unknown> (flagged above).",
+      "options": {
+        "find": "(?i)\\bSTRUCT<[^>]*>",
+        "replace_with": "Record<string,unknown>"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "BIGNUMERIC(p,s) -> number (flagged above).",
+      "options": {
+        "find": "(?i)\\bBIGNUMERIC\\(\\d+,\\s*\\d+\\)",
+        "replace_with": "number"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare BIGNUMERIC -> number (flagged above).",
+      "options": {
+        "find": "(?i)\\bBIGNUMERIC\\b",
+        "replace_with": "number"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "NUMERIC(p,s) / DECIMAL(p,s) -> number.",
+      "options": {
+        "find": "(?i)\\b(?:NUMERIC|DECIMAL)\\(\\d+,\\s*\\d+\\)",
+        "replace_with": "number"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare NUMERIC / DECIMAL -> number.",
+      "options": {
+        "find": "(?i)\\b(?:NUMERIC|DECIMAL)\\b",
+        "replace_with": "number"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "INT64 / INT / INTEGER -> number.",
+      "options": {
+        "find": "(?i)\\b(?:INT64|INTEGER|INT)\\b",
+        "replace_with": "number"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "FLOAT64 / FLOAT -> number.",
+      "options": {
+        "find": "(?i)\\b(?:FLOAT64|FLOAT)\\b",
+        "replace_with": "number"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "BOOL / BOOLEAN -> boolean.",
+      "options": {
+        "find": "(?i)\\b(?:BOOLEAN|BOOL)\\b",
+        "replace_with": "boolean"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "STRING(n) -> string.",
+      "options": {
+        "find": "(?i)\\bSTRING\\(\\d+\\)",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare STRING -> string.",
+      "options": {
+        "find": "(?i)\\bSTRING\\b",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "BYTES(n) / BYTES -> Uint8Array.",
+      "options": {
+        "find": "(?i)\\bBYTES(?:\\(\\d+\\))?",
+        "replace_with": "Uint8Array"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "TIMESTAMP / DATETIME / DATE / TIME -> string (ISO-8601 text).",
+      "options": {
+        "find": "(?i)\\b(?:TIMESTAMP|DATETIME|DATE|TIME)\\b",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "JSON -> unknown (flagged above).",
+      "options": {
+        "find": "(?i)\\bJSON\\b",
+        "replace_with": "unknown"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "ARRAY<T> -> T[] (flagged above).",
+      "options": {
+        "find": "(?i)\\bARRAY<([^<>]+)>",
+        "replace_with": "${1}[]"
+      }
+    },
+    {
+      "section": "Members",
+      "action": "replace_regex",
+      "description": "Rewrite nullable columns into a TypeScript member with a '| null' union (2-space indent).",
+      "options": {
+        "find": "(?m)^(    )(\\w+) (\\S+)@@N@@(.*)$",
+        "replace_with": "  ${2}: ${3} | null;${4}"
+      }
+    },
+    {
+      "section": "Members",
+      "action": "replace_regex",
+      "description": "Rewrite non-nullable columns into a TypeScript member (2-space indent).",
+      "options": {
+        "find": "(?m)^    (\\w+) (\\S+)( // .*)?$",
+        "replace_with": "  ${1}: ${2};${3}"
+      }
+    },
+    {
+      "section": "Members",
+      "action": "replace_regex",
+      "description": "Safety: strip any leftover nullability sentinel.",
+      "options": {
+        "find": "@@N@@",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "PascalCase",
+      "action": "to_pascal",
+      "description": "PascalCase each interface name (the table identifier); column members stay snake_case.",
+      "only_lines_matching": "^export interface ",
+      "scope": {
+        "field": {
+          "index": 3,
+          "delimiter": " "
+        }
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Collapse multiple blank lines to a single blank between declarations.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim leading blank lines.",
+      "options": {
+        "find": "\\A\\n+",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim trailing blank lines to a single final newline.",
+      "options": {
+        "find": "\\n\\s*\\z",
+        "replace_with": "\n"
+      }
+    }
+  ]
+}

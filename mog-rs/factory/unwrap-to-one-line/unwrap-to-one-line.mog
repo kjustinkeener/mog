@@ -1,0 +1,17 @@
+{
+  "name": "Unwrap lines into one",
+  "summary": "Trim each line and join them with single spaces",
+  "description": "Trim each line and join them all with single spaces, collapsing a hard-wrapped paragraph back into one line. Drops the internal line breaks. Useful for un-wrapping text copied from a fixed-width source.",
+  "tags": [
+    "whitespace",
+    "join",
+    "format",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "trim_and_eol_to_space",
+      "description": "Trim each line, join with spaces"
+    }
+  ]
+}

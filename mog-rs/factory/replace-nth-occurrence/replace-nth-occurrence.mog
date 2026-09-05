@@ -1,0 +1,23 @@
+{
+  "name": "Replace the Nth match",
+  "summary": "Replace only the Nth occurrence of a pattern",
+  "description": "Replace ONLY the Nth occurrence (1-based) of the find pattern, leaving the others untouched. This recipe replaces the 2nd match. Positional replace for when you need to change one specific occurrence.",
+  "tags": [
+    "replace",
+    "filter",
+    "column",
+    "single",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "replace_nth",
+      "description": "Replace the 2nd 'col' with 'COL'",
+      "options": {
+        "find": "col",
+        "replace_with": "COL",
+        "n": 2
+      }
+    }
+  ]
+}

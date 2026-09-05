@@ -1,0 +1,73 @@
+{
+  "name": "Databricks (Spark SQL) to BigQuery (DDL/SQL)",
+  "description": "Convert Databricks / Spark SQL toward BigQuery. Both quote identifiers with backticks, so those pass through; complex types (ARRAY<...>, MAP<...>, STRUCT<...>) are collapsed to JSON, the USING <format> table clause (e.g. USING DELTA) is dropped, and scalar type keywords are mapped (LONG/INT/INTEGER/BIGINT/SMALLINT/SHORT/TINYINT/BYTE->INT64, DOUBLE/FLOAT/REAL->FLOAT64, DECIMAL->NUMERIC, BOOLEAN->BOOL, BINARY->BYTES; STRING/TIMESTAMP/DATE stay) with NVL->IFNULL. Minimal-diff, not a semantic transpiler: nested complex types, STRUCT/ARRAY semantics, LATERAL VIEW/EXPLODE, and Spark-only functions are left for manual review. Assumes LF text.",
+  "summary": "Convert Databricks Spark SQL to BigQuery",
+  "tags": [
+    "sql",
+    "databricks",
+    "spark",
+    "bigquery",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "steps": [
+    {
+      "section": "Complex types",
+      "description": "Collapse ARRAY<...>/MAP<...>/STRUCT<...> to JSON (best-effort; non-nested).",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\b(?:ARRAY|MAP|STRUCT)\\s*<[^<>]*>",
+        "replace_with": "JSON",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Table clauses",
+      "description": "Drop the USING <format> table clause (e.g. USING DELTA).",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\s+USING\\s+\\w+",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Types",
+      "description": "Map Spark scalar type keywords to BigQuery types (whole-word, case-insensitive; longest match wins).",
+      "action": "replace_map",
+      "options": {
+        "ignore_case": true,
+        "whole_word": true,
+        "map": {
+          "INTEGER": "INT64",
+          "BIGINT": "INT64",
+          "SMALLINT": "INT64",
+          "TINYINT": "INT64",
+          "LONG": "INT64",
+          "SHORT": "INT64",
+          "BYTE": "INT64",
+          "INT": "INT64",
+          "DOUBLE": "FLOAT64",
+          "FLOAT": "FLOAT64",
+          "REAL": "FLOAT64",
+          "DECIMAL": "NUMERIC",
+          "BOOLEAN": "BOOL",
+          "BINARY": "BYTES"
+        }
+      }
+    },
+    {
+      "section": "Functions",
+      "description": "Safe 1:1 function rename (same argument shape).",
+      "action": "replace_map",
+      "options": {
+        "ignore_case": true,
+        "whole_word": true,
+        "map": {
+          "NVL": "IFNULL"
+        }
+      }
+    }
+  ]
+}

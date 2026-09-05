@@ -1,0 +1,21 @@
+{
+  "name": "Strip YAML frontmatter",
+  "description": "Remove a leading YAML frontmatter block (the metadata fenced by --- at the very top of a Markdown file), leaving the body content. Only a block at the start of the file is removed; later --- horizontal rules are untouched. Assumes LF text.",
+  "summary": "Remove leading YAML frontmatter from a Markdown file",
+  "tags": [
+    "markdown",
+    "docs",
+    "yaml",
+    "strip"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Delete the opening ---...--- block at the start of the file",
+      "options": {
+        "find": "\\A---\\n[\\s\\S]*?\\n---\\n",
+        "replace_with": ""
+      }
+    }
+  ]
+}

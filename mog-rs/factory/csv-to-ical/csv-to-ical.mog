@@ -1,0 +1,23 @@
+{
+  "name": "CSV to iCalendar events",
+  "description": "Turn a CSV of events (header row with SUMMARY, DTSTART, DTEND) into an iCalendar (.ics) file: one VEVENT per row, wrapped in a VCALENDAR. Uses a per-row template plus a calendar header/footer. The inverse of ical-to-csv. Timestamps should already be in iCal form (e.g. 20240101T090000Z).",
+  "summary": "Convert a CSV of events to iCalendar (.ics)",
+  "tags": [
+    "csv",
+    "date",
+    "convert",
+    "interchange"
+  ],
+  "steps": [
+    {
+      "action": "row_to_template",
+      "description": "Render each row as a VEVENT",
+      "options": {
+        "has_header": true,
+        "template": "BEGIN:VEVENT\nSUMMARY:${SUMMARY}\nDTSTART:${DTSTART}\nDTEND:${DTEND}\nEND:VEVENT"
+      }
+    },
+    { "action": "prepend", "description": "Calendar header", "options": { "text": "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//mog//EN\n" } },
+    { "action": "append", "description": "Calendar footer", "options": { "text": "END:VCALENDAR\n" } }
+  ]
+}

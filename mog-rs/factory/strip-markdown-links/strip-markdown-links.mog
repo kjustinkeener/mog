@@ -1,0 +1,30 @@
+{
+  "name": "Unwrap Markdown links to text",
+  "description": "Replace Markdown links and images with just their visible text: [label](url) becomes label, and ![alt](img) becomes alt. Leaves the surrounding prose intact. Useful for turning Markdown into plain text or stripping URLs from a document. Reference-style links ([label][ref]) are not handled.",
+  "summary": "Unwrap Markdown links and images to their text",
+  "tags": [
+    "markdown",
+    "links",
+    "strip",
+    "plaintext",
+    "docs"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Images: ![alt](img) -> alt",
+      "options": {
+        "find": "!\\[([^\\]]*)\\]\\([^)]*\\)",
+        "replace_with": "$1"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Links: [label](url) -> label",
+      "options": {
+        "find": "\\[([^\\]]*)\\]\\([^)]*\\)",
+        "replace_with": "$1"
+      }
+    }
+  ]
+}

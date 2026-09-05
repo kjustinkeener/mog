@@ -1,0 +1,14 @@
+{
+  "name": "Strip Jupyter notebook outputs",
+  "description": "Clear the outputs and execution counts from a Jupyter notebook (.ipynb) so it produces clean git diffs and small commits: sets every cell's outputs to [] and execution_count to null via json_set. The notebook stays a valid .ipynb (unlike ipynb-to-python, which discards structure). Mechanical: it sets these fields on every cell, including markdown cells (a harmless extra field that renderers ignore).",
+  "summary": "Clear Jupyter notebook outputs and execution counts",
+  "tags": [
+    "jupyter",
+    "cleanup",
+    "ml"
+  ],
+  "steps": [
+    { "action": "json_set", "description": "Clear all cell outputs", "options": { "path": "cells[*].outputs", "value": "[]" } },
+    { "action": "json_set", "description": "Reset execution counts", "options": { "path": "cells[*].execution_count", "value": "null" } }
+  ]
+}

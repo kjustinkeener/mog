@@ -1,0 +1,4 @@
+  1: import os
+ 12: def main():
+100  print("hi")
+no number here

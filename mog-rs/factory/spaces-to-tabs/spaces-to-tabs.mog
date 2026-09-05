@@ -1,0 +1,7 @@
+{
+  "name": "Convert leading spaces to tabs",
+  "description": "Turn runs of leading spaces into tabs for indentation. Uses the spaces_to_tabs action's default tab width. The inverse of tabs-to-spaces.",
+  "summary": "Convert leading spaces to tabs for indentation",
+  "tags": ["whitespace", "indent", "single-action"],
+  "steps": [ { "action": "spaces_to_tabs", "description": "Leading spaces -> tabs" } ]
+}

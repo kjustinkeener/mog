@@ -1,0 +1,159 @@
+{
+  "name": "SQL Server (SSMS/mssql-scripter) DDL to MySQL",
+  "summary": "Convert real SQL Server script output to MySQL DDL",
+  "description": "Convert real SQL Server script output (SSMS Generate Scripts / mssql-scripter) to MySQL DDL. Strips the SET/banner/DROP noise, then the USE/GO batch scaffolding, the [bracket] quoting and dbo. schema, the ON [PRIMARY]/TEXTIMAGE_ON filegroup clauses, and the separate ALTER TABLE ADD CONSTRAINT PRIMARY KEY CLUSTERED WITH(...) block. Folds the identity column's primary key inline (IDENTITY(1,1) NOT NULL -> AUTO_INCREMENT PRIMARY KEY, since MySQL requires the auto column to be a key), and maps types (nvarchar(max)->TEXT, nvarchar->varchar, bit->tinyint(1), datetime2(n)->datetime, uniqueidentifier->char(36)).",
+  "tags": [
+    "sql",
+    "mssql",
+    "mysql",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "mssql-strip-server-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip noise",
+      "action": "run_mog",
+      "options": {
+        "file": "mssql-strip-server-noise.mog"
+      }
+    },
+    {
+      "section": "Strip noise",
+      "action": "replace_regex",
+      "description": "Drop USE [db] batch.",
+      "options": {
+        "find": "(?mi)^USE \\[?\\w+\\]?\\s*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Strip noise",
+      "action": "replace_regex",
+      "description": "Drop GO batch separators.",
+      "options": {
+        "find": "(?mi)^GO\\s*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Constraints",
+      "action": "replace_regex",
+      "description": "Drop the separate ALTER ... PRIMARY KEY CLUSTERED WITH(...) block (folded inline below).",
+      "options": {
+        "find": "(?is)ALTER TABLE \\[?\\w+\\]?\\.?\\[?\\w+\\]?\\s+ADD\\s+CONSTRAINT[^;]*?PRIMARY KEY CLUSTERED\\s*\\([^)]*\\)\\s*WITH \\([^)]*\\)\\s*ON \\[?PRIMARY\\]?",
+        "replace_with": "-- TODO(mog): primary key folded into CREATE TABLE"
+      }
+    },
+    {
+      "section": "Identifiers",
+      "action": "replace",
+      "description": "Drop [ bracket.",
+      "options": {
+        "find": "[",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Identifiers",
+      "action": "replace",
+      "description": "Drop ] bracket.",
+      "options": {
+        "find": "]",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Identifiers",
+      "action": "replace",
+      "description": "Drop dbo. schema.",
+      "options": {
+        "find": "dbo.",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "IDENTITY(1,1) NOT NULL -> AUTO_INCREMENT PRIMARY KEY (fold PK; MySQL needs the auto col to be a key).",
+      "options": {
+        "find": "(?i)IDENTITY\\(\\d+,\\s*\\d+\\)\\s+NOT NULL",
+        "replace_with": "AUTO_INCREMENT PRIMARY KEY"
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Any remaining IDENTITY(n,n) -> AUTO_INCREMENT.",
+      "options": {
+        "find": "(?i)IDENTITY\\(\\d+,\\s*\\d+\\)",
+        "replace_with": "AUTO_INCREMENT"
+      }
+    },
+    {
+      "section": "Storage",
+      "action": "replace_regex",
+      "description": "Drop the ) ON PRIMARY TEXTIMAGE_ON PRIMARY filegroup clause.",
+      "options": {
+        "find": "(?i)\\)\\s*ON PRIMARY(?:\\s+TEXTIMAGE_ON PRIMARY)?",
+        "replace_with": ")"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "nvarchar(max) -> TEXT.",
+      "options": {
+        "find": "(?i)\\bnvarchar\\(max\\)",
+        "replace_with": "TEXT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "nvarchar/nchar -> varchar/char.",
+      "options": {
+        "find": "(?i)\\bn(varchar|char)\\b",
+        "replace_with": "$1"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "bit -> tinyint(1).",
+      "options": {
+        "find": "(?i)\\bbit\\b",
+        "replace_with": "tinyint(1)"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "datetime2(n) -> datetime.",
+      "options": {
+        "find": "(?i)\\bdatetime2(\\(\\d+\\))?",
+        "replace_with": "datetime"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "uniqueidentifier -> char(36).",
+      "options": {
+        "find": "(?i)\\buniqueidentifier\\b",
+        "replace_with": "char(36)"
+      }
+    },
+    {
+      "section": "Finalize",
+      "action": "replace_regex",
+      "description": "Collapse blank lines.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    }
+  ]
+}

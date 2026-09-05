@@ -1,0 +1,24 @@
+{
+  "name": "Diff a list against a baseline",
+  "description": "Show a line-by-line diff of the input against a baseline list, git-style: a leading '- ' marks a line only in the baseline (removed), '+ ' a line only in the input (added), and '  ' an unchanged line. Point the 'baseline' source at the old version with --source baseline=<path>. Good for a readable changelog between two snapshots (config keys, dependency lists, checklists). Set the 'format' option to only_added or only_removed to emit just one side, or unified for a unified diff.",
+  "summary": "Diff a list against a baseline, git-style",
+  "tags": [
+    "compare",
+    "diff",
+    "audit",
+    "docs"
+  ],
+  "sources": {
+    "baseline": "list-diff.Baseline.txt"
+  },
+  "steps": [
+    {
+      "action": "diff",
+      "description": "Emit a git-style +/-/space marker diff of the input against the baseline",
+      "options": {
+        "ref": "baseline",
+        "format": "marker"
+      }
+    }
+  ]
+}

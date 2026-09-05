@@ -1,0 +1,9 @@
+{
+  "name": "CSV to HTML table",
+  "description": "Render CSV (with a header row) as an HTML <table> (thead + tbody), with cell text HTML-escaped.",
+  "summary": "Convert CSV to an HTML table",
+  "tags": ["convert", "csv", "html", "table"],
+  "steps": [
+    { "description": "Render the CSV as an HTML table.", "action": "csv_to_html" }
+  ]
+}

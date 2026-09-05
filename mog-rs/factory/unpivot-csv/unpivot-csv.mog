@@ -1,0 +1,9 @@
+{
+  "name": "Unpivot a wide CSV to long form",
+  "description": "Reshape a wide CSV into tidy long (id, key, value) rows, one row per value: keep the 'id_columns' and turn every other column into its own row, using the header name as the key. The classic 'melt' for feeding a database or a BI tool. Set 'id_columns' (1-based, comma-separated) to keep more than the first column.",
+  "summary": "Reshape a wide CSV into long id, key, value rows",
+  "tags": ["csv", "reshape", "prose", "data"],
+  "steps": [
+    { "action": "unpivot", "description": "Wide columns to (id, key, value) rows", "options": { "id_columns": "1" } }
+  ]
+}

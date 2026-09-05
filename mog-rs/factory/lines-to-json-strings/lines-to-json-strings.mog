@@ -1,0 +1,21 @@
+{
+  "name": "Wrap each line as a JSON string",
+  "description": "Escape and quote each input line as a JSON string literal, so arbitrary text (with quotes, backslashes, tabs, or control characters) can be safely embedded in JSON. Hand-escaping this is easy to get subtly wrong; this is exact. Set quote:false on the step to escape without the surrounding double quotes when you are building a larger string. Pair with join_lines to assemble a JSON array.",
+  "summary": "Escape and quote each line as a JSON string",
+  "tags": [
+    "encode",
+    "escape",
+    "json",
+    "string",
+    "security"
+  ],
+  "steps": [
+    {
+      "action": "escape_json",
+      "description": "Escape + quote each line as a JSON string",
+      "options": {
+        "quote": true
+      }
+    }
+  ]
+}

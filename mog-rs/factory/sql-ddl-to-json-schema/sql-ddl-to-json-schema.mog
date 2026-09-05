@@ -1,0 +1,127 @@
+{
+  "name": "SQL CREATE TABLE to JSON Schema",
+  "description": "Convert a CREATE TABLE statement into a draft-07 JSON Schema object (the reverse of json-schema-to-sql-ddl). Maps common SQL types to JSON types (INT/BIGINT/SERIAL -> integer; REAL/FLOAT/DOUBLE PRECISION/NUMERIC/DECIMAL -> number; BOOL/BOOLEAN -> boolean; TEXT/VARCHAR/CHAR/UUID/DATE/TIMESTAMP/JSON -> string) and turns column nullability into the type: NOT NULL -> a plain type, a nullable column -> a ['type', 'null'] union. Not a SQL parser: it assumes one column per line, and does not handle table/column constraints on their own line (PRIMARY KEY, FOREIGN KEY, UNIQUE, CHECK), DEFAULT clauses, multi-statement scripts, or bracket/backtick quoting.",
+  "summary": "Convert SQL CREATE TABLE to JSON Schema",
+  "tags": [
+    "convert",
+    "schema",
+    "sql",
+    "json"
+  ],
+  "steps": [
+    {
+      "section": "Normalize",
+      "description": "Normalize line endings to LF so the per-line column regexes are reliable.",
+      "action": "eol_lf"
+    },
+    {
+      "section": "Type map",
+      "description": "Parametrized character types VARCHAR(n)/CHAR(n)/NVARCHAR(n) -> tagged @string@.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\b(?:VARCHAR|CHAR|NVARCHAR|NCHAR|CHARACTER VARYING|CHARACTER)\\s*\\(\\s*\\d+\\s*\\)",
+        "replace_with": "@string@",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Parametrized numeric types NUMERIC(p[,s])/DECIMAL(p[,s]) -> tagged @number@.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\b(?:NUMERIC|DECIMAL)\\s*\\(\\s*\\d+\\s*(?:,\\s*\\d+\\s*)?\\)",
+        "replace_with": "@number@",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Two-word DOUBLE PRECISION -> tagged @number@ (before the bare-word map).",
+      "action": "replace",
+      "options": {
+        "find": "DOUBLE PRECISION",
+        "replace_with": "@number@",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Bare SQL type keywords -> tagged JSON types (whole-word, case-insensitive; longest key wins).",
+      "action": "replace_map",
+      "options": {
+        "ignore_case": true,
+        "whole_word": true,
+        "map": {
+          "BIGINT": "@integer@",
+          "INTEGER": "@integer@",
+          "INT": "@integer@",
+          "SMALLINT": "@integer@",
+          "TINYINT": "@integer@",
+          "SERIAL": "@integer@",
+          "BIGSERIAL": "@integer@",
+          "REAL": "@number@",
+          "FLOAT": "@number@",
+          "NUMERIC": "@number@",
+          "DECIMAL": "@number@",
+          "DOUBLE": "@number@",
+          "BOOLEAN": "@boolean@",
+          "BOOL": "@boolean@",
+          "TEXT": "@string@",
+          "VARCHAR": "@string@",
+          "NVARCHAR": "@string@",
+          "CHAR": "@string@",
+          "NCHAR": "@string@",
+          "UUID": "@string@",
+          "DATE": "@string@",
+          "TIMESTAMP": "@string@",
+          "TIMESTAMPTZ": "@string@",
+          "JSON": "@string@",
+          "JSONB": "@string@",
+          "BYTEA": "@string@"
+        }
+      }
+    },
+    {
+      "section": "Columns to properties",
+      "description": "NOT NULL column -> a JSON Schema property with a single type. Runs before the nullable rule.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*([A-Za-z0-9_]+)\\s+@([a-z]+)@\\s+NOT\\s+NULL,?\\s*$",
+        "replace_with": "    \"$1\": { \"type\": \"$2\" },",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Nullable column -> a JSON Schema property with a ['type', 'null'] union.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*([A-Za-z0-9_]+)\\s+@([a-z]+)@,?\\s*$",
+        "replace_with": "    \"$1\": { \"type\": [\"$2\", \"null\"] },"
+      }
+    },
+    {
+      "section": "Reshape header",
+      "description": "CREATE TABLE <name> ( -> the JSON Schema object header and open the properties object.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*CREATE\\s+TABLE\\s+([A-Za-z0-9_.\"]+)\\s*\\(\\s*$",
+        "replace_with": "{\n  \"type\": \"object\",\n  \"title\": \"$1\",\n  \"properties\": {",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "The closing ); -> close the properties object and the schema object.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*\\)\\s*;?\\s*$",
+        "replace_with": "  }\n}"
+      }
+    },
+    {
+      "section": "Finalize JSON",
+      "description": "Drop the trailing comma after the last property so the output is valid JSON.",
+      "action": "replace_regex",
+      "options": {
+        "find": ",(\\n\\s*\\})",
+        "replace_with": "$1"
+      }
+    }
+  ]
+}

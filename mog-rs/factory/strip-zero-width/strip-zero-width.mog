@@ -1,0 +1,28 @@
+{
+  "name": "Strip invisible characters",
+  "description": "Remove invisible characters that you cannot see to delete: zero-width space/joiner/non-joiner (U+200B/C/D), a byte-order mark or zero-width no-break space (U+FEFF), and the soft hyphen (U+00AD); a non-breaking space (U+00A0) is turned into a normal space. These often sneak in from copy-paste, PDFs, or web pages and break diffs, greps, and parsers.",
+  "summary": "Remove zero-width and invisible characters",
+  "tags": [
+    "text",
+    "unicode",
+    "cleanup"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Delete zero-width and BOM/soft-hyphen characters",
+      "options": {
+        "find": "[\\x{200B}\\x{200C}\\x{200D}\\x{FEFF}\\x{00AD}]",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Turn a non-breaking space into a normal space",
+      "options": {
+        "find": "\\x{00A0}",
+        "replace_with": " "
+      }
+    }
+  ]
+}

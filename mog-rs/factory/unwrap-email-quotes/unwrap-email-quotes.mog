@@ -1,0 +1,16 @@
+{
+  "name": "Unwrap hard-wrapped text, quote-aware",
+  "description": "Join each hard-wrapped paragraph back into one long line, the inverse of a fixed-width reflow. With prefix_aware on, a leading quote or comment marker (> , #, //, --) is detected on the paragraph and its wrapped lines are joined under a single prefix, so a '> ' quoted block collapses to one '> ' line instead of concatenating the markers. Blank lines between paragraphs are preserved, so paragraph boundaries survive. Change separator on the step if lines should join with something other than a single space.",
+  "summary": "Join wrapped lines back to one line per paragraph, keeping > prefixes",
+  "tags": [
+    "whitespace",
+    "unwrap",
+    "reflow",
+    "email",
+    "markdown",
+    "single-action"
+  ],
+  "steps": [
+    { "action": "unwrap_text", "description": "Join each paragraph's wrapped lines under its quote/comment prefix", "options": { "prefix_aware": true } }
+  ]
+}

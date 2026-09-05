@@ -1,0 +1,3 @@
+Copyright 2006 Acme Corp
+Copyright (c) 2015-2006 Bob
+No year on this line

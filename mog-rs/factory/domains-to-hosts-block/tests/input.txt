@@ -1,0 +1,5 @@
+# ad + tracker blocklist
+ads.example.com
+tracker.net
+
+analytics.example.io

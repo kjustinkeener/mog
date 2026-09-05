@@ -1,0 +1,4 @@
+Error: boom
+    at foo (/app/src/index.js:12:5)
+    at bar (/app/src/index.js:34:9)
+    handle at 0xdeadbeef

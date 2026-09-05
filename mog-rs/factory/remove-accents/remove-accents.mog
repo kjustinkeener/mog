@@ -1,0 +1,14 @@
+{
+  "name": "Remove accents (de-accent to ASCII)",
+  "description": "Strip diacritics from accented Latin letters, mapping them to their base ASCII letter (cafe from cafe-with-accent, naive, resume, Muenchen-style). Useful for building ASCII slugs, search keys, or filenames. Non-Latin scripts are left unchanged.",
+  "summary": "Strip accents, mapping Latin letters to ASCII",
+  "tags": [
+    "text",
+    "unicode",
+    "normalize",
+    "single-action"
+  ],
+  "steps": [
+    { "action": "normalize", "description": "Fold accented letters to their base ASCII form", "options": { "accents": true } }
+  ]
+}

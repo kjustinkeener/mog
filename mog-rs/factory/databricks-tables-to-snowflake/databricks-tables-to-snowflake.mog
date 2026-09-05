@@ -1,0 +1,108 @@
+{
+  "name": "Databricks SHOW CREATE TABLE to Snowflake",
+  "summary": "Convert a Databricks/Spark table export to Snowflake DDL",
+  "description": "Convert the output of Databricks 'SHOW CREATE TABLE' to Snowflake. (1) Strips Delta/Spark export noise (USING, LOCATION, TBLPROPERTIES) and flags the physical clauses with no Snowflake equivalent, (2) rewrites Spark scalar types to Snowflake (STRING->VARCHAR, LONG->BIGINT, SHORT->SMALLINT, BYTE->TINYINT), (3) collapses nested ARRAY/MAP/STRUCT types to VARIANT and flags the lost element types, (4) flags bare TIMESTAMP (instant vs Snowflake's default NTZ wall-clock), and (5) rewrites CREATE TABLE to CREATE OR REPLACE TABLE and the table COMMENT. Not a semantic transpiler. Assumes one table's SHOW CREATE TABLE output.",
+  "tags": [
+    "sql",
+    "databricks",
+    "spark",
+    "snowflake",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-databricks-export-noise",
+    "sql-requote-backtick-to-quote",
+    "sql-finalize-whitespace"
+  ],
+  "steps": [
+    {
+      "section": "Strip export noise",
+      "action": "run_mog",
+      "description": "Remove Delta/Spark boilerplate; flag dropped physical clauses.",
+      "options": { "file": "strip-databricks-export-noise.mog" }
+    },
+    {
+      "section": "Identifiers",
+      "action": "run_mog",
+      "description": "Spark `id` backticks to Snowflake \"id\" double quotes.",
+      "options": { "file": "sql-requote-backtick-to-quote.mog" }
+    },
+    {
+      "section": "Statement",
+      "action": "replace",
+      "description": "Snowflake export idiom: CREATE TABLE -> CREATE OR REPLACE TABLE.",
+      "options": { "find": "CREATE TABLE ", "replace_with": "CREATE OR REPLACE TABLE " }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Databricks ARRAY<...> -> Snowflake ARRAY (untyped; element type dropped).",
+      "options": { "find": "\\bARRAY\\s*<[^<>]*>", "replace_with": "ARRAY" }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Databricks MAP<...> -> Snowflake OBJECT (untyped key/value).",
+      "options": { "find": "\\bMAP\\s*<[^<>]*>", "replace_with": "OBJECT" }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Databricks STRUCT<...> -> Snowflake OBJECT (field types dropped).",
+      "options": { "find": "\\bSTRUCT\\s*<[^<>]*>", "replace_with": "OBJECT" }
+    },
+    {
+      "section": "Types",
+      "action": "flag_matching",
+      "description": "Flag ARRAY/OBJECT columns: Snowflake's are untyped, so element/field types were lost.",
+      "options": {
+        "pattern": "\\b(?:ARRAY|OBJECT)\\b",
+        "message": "Snowflake ARRAY/OBJECT is untyped; the Databricks element/field types were dropped",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_map",
+      "description": "Map Spark scalar types to Snowflake; Databricks TIMESTAMP (instant) -> TIMESTAMP_LTZ.",
+      "options": {
+        "whole_word": true,
+        "map": {
+          "STRING": "VARCHAR",
+          "LONG": "BIGINT",
+          "SHORT": "SMALLINT",
+          "BYTE": "TINYINT",
+          "TIMESTAMP": "TIMESTAMP_LTZ"
+        }
+      }
+    },
+    {
+      "section": "Types",
+      "action": "flag_matching",
+      "description": "Note the instant-preserving timestamp choice for review.",
+      "options": {
+        "pattern": "\\bTIMESTAMP_LTZ\\b",
+        "message": "mapped Databricks TIMESTAMP (UTC instant) to Snowflake TIMESTAMP_LTZ; use TIMESTAMP_NTZ instead if the source was wall-clock",
+        "comment": "--",
+        "tag": "NOTE",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Comments",
+      "action": "replace_regex",
+      "description": "Table-level COMMENT 'x' -> Snowflake COMMENT = 'x'.",
+      "options": { "find": "(?m)^COMMENT '([^']*)'", "replace_with": "COMMENT = '$1'" }
+    },
+    {
+      "section": "Finalize",
+      "action": "run_mog",
+      "description": "Canonical whitespace tidy.",
+      "options": { "file": "sql-finalize-whitespace.mog" }
+    }
+  ]
+}

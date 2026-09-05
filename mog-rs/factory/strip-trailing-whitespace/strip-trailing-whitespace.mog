@@ -1,0 +1,9 @@
+{
+  "name": "Strip Trailing Whitespace",
+  "description": "Remove trailing spaces and tabs from the end of every line. The minimal, precise transform: unlike repo-tidy it does NOT touch line endings, blank lines, or the final newline. Runs across many files at once with preview and backup.",
+  "summary": "Remove trailing spaces and tabs from every line",
+  "tags": ["whitespace", "strip", "cleanup", "scan"],
+  "steps": [
+    { "action": "trim_whitespace_right", "description": "Remove trailing whitespace from each line" }
+  ]
+}

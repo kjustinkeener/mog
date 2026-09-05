@@ -1,0 +1,13 @@
+id,first,middle,last,suffix
+1,John,,Smith,
+2,John,,Smith,
+3,Mary,Jane,Watson,
+4,Alan,,Grant,
+5,Johannes,,van der Berg,
+6,Robert,,Downey,Jr
+7,Martin,Luther,King,Sr
+8,Cher,,, # FIXME(mog): one word only so the parts could not be separated; kept whole for review
+9,Tip,,O'Neill,
+10,Jean-Luc,,Picard,
+11,Ada,King,Lovelace,
+12,Ludwig,,van Beethoven,III

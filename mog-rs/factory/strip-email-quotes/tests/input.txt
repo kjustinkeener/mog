@@ -1,0 +1,4 @@
+> On Monday, Bob wrote:
+>> The original message
+> a reply line
+not quoted at all

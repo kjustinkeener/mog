@@ -1,0 +1,18 @@
+{
+  "name": "ldapsearch output to CSV",
+  "description": "Flatten ldapsearch LDIF-style output (blank-line-separated blocks of attr: value lines) into a CSV table, one row per entry with a column per attribute seen. Splits each line on the first colon. Good for turning a directory dump into a spreadsheet. Base64 (attr:: value) and folded continuation lines are not decoded.",
+  "summary": "Flatten ldapsearch LDIF output to CSV",
+  "tags": [
+    "config",
+    "csv",
+    "convert",
+    "data"
+  ],
+  "steps": [
+    {
+      "action": "records_to_columns",
+      "description": "Pivot each entry block into a CSV row",
+      "options": { "separator": ":", "delimiter": ",", "header": true }
+    }
+  ]
+}

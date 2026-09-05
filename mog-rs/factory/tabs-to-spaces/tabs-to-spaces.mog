@@ -1,0 +1,10 @@
+{
+  "name": "Tabs to Spaces",
+  "description": "Expand tabs to spaces (default 4 per tab; override with -D width=N). Opt-in and deliberate: do NOT run on tab-significant files (Makefiles, Go source). Just the tab expansion, nothing else.",
+  "summary": "Expand tabs to spaces (default 4 per tab)",
+  "tags": ["whitespace", "indent", "format"],
+  "constants": { "width": "4" },
+  "steps": [
+    { "action": "tabs_to_spaces", "description": "Replace each tab with spaces", "options": { "width": "{{width}}" } }
+  ]
+}

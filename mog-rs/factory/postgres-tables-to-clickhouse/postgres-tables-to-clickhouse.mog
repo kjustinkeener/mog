@@ -1,0 +1,335 @@
+{
+  "name": "pg_dump (Postgres) to ClickHouse",
+  "summary": "Convert pg_dump --schema-only output to a runnable ClickHouse MergeTree table",
+  "description": "Turn real 'pg_dump --schema-only' table DDL into an executable ClickHouse CREATE TABLE for analytics ingestion. Strips the pg_dump plumbing, drops the public. qualifier, and maps every Postgres column type to its ClickHouse equivalent (character varying/text -> String, integer -> Int32, bigint -> Int64, smallint -> Int16, numeric(p,s) -> Decimal(p,s), double precision -> Float64, real -> Float32, timestamp with time zone -> DateTime64(6, 'UTC'), timestamp without time zone -> DateTime64(6), date -> Date, boolean -> Bool, uuid -> UUID, jsonb/json -> String, bytea -> String). Applies ClickHouse's NOT-NULL-by-default rule (wraps nullable columns in Nullable(...)) and synthesizes 'ENGINE = MergeTree' plus 'ORDER BY (<pk cols>)' from the PRIMARY KEY (falling back to ORDER BY tuple() when there is no PK). Non-portable constructs are dropped and stamped with -- TODO(mog): IDENTITY/sequences, the consumed PRIMARY KEY, UNIQUE/FOREIGN KEY/CHECK constraints (ClickHouse does not enforce them), and secondary indexes. Minimal-diff regex rewrite, NOT a semantic transpiler. Validated by executing the result in a real ClickHouse engine.",
+  "tags": [
+    "sql",
+    "postgres",
+    "clickhouse",
+    "convert",
+    "migration",
+    "analytics",
+    "warehouse"
+  ],
+  "dependencies": [
+    "strip-pgdump-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip export noise",
+      "action": "run_mog",
+      "description": "Remove pg_dump plumbing (banners, \\restrict, SET block, object banners), keep CREATE/ALTER. Normalizes to LF.",
+      "options": {
+        "file": "strip-pgdump-noise.mog"
+      }
+    },
+    {
+      "section": "Identifiers",
+      "action": "replace",
+      "description": "Drop the public. schema qualifier; ClickHouse tables live in a database, not a schema.",
+      "options": {
+        "find": "public.",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "character varying(n) -> String (ClickHouse String is unbounded; drop the length).",
+      "options": {
+        "find": "(?i)\\bcharacter varying(\\(\\d+\\))?",
+        "replace_with": "String"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "varchar(n) -> String (in case the dump kept the short spelling).",
+      "options": {
+        "find": "(?i)\\bvarchar(\\(\\d+\\))?",
+        "replace_with": "String"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "character(n) / char(n) -> String (fixed-width becomes String).",
+      "options": {
+        "find": "(?i)\\bchar(?:acter)?(\\(\\d+\\))?",
+        "replace_with": "String"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "text -> String.",
+      "options": {
+        "find": "(?i)\\btext\\b",
+        "replace_with": "String"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "timestamp without time zone -> DateTime64(6). Run before the bare-timestamp and with-time-zone maps so it is not re-matched.",
+      "options": {
+        "find": "(?i)\\btimestamp without time zone\\b",
+        "replace_with": "DateTime64(6)"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "timestamp with time zone / timestamptz -> DateTime64(6, 'UTC').",
+      "options": {
+        "find": "(?i)\\btimestamp(?: with time zone|tz)\\b",
+        "replace_with": "DateTime64(6, 'UTC')"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "bare timestamp -> DateTime64(6) (fallback; the produced DateTime64 does not contain the word 'timestamp').",
+      "options": {
+        "find": "(?i)\\btimestamp\\b",
+        "replace_with": "DateTime64(6)"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "bigint -> Int64.",
+      "options": {
+        "find": "(?i)\\bbigint\\b",
+        "replace_with": "Int64"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "smallint -> Int16.",
+      "options": {
+        "find": "(?i)\\bsmallint\\b",
+        "replace_with": "Int16"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "integer / int -> Int32.",
+      "options": {
+        "find": "(?i)\\b(?:integer|int)\\b",
+        "replace_with": "Int32"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "numeric(p,s) -> Decimal(p,s).",
+      "options": {
+        "find": "(?i)\\bnumeric\\(",
+        "replace_with": "Decimal("
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "decimal(p,s) -> Decimal(p,s) (canonical casing).",
+      "options": {
+        "find": "(?i)\\bdecimal\\(",
+        "replace_with": "Decimal("
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "double precision -> Float64.",
+      "options": {
+        "find": "(?i)\\bdouble precision\\b",
+        "replace_with": "Float64"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "real -> Float32.",
+      "options": {
+        "find": "(?i)\\breal\\b",
+        "replace_with": "Float32"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "boolean -> Bool.",
+      "options": {
+        "find": "(?i)\\bboolean\\b",
+        "replace_with": "Bool"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "uuid -> UUID.",
+      "options": {
+        "find": "(?i)\\buuid\\b",
+        "replace_with": "UUID"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "jsonb -> String (ClickHouse JSON is experimental; String is portable). Run before json so jsonb is not left as 'Stringb'.",
+      "options": {
+        "find": "(?i)\\bjsonb\\b",
+        "replace_with": "String"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "json -> String.",
+      "options": {
+        "find": "(?i)\\bjson\\b",
+        "replace_with": "String"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "bytea -> String (ClickHouse stores binary in String).",
+      "options": {
+        "find": "(?i)\\bbytea\\b",
+        "replace_with": "String"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "date -> Date. Case-sensitive so it never bites the 'Date' inside the generated 'DateTime64'.",
+      "options": {
+        "find": "\\bdate\\b",
+        "replace_with": "Date"
+      }
+    },
+    {
+      "section": "Functions",
+      "action": "replace",
+      "description": "gen_random_uuid() -> generateUUIDv4() (ClickHouse UUID default).",
+      "options": {
+        "find": "gen_random_uuid()",
+        "replace_with": "generateUUIDv4()",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "ClickHouse is NOT NULL by default: wrap the type of every column WITHOUT a NOT NULL marker in Nullable(...). Keyed on the absence of NOT NULL (negative lookahead), so it must run before NOT NULL is stripped. The DateTime64/Decimal parenthesized forms are listed first so they are not shadowed by the bare Date/Int alternatives.",
+      "options": {
+        "find": "(?m)^(    [A-Za-z_]\\w* )(DateTime64\\([^)]*\\)|Decimal\\([^)]*\\)|Int64|Int32|Int16|Float64|Float32|String|UUID|Bool|Date)(?![^\\n]*NOT NULL)",
+        "replace_with": "${1}Nullable(${2})"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace",
+      "description": "Strip the Postgres NOT NULL marker; NOT NULL is the ClickHouse default and non-nullable columns are left bare.",
+      "options": {
+        "find": " NOT NULL",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Engine and order by",
+      "action": "replace_regex",
+      "description": "Core transform: close the CREATE TABLE with a MergeTree engine and derive ORDER BY from the PRIMARY KEY, which pg_dump emits as a separate ALTER further down (captured via lookahead, not consumed here). Anchored on CREATE TABLE and lazy to the first ');' so it fires exactly once.",
+      "options": {
+        "find": "(?s)(CREATE TABLE \\w+ \\(.*?\\n)\\);(?=.*?ADD CONSTRAINT \\S+ PRIMARY KEY \\(([^)]+)\\);)",
+        "replace_with": "${1})\nENGINE = MergeTree\nORDER BY (${2});"
+      }
+    },
+    {
+      "section": "Engine and order by",
+      "action": "replace_regex",
+      "description": "Fallback for a table with no PRIMARY KEY: close it with ORDER BY tuple(). The tempered body (no 'ENGINE =' before the close) means this is a no-op once the PK step has already added an engine.",
+      "options": {
+        "find": "(?s)(CREATE TABLE \\w+ \\((?:(?!ENGINE =).)*?\\n)\\);",
+        "replace_with": "${1})\nENGINE = MergeTree\nORDER BY tuple();"
+      }
+    },
+    {
+      "section": "Flag non-portable",
+      "action": "replace_regex",
+      "description": "Drop the Postgres IDENTITY / sequence ALTER and flag it: ClickHouse has no server-side auto-increment.",
+      "options": {
+        "find": "(?s)ALTER TABLE \\w+ ALTER COLUMN \\w+ ADD GENERATED[^;]*?SEQUENCE NAME (\\w+)[^;]*;",
+        "replace_with": "-- TODO(mog): dropped Postgres IDENTITY (sequence ${1}); ClickHouse has no server-side auto-increment -- assign ids explicitly or via a DEFAULT"
+      }
+    },
+    {
+      "section": "Flag non-portable",
+      "action": "replace_regex",
+      "description": "Drop and flag a UNIQUE constraint: ClickHouse does not enforce uniqueness.",
+      "options": {
+        "find": "(?s)ALTER TABLE (?:ONLY )?\\w+\\s+ADD CONSTRAINT \\w+ UNIQUE \\(([^)]*)\\);",
+        "replace_with": "-- TODO(mog): dropped UNIQUE (${1}); ClickHouse does not enforce uniqueness -- use ReplacingMergeTree or dedupe at query time"
+      }
+    },
+    {
+      "section": "Flag non-portable",
+      "action": "replace_regex",
+      "description": "Drop the separate PRIMARY KEY ALTER (already consumed into ORDER BY) and leave a breadcrumb.",
+      "options": {
+        "find": "(?s)ALTER TABLE (?:ONLY )?\\w+\\s+ADD CONSTRAINT \\w+ PRIMARY KEY \\(([^)]*)\\);",
+        "replace_with": "-- TODO(mog): PRIMARY KEY (${1}) consumed into ENGINE ORDER BY; ClickHouse has no enforced primary key"
+      }
+    },
+    {
+      "section": "Flag non-portable",
+      "action": "replace_regex",
+      "description": "Drop and flag a FOREIGN KEY constraint: ClickHouse has no referential integrity.",
+      "options": {
+        "find": "(?s)ALTER TABLE (?:ONLY )?\\w+\\s+ADD CONSTRAINT \\w+ FOREIGN KEY[^;]*;",
+        "replace_with": "-- TODO(mog): dropped FOREIGN KEY; ClickHouse does not enforce referential integrity -- denormalize or JOIN at query time"
+      }
+    },
+    {
+      "section": "Flag non-portable",
+      "action": "replace_regex",
+      "description": "Drop and flag a CHECK constraint: ClickHouse has no CHECK constraints.",
+      "options": {
+        "find": "(?s)ALTER TABLE (?:ONLY )?\\w+\\s+ADD CONSTRAINT \\w+ CHECK[^;]*;",
+        "replace_with": "-- TODO(mog): dropped CHECK constraint; ClickHouse has no CHECK constraints -- enforce in the ingest pipeline"
+      }
+    },
+    {
+      "section": "Flag non-portable",
+      "action": "replace_regex",
+      "description": "Drop and flag a secondary index; ClickHouse indexing is the ORDER BY key plus optional data-skipping indexes.",
+      "options": {
+        "find": "CREATE INDEX (\\w+) ON \\w+ USING \\w+ \\(([^)]*)\\);",
+        "replace_with": "-- TODO(mog): dropped secondary index ${1} on (${2}); add a ClickHouse data-skipping INDEX (TYPE minmax/set/bloom_filter) if needed"
+      }
+    },
+    {
+      "section": "Finalize",
+      "action": "replace_regex",
+      "description": "Trim leading blank lines left by the strip pass.",
+      "options": {
+        "find": "(?s)^\\n+",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Finalize",
+      "action": "squeeze_blank_lines",
+      "description": "Collapse runs of blank lines to a single blank line."
+    },
+    {
+      "section": "Finalize",
+      "action": "trim_whitespace_right",
+      "description": "Remove trailing whitespace on every line."
+    }
+  ]
+}

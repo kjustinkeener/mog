@@ -1,0 +1,10 @@
+{
+  "name": "YAML to CSV",
+  "description": "Convert a YAML list of flat objects to CSV. The header is the union of keys; missing keys are empty cells.",
+  "summary": "Convert YAML to CSV",
+  "tags": ["convert", "yaml", "csv", "data"],
+  "steps": [
+    { "description": "Parse the YAML list into a compact JSON array.", "action": "yaml_to_json", "options": { "compact": true } },
+    { "description": "Flatten the JSON array into CSV.", "action": "json_to_csv" }
+  ]
+}

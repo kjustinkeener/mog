@@ -1,0 +1,19 @@
+{
+  "name": "Escape as a C/Java string literal",
+  "summary": "Backslash-escape each line and wrap it in quotes",
+  "description": "Escape each line as a C / C++ / Java string literal: backslashes and double quotes are backslash-escaped and the whole line is wrapped in double quotes. Use to paste literal text into source code.",
+  "tags": [
+    "escape",
+    "codemod",
+    "java",
+    "encode",
+    "string",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "escape_c",
+      "description": "Escape and quote each line as a C string literal"
+    }
+  ]
+}

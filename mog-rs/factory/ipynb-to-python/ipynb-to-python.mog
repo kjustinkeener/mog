@@ -1,0 +1,21 @@
+{
+  "name": "Jupyter notebook to Python script",
+  "description": "Convert a Jupyter notebook (.ipynb) into a plain Python script in the Jupytext / VS Code percent format: each code cell follows a '# %%' marker and each markdown cell becomes a commented '# %% [markdown]' block. Outputs and execution metadata are dropped, so you get just the code and prose. Point it at the .ipynb JSON; set markdown to skip on the step to emit code only.",
+  "summary": "Convert a Jupyter notebook to a Python script",
+  "tags": [
+    "jupyter",
+    "python",
+    "convert",
+    "ml"
+  ],
+  "steps": [
+    {
+      "action": "ipynb_to_python",
+      "description": "Emit code cells after # %% markers; markdown cells as commented blocks",
+      "options": {
+        "cell_marker": "# %%",
+        "markdown": "comment"
+      }
+    }
+  ]
+}

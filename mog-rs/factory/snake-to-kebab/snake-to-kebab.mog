@@ -1,0 +1,29 @@
+{
+  "name": "snake_case to kebab-case",
+  "description": "Convert snake_case identifiers to kebab-case by turning each underscore between two alphanumerics into a hyphen. A leading/trailing or standalone underscore is left alone. Best on a list or column of identifiers.",
+  "summary": "Convert snake_case identifiers to kebab-case",
+  "tags": [
+    "case",
+    "identifier",
+    "codemod",
+    "convert"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Underscore between alphanumerics -> hyphen (pass 1)",
+      "options": {
+        "find": "([A-Za-z0-9])_([A-Za-z0-9])",
+        "replace_with": "${1}-${2}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Again, to catch adjacent segments the first pass skipped",
+      "options": {
+        "find": "([A-Za-z0-9])_([A-Za-z0-9])",
+        "replace_with": "${1}-${2}"
+      }
+    }
+  ]
+}

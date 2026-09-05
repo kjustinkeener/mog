@@ -1,0 +1,21 @@
+{
+  "name": "CSV to SQL INSERTs (custom template)",
+  "description": "Turn each row of a CSV with a header into a SQL INSERT statement, using a template with ${column} placeholders (by header name). Unlike the fixed csv_to_sql converter, the template is yours: change the table, column order, quoting, or ON CONFLICT clause freely, and reuse the same pattern to emit config lines, HTML, YAML, or form text instead. The header row supplies the ${name} placeholders and is not itself emitted; $$ is a literal dollar sign.",
+  "summary": "Convert CSV rows to SQL INSERTs via a template",
+  "tags": [
+    "data",
+    "codegen",
+    "csv",
+    "sql"
+  ],
+  "steps": [
+    {
+      "action": "row_to_template",
+      "description": "One INSERT per row, filling ${id}/${name}/${email} from the header",
+      "options": {
+        "has_header": true,
+        "template": "INSERT INTO users (id, name, email) VALUES (${id}, '${name}', '${email}');"
+      }
+    }
+  ]
+}

@@ -1,0 +1,253 @@
+{
+  "name": "MySQL SHOW CREATE TABLE to ClickHouse",
+  "summary": "Convert a MySQL table export into runnable ClickHouse MergeTree DDL",
+  "description": "Convert MySQL 'SHOW CREATE TABLE' output to ClickHouse for analytics ingestion. Strips MySQL storage noise (ENGINE/CHARSET/COLLATE, backticks, DEFAULT NULL, ON UPDATE), maps every MySQL type to a ClickHouse type (varchar/text->String, int->Int32, bigint->Int64, tinyint(1)->UInt8, tinyint->Int8, decimal(p,s)->Decimal(p,s), double->Float64, datetime/timestamp->DateTime64(3), date->Date, enum(...)->String), and applies the two ClickHouse-specific structural transforms: nullable columns are wrapped as Nullable(<type>) (columns are NOT NULL by default) and the MySQL PRIMARY KEY becomes 'ENGINE = MergeTree' + 'ORDER BY (<pk cols>)'. Non-portable constructs are flagged with -- TODO(mog): AUTO_INCREMENT, ENUM (constraint lost), ON UPDATE, and UNIQUE/secondary indexes (ClickHouse does not enforce uniqueness). Minimal-diff. Validated by a live round-trip against a real ClickHouse engine.",
+  "tags": [
+    "sql",
+    "mysql",
+    "clickhouse",
+    "convert",
+    "migration",
+    "analytics"
+  ],
+  "dependencies": [
+    "strip-mysql-ddl-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip export noise",
+      "action": "run_mog",
+      "description": "Remove MySQL SHOW CREATE rendering: backticks, ENGINE/CHARSET/COLLATE, DEFAULT NULL, and flag+drop ON UPDATE.",
+      "options": {
+        "file": "strip-mysql-ddl-noise.mog"
+      }
+    },
+    {
+      "section": "Identity",
+      "action": "flag_matching",
+      "description": "Flag AUTO_INCREMENT before dropping it: ClickHouse has no autoincrement.",
+      "options": {
+        "pattern": "(?i)\\bAUTO_INCREMENT\\b",
+        "message": "MySQL AUTO_INCREMENT has no ClickHouse equivalent (use a generated UUID, a sequence table, or an application-supplied id)",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Drop the AUTO_INCREMENT column marker (only the column occurrence, which precedes the comma, so the TODO note keeps the word).",
+      "options": {
+        "find": "(?i) AUTO_INCREMENT(?=,)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Types",
+      "action": "flag_matching",
+      "description": "Flag ENUM (mapped to String; the allowed-value constraint is lost).",
+      "options": {
+        "pattern": "(?i)enum\\(",
+        "message": "MySQL ENUM mapped to String; the allowed-value constraint was lost (use a ClickHouse Enum8/Enum16 or a CHECK)",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "enum(...) -> String.",
+      "options": {
+        "find": "(?i)\\benum\\([^)]*\\)",
+        "replace_with": "String"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "timestamp (instant) -> DateTime64(3). Runs before datetime; both map to the same token, whole-word so it never re-bites.",
+      "options": {
+        "find": "(?i)\\btimestamp\\b",
+        "replace_with": "DateTime64(3)"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "datetime (wall-clock) -> DateTime64(3).",
+      "options": {
+        "find": "(?i)\\bdatetime\\b",
+        "replace_with": "DateTime64(3)"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "date -> Date (after datetime/timestamp so it does not touch them).",
+      "options": {
+        "find": "(?i)\\bdate\\b",
+        "replace_with": "Date"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "tinyint(1) is MySQL's boolean -> UInt8. Runs before the bare tinyint map.",
+      "options": {
+        "find": "(?i)\\btinyint\\(1\\)",
+        "replace_with": "UInt8"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "tinyint -> Int8.",
+      "options": {
+        "find": "(?i)\\btinyint\\b(\\(\\d+\\))?",
+        "replace_with": "Int8"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "smallint -> Int16.",
+      "options": {
+        "find": "(?i)\\bsmallint\\b(\\(\\d+\\))?",
+        "replace_with": "Int16"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "mediumint -> Int32.",
+      "options": {
+        "find": "(?i)\\bmediumint\\b(\\(\\d+\\))?",
+        "replace_with": "Int32"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "bigint -> Int64. Runs before the bare int map.",
+      "options": {
+        "find": "(?i)\\bbigint\\b(\\(\\d+\\))?",
+        "replace_with": "Int64"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "int -> Int32 (whole word so it never bites bigint/tinyint or an Int64 token).",
+      "options": {
+        "find": "(?i)\\bint\\b(\\(\\d+\\))?",
+        "replace_with": "Int32"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "decimal(p,s) -> Decimal(p,s) (ClickHouse spelling; precision/scale preserved).",
+      "options": {
+        "find": "(?i)\\bdecimal(\\(\\d+,\\d+\\))?",
+        "replace_with": "Decimal${1}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "numeric(p,s) -> Decimal(p,s).",
+      "options": {
+        "find": "(?i)\\bnumeric(\\(\\d+,\\d+\\))?",
+        "replace_with": "Decimal${1}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "double / double precision -> Float64.",
+      "options": {
+        "find": "(?i)\\bdouble(\\s+precision)?",
+        "replace_with": "Float64"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "float -> Float32.",
+      "options": {
+        "find": "(?i)\\bfloat\\b(\\(\\d+(,\\d+)?\\))?",
+        "replace_with": "Float32"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "varchar(n)/char(n) -> String (ClickHouse String is unbounded).",
+      "options": {
+        "find": "(?i)\\b(var)?char\\(\\d+\\)",
+        "replace_with": "String"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "text family (text/tinytext/mediumtext/longtext) -> String.",
+      "options": {
+        "find": "(?i)\\b(tiny|medium|long)?text\\b",
+        "replace_with": "String"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "blob/varbinary/binary family -> String (ClickHouse stores bytes as String).",
+      "options": {
+        "find": "(?i)\\b(tiny|medium|long)?blob\\b|\\bvarbinary(\\(\\d+\\))?|\\bbinary(\\(\\d+\\))?",
+        "replace_with": "String"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "json -> String (ClickHouse String is the portable, always-runnable choice).",
+      "options": {
+        "find": "(?i)\\bjson\\b",
+        "replace_with": "String"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Wrap every nullable column's type in Nullable(...). A column line WITHOUT 'NOT NULL' is nullable in MySQL; ClickHouse needs the explicit Nullable() wrapper. NOT NULL columns are left bare (next steps drop the keyword).",
+      "options": {
+        "find": "(?m)^(  \\w+ )(String|Int64|Int32|Int16|Int8|UInt8|Float64|Float32|Decimal\\(\\d+,\\d+\\)|DateTime64\\(\\d+\\)|DateTime|Date)(?![^\\n]*\\bNOT NULL\\b)",
+        "replace_with": "${1}Nullable(${2})"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Drop the NOT NULL keyword (ClickHouse columns are non-null by default; NOT NULL columns are already bare).",
+      "options": {
+        "find": "(?i) NOT NULL",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Drop the redundant explicit NULL modifier left by MySQL (the type is already Nullable()).",
+      "options": {
+        "find": "(?i) NULL(?= DEFAULT|,)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Engine and key",
+      "action": "replace_regex",
+      "description": "UNIQUE KEY has no ClickHouse equivalent (uniqueness is not enforced): turn it into a TODO note.",
+      "options": {
+        "find": "(?im)^  UNIQUE KEY (\\w+) \\(([^)]*)\\),?$",
+        "replace_with": "  -- TODO(mog): MySQL UNIQUE KEY ${1} (${2}) dropped; ClickHouse does not enforce uniqueness (dedupe with ReplacingMergeTree or enforce upstream)"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Secondary index KEY has no direct ClickHouse equivalent: turn it into a TODO note (ClickHouse uses the ORDER BY key and data-skipping indexes).",
+      "options": {
+        "find": "(?im)^  KEY (\\w+) \\(([^)]*)\\),?$",
+        "replace_with": "  -- TODO(mog): MySQL secondary index ${1} (${2}) dropped; ClickHouse uses the ORDER BY key and data-skipping indexes instead"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "The main structural transform: PRIMARY KEY (cols) -> a required MergeTree engine + ORDER BY (cols). Consumes the last column's trailing comma, preserves any TODO notes, and appends the engine clause after the closing paren. If a table has no PRIMARY KEY, add 'ENGINE = MergeTree ORDER BY tuple()' by hand.",
+      "options": {
+        "find": "(?s),( -- [^\\n]*)?\\n  PRIMARY KEY \\(([^)]*)\\),?(.*?)\\n\\)",
+        "replace_with": "${1}${3}\n) ENGINE = MergeTree\nORDER BY (${2})"
+      }
+    }
+  ]
+}

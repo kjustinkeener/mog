@@ -1,0 +1,16 @@
+{
+  "name": "Encode text to hex",
+  "summary": "Hexlify: each byte becomes two lowercase hex digits",
+  "description": "Hex-encode the input: every byte becomes two lowercase hex digits with no separator. The inverse of hex-to-text. Useful for inspecting or transmitting bytes as plain ASCII.",
+  "tags": [
+    "encode",
+    "hex",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "hex_encode",
+      "description": "Hex-encode the input bytes"
+    }
+  ]
+}

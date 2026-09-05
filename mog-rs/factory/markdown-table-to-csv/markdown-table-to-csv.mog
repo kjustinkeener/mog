@@ -1,0 +1,9 @@
+{
+  "name": "Markdown table to CSV",
+  "description": "Parse a Markdown table into CSV, dropping the separator row. Cells are trimmed and CSV-quoted as needed; non-table lines are ignored. The read counterpart to CSV to Markdown table.",
+  "summary": "Convert a Markdown table to CSV",
+  "tags": ["convert", "markdown", "csv", "table"],
+  "steps": [
+    { "description": "Parse the Markdown table into CSV rows.", "action": "markdown_table_to_csv" }
+  ]
+}

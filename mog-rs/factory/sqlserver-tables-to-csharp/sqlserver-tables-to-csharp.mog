@@ -1,0 +1,415 @@
+{
+  "name": "SQL Server tables to C# classes",
+  "summary": "Generate C# POCO classes from SSMS-scripted SQL Server table DDL",
+  "description": "Generate idiomatic C# POCO classes from SQL Server SSMS 'Generate Scripts' / mssql-scripter table DDL, one class per table. Strips the SSMS scaffolding, unquotes the [bracketed] identifiers, discards every non-table statement (USE, the ALTER TABLE constraint/DEFAULT phase, CREATE INDEX), then rewrites each CREATE TABLE into a 'public class' with one auto-property per column. T-SQL types map to C# types (bigint->long, int->int, smallint->short, tinyint->byte, bit->bool, nvarchar/varchar/nchar/char/text/ntext->string, decimal/numeric(p,s)->decimal, money/smallmoney->decimal, float->double, real->float, datetime/datetime2/smalldatetime->DateTime, datetimeoffset->DateTimeOffset, date->DateOnly, time->TimeOnly, uniqueidentifier->Guid, varbinary/binary/image->byte[], xml->string). IDENTITY markers are dropped. Nullable columns (declared NULL, not NOT NULL) get a C# nullable type ('?'). Table and column identifiers are PascalCased (order_id -> OrderId). Exotic types with no clean C# equivalent (sql_variant, hierarchyid, geography, geometry) map to string and are flagged with a // TODO(mog): comment. The SQL-Server-source sibling of postgres-tables-to-csharp. Not a full T-SQL parser. Assumes LF.",
+  "tags": [
+    "sql",
+    "mssql",
+    "csharp",
+    "codegen",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "mssql-strip-server-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "description": "Remove SSMS server/session/DROP scaffolding (object banners, SET batches, CREATE/DROP DATABASE, the guarded DROP phase, extended properties). Runs while GO batches are intact.",
+      "options": {
+        "file": "mssql-strip-server-noise.mog"
+      }
+    },
+    {
+      "section": "Unquote",
+      "action": "replace",
+      "description": "Strip T-SQL square-bracket quoting: opening bracket.",
+      "options": { "find": "[", "replace_with": "" }
+    },
+    {
+      "section": "Unquote",
+      "action": "replace",
+      "description": "Strip T-SQL square-bracket quoting: closing bracket.",
+      "options": { "find": "]", "replace_with": "" }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop the leading USE <db> batch (Postgres/C# have no database-switch statement).",
+      "options": {
+        "find": "(?im)^USE .*\\nGO\\n",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop every ALTER TABLE batch (PRIMARY KEY / UNIQUE / FOREIGN KEY / CHECK / DEFAULT constraints), each spanning up to its GO.",
+      "options": {
+        "find": "(?ims)^ALTER TABLE\\b.*?\\nGO\\n",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop standalone CREATE INDEX batches (clustered/nonclustered/unique), each spanning up to its GO.",
+      "options": {
+        "find": "(?ims)^CREATE (?:UNIQUE )?(?:CLUSTERED |NONCLUSTERED )?INDEX\\b.*?\\nGO\\n",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Remove the remaining GO batch terminators (the one after each CREATE TABLE).",
+      "options": {
+        "find": "(?im)^GO$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Normalize the SSMS leading tab on each column line to four spaces (matches the property regexes below).",
+      "options": {
+        "find": "(?m)^\\t",
+        "replace_with": "    "
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Collapse the blank lines the removals left behind.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Class shell",
+      "action": "replace_regex",
+      "description": "Rewrite each 'CREATE TABLE dbo.<tbl>(' into a C# class header + opening brace.",
+      "options": {
+        "find": "(?m)^CREATE TABLE (?:\\w+\\.)?(\\w+)\\($",
+        "replace_with": "public class ${1}\n{"
+      }
+    },
+    {
+      "section": "Class shell",
+      "action": "replace_regex",
+      "description": "Rewrite each table-closing line ') ON PRIMARY ...' (or a bare ')') into a closing brace.",
+      "options": {
+        "find": "(?m)^\\).*$",
+        "replace_with": "}"
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop the IDENTITY(seed,step) column marker (C# does not carry auto-increment on the POCO).",
+      "options": {
+        "find": "(?i) IDENTITY\\(\\d+,\\s*\\d+\\)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop trailing commas that separated columns.",
+      "options": {
+        "find": "(?m),[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Mark nullable columns (a column line ending in a bare NULL, not NOT NULL) with a sentinel.",
+      "options": {
+        "find": "(?m)^(    \\w[^\\n]*?)(?<!NOT) NULL$",
+        "replace_with": "${1}@@N@@"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Remove the NOT NULL constraint marker from non-nullable columns.",
+      "options": {
+        "find": "(?m) NOT NULL$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag sql_variant columns: mapped to string.",
+      "options": {
+        "pattern": "\\bsql_variant\\b",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "SQL Server variant type has no fixed C# type; stored as string.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag hierarchyid columns: mapped to string.",
+      "options": {
+        "pattern": "\\bhierarchyid\\b",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "SQL Server hierarchy identifier has no C# equivalent; stored as string.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag geography columns: mapped to string.",
+      "options": {
+        "pattern": "\\bgeography\\b",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "SQL Server spatial location type has no C# equivalent; stored as string.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag geometry columns: mapped to string.",
+      "options": {
+        "pattern": "\\bgeometry\\b",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "SQL Server spatial shape type has no C# equivalent; stored as string.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "datetimeoffset(n) / bare datetimeoffset -> DateTimeOffset (run before datetime).",
+      "options": { "find": "(?i)\\bdatetimeoffset\\b(?:\\(\\d+\\))?", "replace_with": "DateTimeOffset" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "datetime2(n) / bare datetime2 -> DateTime (run before datetime).",
+      "options": { "find": "(?i)\\bdatetime2\\b(?:\\(\\d+\\))?", "replace_with": "DateTime" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "smalldatetime -> DateTime (run before datetime; it contains 'datetime').",
+      "options": { "find": "(?i)\\bsmalldatetime\\b", "replace_with": "DateTime" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "datetime -> DateTime.",
+      "options": { "find": "(?i)\\bdatetime\\b", "replace_with": "DateTime" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "date -> DateOnly (runs after the datetime family, which it does not bite into: no word boundary inside 'DateTime').",
+      "options": { "find": "(?i)\\bdate\\b", "replace_with": "DateOnly" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "time(n) / bare time -> TimeOnly.",
+      "options": { "find": "(?i)\\btime\\b(?:\\(\\d+\\))?", "replace_with": "TimeOnly" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "nvarchar / varchar / nchar / char / ntext / text (with or without (n) / (max)) -> string.",
+      "options": { "find": "(?i)\\b(?:nvarchar|varchar|nchar|char|ntext|text)\\b(?:\\(\\s*(?:\\d+|max)\\s*\\))?", "replace_with": "string" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "decimal(p,s) / numeric(p,s) -> decimal.",
+      "options": { "find": "(?i)\\b(?:decimal|numeric)\\(\\s*\\d+\\s*,\\s*\\d+\\s*\\)", "replace_with": "decimal" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare decimal / numeric -> decimal.",
+      "options": { "find": "(?i)\\b(?:decimal|numeric)\\b", "replace_with": "decimal" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "smallmoney -> decimal (run before money).",
+      "options": { "find": "(?i)\\bsmallmoney\\b", "replace_with": "decimal" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "money -> decimal.",
+      "options": { "find": "(?i)\\bmoney\\b", "replace_with": "decimal" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bigint -> long (run before int).",
+      "options": { "find": "(?i)\\bbigint\\b", "replace_with": "long" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "smallint -> short (run before int).",
+      "options": { "find": "(?i)\\bsmallint\\b", "replace_with": "short" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "tinyint -> byte (run before int).",
+      "options": { "find": "(?i)\\btinyint\\b", "replace_with": "byte" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "int -> int.",
+      "options": { "find": "(?i)\\bint\\b", "replace_with": "int" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bit -> bool.",
+      "options": { "find": "(?i)\\bbit\\b", "replace_with": "bool" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "float(n) / bare float -> double.",
+      "options": { "find": "(?i)\\bfloat\\b(?:\\(\\d+\\))?", "replace_with": "double" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "real -> float.",
+      "options": { "find": "(?i)\\breal\\b", "replace_with": "float" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "uniqueidentifier -> Guid.",
+      "options": { "find": "(?i)\\buniqueidentifier\\b", "replace_with": "Guid" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "varbinary(n) / varbinary(max) / bare varbinary -> byte[] (run before binary).",
+      "options": { "find": "(?i)\\bvarbinary\\b(?:\\(\\s*(?:\\d+|max)\\s*\\))?", "replace_with": "byte[]" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "binary(n) / bare binary -> byte[].",
+      "options": { "find": "(?i)\\bbinary\\b(?:\\(\\d+\\))?", "replace_with": "byte[]" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "image -> byte[].",
+      "options": { "find": "(?i)\\bimage\\b", "replace_with": "byte[]" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "xml -> string.",
+      "options": { "find": "(?i)\\bxml\\b", "replace_with": "string" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "sql_variant -> string (flagged above).",
+      "options": { "find": "(?i)\\bsql_variant\\b", "replace_with": "string" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "hierarchyid -> string (flagged above).",
+      "options": { "find": "(?i)\\bhierarchyid\\b", "replace_with": "string" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "geography -> string (flagged above).",
+      "options": { "find": "(?i)\\bgeography\\b", "replace_with": "string" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "geometry -> string (flagged above).",
+      "options": { "find": "(?i)\\bgeometry\\b", "replace_with": "string" }
+    },
+    {
+      "section": "Properties",
+      "action": "replace_regex",
+      "description": "Rewrite nullable columns into a C# auto-property with a nullable type.",
+      "options": {
+        "find": "(?m)^(    )(\\w+) (\\S+)@@N@@(.*)$",
+        "replace_with": "${1}public ${3}? ${2} { get; set; }${4}"
+      }
+    },
+    {
+      "section": "Properties",
+      "action": "replace_regex",
+      "description": "Rewrite non-nullable columns into a C# auto-property.",
+      "options": {
+        "find": "(?m)^(    )(\\w+) (\\S+)( // .*)?$",
+        "replace_with": "${1}public ${3} ${2} { get; set; }${4}"
+      }
+    },
+    {
+      "section": "Properties",
+      "action": "replace_regex",
+      "description": "Safety: strip any leftover nullability sentinel.",
+      "options": { "find": "@@N@@", "replace_with": "" }
+    },
+    {
+      "section": "PascalCase",
+      "action": "to_pascal",
+      "description": "PascalCase each class name (the table identifier).",
+      "only_lines_matching": "^public class ",
+      "scope": { "field": { "index": 3, "delimiter": " " } }
+    },
+    {
+      "section": "PascalCase",
+      "action": "to_pascal",
+      "description": "PascalCase each property name (the column identifier).",
+      "only_lines_matching": "^    public ",
+      "scope": { "field": { "index": 7, "delimiter": " " } }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Collapse multiple blank lines to a single blank between classes.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim leading blank lines.",
+      "options": { "find": "\\A\\n+", "replace_with": "" }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim trailing blank lines to a single final newline.",
+      "options": { "find": "\\n\\s*\\z", "replace_with": "\n" }
+    }
+  ]
+}

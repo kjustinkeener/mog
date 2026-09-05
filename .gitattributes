@@ -1,0 +1,23 @@
+# Mog is a cross-platform text tool with byte-exact golden tests, so line
+# endings must be deterministic everywhere. Normalize all text to LF on
+# checkout regardless of the platform or core.autocrlf, and let git detect
+# binary files automatically.
+* text=auto eol=lf
+
+# These specific fixtures intentionally contain CRLF / mixed EOL that the recipe
+# under test converts, so their bytes must survive checkout verbatim -- the LF
+# rule above would otherwise erase the very CRLF the fixture exists to test.
+# (Scoped to just these files so the LF default still governs every other text
+# file, including the SQL converter fixtures.)
+crlf-to-lf.TestInput.txt -text
+repo-tidy.TestInput.txt -text
+# Path-scoped rules for the per-recipe factory layout (mog-rs/factory/<name>/
+# tests/input.<ext>). These are relative to this .gitattributes at the repo root
+# (factory/ lives under mog-rs/), and they replace the basename rules above once
+# the fixtures are renamed to tests/input.txt.
+mog-rs/factory/crlf-to-lf/tests/input.txt -text
+mog-rs/factory/repo-tidy/tests/input.txt -text
+
+# Binary assets (never touch their bytes)
+*.png binary
+*.ico binary

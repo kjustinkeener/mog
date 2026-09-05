@@ -1,0 +1,17 @@
+{
+  "name": "OpenAI chat messages to Anthropic Messages",
+  "description": "Convert OpenAI chat records (JSONL, one object per line shaped {messages:[{role, content}]}) into Anthropic Messages API shape ({system?, messages:[{role, content}]}). Extracts a leading system message into Anthropic's top-level system string; records with no leading system message pass through unchanged. Assumes compact JSONL (no spaces after colons), the object is exactly {messages:[...]}, a single system message in first position, and string content. Not handled: multi-part content arrays, tool/function messages, multiple or misplaced system messages, or extra top-level params (model, temperature). Inverse of anthropic-to-openai-messages.",
+  "summary": "Convert OpenAI chat messages to Anthropic Messages API",
+  "tags": [
+    "ml",
+    "dataset",
+    "openai",
+    "anthropic",
+    "chat",
+    "convert",
+    "jsonl"
+  ],
+  "steps": [
+    { "section": "Extract leading system message", "action": "replace_regex_multiline", "description": "leading system message -> top-level system string", "options": { "find": "^\\{\"messages\":\\[\\{\"role\":\"system\",\"content\":(\"(?:[^\"\\\\]|\\\\.)*\")\\},", "replace_with": "{\"system\":$1,\"messages\":[" } }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "Map codes via a lookup table",
+  "summary": "Replace matched codes with values from a table",
+  "description": "For each regex match, look the captured value up in a table and replace it with the mapped value; unmatched keys are left as-is. This recipe maps common HTTP status codes to their reason phrase. Edit the map for any code->label table.",
+  "tags": [
+    "replace",
+    "lookup",
+    "table",
+    "web"
+  ],
+  "steps": [
+    {
+      "action": "lookup_replace",
+      "description": "Map 3-digit codes to reason phrases",
+      "options": {
+        "pattern": "\\b(\\d{3})\\b",
+        "map": {
+          "200": "OK",
+          "404": "Not Found",
+          "500": "Server Error"
+        },
+        "on_miss": "leave"
+      }
+    }
+  ]
+}

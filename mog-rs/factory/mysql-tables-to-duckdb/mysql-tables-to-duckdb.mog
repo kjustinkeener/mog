@@ -1,0 +1,26 @@
+{
+  "name": "MySQL SHOW CREATE TABLE to DuckDB",
+  "summary": "Convert a MySQL table export to DuckDB DDL",
+  "description": "Convert MySQL 'SHOW CREATE TABLE' output to DuckDB. Strips MySQL storage noise (ENGINE/CHARSET/COLLATE, backticks, DEFAULT NULL, ON UPDATE), maps types (tinyint(1)->BOOLEAN, datetime->TIMESTAMP, timestamp->TIMESTAMPTZ, json->JSON, enum(...)->VARCHAR flagged), and drops AUTO_INCREMENT (DuckDB uses a sequence; flagged). Minimal-diff. Validated by executing the result in a real DuckDB engine.",
+  "tags": ["sql", "mysql", "duckdb", "convert", "migration"],
+  "dependencies": ["strip-mysql-ddl-noise"],
+  "steps": [
+    { "section": "Strip export noise", "action": "run_mog", "options": { "file": "strip-mysql-ddl-noise.mog" } },
+    { "section": "Types", "action": "replace_regex", "description": "tinyint(1) -> BOOLEAN.",
+      "options": { "find": "(?i)\\btinyint\\(1\\)", "replace_with": "BOOLEAN" } },
+    { "section": "Types", "action": "replace_regex", "description": "timestamp (instant) -> TIMESTAMPTZ. Before datetime so it does not re-match.",
+      "options": { "find": "(?i)\\btimestamp\\b", "replace_with": "TIMESTAMPTZ" } },
+    { "section": "Types", "action": "replace_regex", "description": "datetime (wall-clock) -> TIMESTAMP.",
+      "options": { "find": "(?i)\\bdatetime\\b", "replace_with": "TIMESTAMP" } },
+    { "section": "Types", "action": "replace_regex", "description": "json -> JSON.",
+      "options": { "find": "(?i)\\bjson\\b", "replace_with": "JSON" } },
+    { "section": "Types", "action": "flag_matching", "description": "Flag ENUM (mapped to VARCHAR; value constraint lost).",
+      "options": { "pattern": "(?i)enum\\(", "message": "MySQL ENUM mapped to VARCHAR; the allowed-value constraint was lost", "comment": "--", "tag": "TODO", "position": "inline" } },
+    { "section": "Types", "action": "replace_regex", "description": "enum(...) -> VARCHAR.",
+      "options": { "find": "(?i)\\benum\\([^)]*\\)", "replace_with": "VARCHAR" } },
+    { "section": "Columns", "action": "flag_matching", "description": "Flag AUTO_INCREMENT (DuckDB uses a sequence).",
+      "options": { "pattern": "AUTO_INCREMENT", "message": "MySQL AUTO_INCREMENT dropped; create a DuckDB SEQUENCE and DEFAULT nextval(...) if needed", "comment": "--", "tag": "TODO", "position": "before" } },
+    { "section": "Columns", "action": "replace", "description": "Drop AUTO_INCREMENT (no DuckDB keyword).",
+      "options": { "find": " AUTO_INCREMENT", "replace_with": "" } }
+  ]
+}

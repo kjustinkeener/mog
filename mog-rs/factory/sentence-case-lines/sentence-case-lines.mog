@@ -1,0 +1,17 @@
+{
+  "name": "Sentence-case each line",
+  "summary": "Capitalize the first letter of every sentence",
+  "description": "Capitalize the first letter of each sentence in every line, leaving the rest of the casing untouched. Useful for tidying prose, headings, or notes that were typed in a hurry.",
+  "tags": [
+    "case",
+    "text",
+    "prose",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "to_sentence",
+      "description": "Capitalize the first letter of each sentence"
+    }
+  ]
+}

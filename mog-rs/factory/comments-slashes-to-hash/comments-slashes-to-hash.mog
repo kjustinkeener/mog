@@ -1,0 +1,22 @@
+{
+  "name": "Convert // comments to # comments",
+  "description": "Rewrite C/JS-style line comments (//) to hash comments (#) at the start of each comment line, preserving indentation and the comment text. Only lines whose first non-whitespace is // are touched, so code is left alone. Handy when porting a config or script between comment conventions; change from/to for other pairs (hash, slashes, dash, semicolon). Block comments (/* */) are not handled.",
+  "summary": "Convert // line comments to # comments",
+  "tags": [
+    "text",
+    "comment",
+    "convert",
+    "codemod",
+    "config"
+  ],
+  "steps": [
+    {
+      "action": "convert_comment_style",
+      "description": "// -> # at the start of comment lines",
+      "options": {
+        "from": "slashes",
+        "to": "hash"
+      }
+    }
+  ]
+}

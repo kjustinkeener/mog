@@ -1,0 +1,6 @@
+Mog is deterministic―it applies the same edit everywhere.
+The engine ― written in Rust ― is fast.
+― an opening dash line
+dangling thought ―
+long run a ―― b
+no dashes here

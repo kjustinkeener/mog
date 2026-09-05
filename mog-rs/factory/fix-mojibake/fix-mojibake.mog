@@ -1,0 +1,14 @@
+{
+  "name": "Repair mojibake (double-encoded UTF-8)",
+  "description": "Fix mojibake: text where UTF-8 was misread as Latin-1 and re-encoded, so 'e-acute' shows up as 'A-tilde'-style garbage. Restores the intended characters using a tested mapping of the common sequences. Best on text that is uniformly double-encoded.",
+  "summary": "Repair mojibake from double-encoded UTF-8",
+  "tags": [
+    "text",
+    "unicode",
+    "cleanup",
+    "single-action"
+  ],
+  "steps": [
+    { "action": "fix_mojibake", "description": "Repair double-encoded UTF-8 sequences" }
+  ]
+}

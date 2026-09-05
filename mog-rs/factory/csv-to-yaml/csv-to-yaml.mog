@@ -1,0 +1,10 @@
+{
+  "name": "CSV to YAML",
+  "description": "Convert CSV (with a header row) to a YAML list of objects, keyed by the header, with types inferred.",
+  "summary": "Convert CSV to a YAML list of objects",
+  "tags": ["convert", "csv", "yaml", "data"],
+  "steps": [
+    { "description": "Read the CSV into a typed JSON array.", "action": "csv_to_json", "options": { "array": true, "infer": true } },
+    { "description": "Render the JSON array as YAML.", "action": "json_to_yaml" }
+  ]
+}

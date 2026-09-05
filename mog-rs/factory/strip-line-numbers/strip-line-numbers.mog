@@ -1,0 +1,22 @@
+{
+  "name": "Strip leading line numbers",
+  "description": "Remove leading line numbers from pasted code or output: a run of digits at the start of each line, with an optional : . or ) and the following whitespace, is deleted (so '  12: code' becomes 'code'). Indentation after the number is kept when it is the only separator. Lines that do not start with a number are left alone.",
+  "summary": "Remove leading line numbers from pasted code",
+  "tags": [
+    "codemod",
+    "cleanup",
+    "line-numbers",
+    "paste",
+    "strip"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex_multiline",
+      "description": "Drop a leading number (and its separator) from each line",
+      "options": {
+        "find": "^\\s*\\d+[:.)]?\\s+",
+        "replace_with": ""
+      }
+    }
+  ]
+}

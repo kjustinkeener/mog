@@ -1,0 +1,21 @@
+{
+  "name": "Mask credit card numbers",
+  "description": "Replace 16-digit credit-card-shaped numbers (four groups of four, optionally separated by spaces or hyphens) with [CARD], so a log or message can be shared without exposing card numbers. Matches by shape, not by Luhn check, so some 16-digit sequences that are not cards would also be masked.",
+  "summary": "Mask 16-digit credit card numbers with [CARD]",
+  "tags": [
+    "redact",
+    "pii",
+    "privacy",
+    "security"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Replace 16-digit card-shaped numbers with a placeholder",
+      "options": {
+        "find": "\\b\\d{4}[ -]?\\d{4}[ -]?\\d{4}[ -]?\\d{4}\\b",
+        "replace_with": "[CARD]"
+      }
+    }
+  ]
+}

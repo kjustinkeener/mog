@@ -1,0 +1,4 @@
+order_id <- orders.id
+customer <- customers.name
+total <- orders.total
+status <- (none)

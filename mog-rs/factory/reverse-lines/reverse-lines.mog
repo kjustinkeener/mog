@@ -1,0 +1,13 @@
+{
+  "name": "Reverse line order",
+  "description": "Reverse the order of lines (last line first), like tac. Useful for flipping a log so newest is on top, or reversing any list.",
+  "summary": "Reverse the order of lines (like tac)",
+  "tags": [
+    "line",
+    "sort",
+    "single-action"
+  ],
+  "steps": [
+    { "action": "reverse_lines", "description": "Reverse the line order" }
+  ]
+}

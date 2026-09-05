@@ -1,0 +1,28 @@
+{
+  "name": "Enrich rows by id from a lookup table",
+  "description": "Join a reference table onto the input by a key column (a keyed lookup / VLOOKUP). Point the 'directory' source at the lookup table with --source directory=<path>. Each input row is matched by its user_id against the directory's id column, and the directory's remaining columns (name, region) are appended. With has_header set, the key columns are named and the appended columns keep their header. Rows whose key has no match get blank cells (on_miss=blank); switch on_miss to leave, drop, or error to change that. The first matching reference row wins on a duplicate key.",
+  "summary": "Join a lookup table onto rows by id (VLOOKUP)",
+  "tags": [
+    "compare",
+    "lookup",
+    "join",
+    "csv",
+    "records"
+  ],
+  "sources": {
+    "directory": "lookup-enrich-by-id.Directory.csv"
+  },
+  "steps": [
+    {
+      "action": "lookup",
+      "description": "Append name and region from the directory, matched by user_id -> id",
+      "options": {
+        "ref": "directory",
+        "key": "user_id",
+        "ref_key": "id",
+        "has_header": true,
+        "on_miss": "blank"
+      }
+    }
+  ]
+}

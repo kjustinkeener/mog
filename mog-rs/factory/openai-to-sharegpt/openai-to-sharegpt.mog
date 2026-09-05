@@ -1,0 +1,20 @@
+{
+  "name": "OpenAI chat format to ShareGPT",
+  "description": "Convert an OpenAI chat fine-tuning dataset (JSONL, one example per line with a messages array of {role, content}) into ShareGPT format ({conversations: [{from, value}]}). Renames messages->conversations, role->from, content->value, and maps role values (user->human, assistant->gpt; system left as-is). JSONL in, JSONL out. Inverse of sharegpt-to-openai.",
+  "summary": "Convert OpenAI chat dataset to ShareGPT format",
+  "tags": [
+    "ml",
+    "dataset",
+    "openai",
+    "fine-tuning",
+    "convert",
+    "jsonl"
+  ],
+  "steps": [
+    { "action": "json_rename", "description": "messages -> conversations", "options": { "path": "messages", "to": "conversations", "jsonl": true } },
+    { "action": "json_rename", "description": "role -> from", "options": { "path": "conversations[*].role", "to": "from", "jsonl": true } },
+    { "action": "json_rename", "description": "content -> value", "options": { "path": "conversations[*].content", "to": "value", "jsonl": true } },
+    { "action": "replace", "description": "user -> human", "options": { "find": "\"from\":\"user\"", "replace_with": "\"from\":\"human\"" } },
+    { "action": "replace", "description": "assistant -> gpt", "options": { "find": "\"from\":\"assistant\"", "replace_with": "\"from\":\"gpt\"" } }
+  ]
+}

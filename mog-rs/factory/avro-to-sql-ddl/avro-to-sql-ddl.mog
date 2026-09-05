@@ -1,0 +1,91 @@
+{
+  "name": "Avro schema to SQL CREATE TABLE",
+  "description": "Convert an Avro record schema (.avsc) into a CREATE TABLE DDL statement. Maps scalar Avro types (long -> BIGINT, int -> INTEGER, double -> DOUBLE PRECISION, float -> REAL, boolean -> BOOLEAN, bytes -> BYTEA, string -> TEXT) and the record name to the table name; a nullable union (['null', T] or [T, 'null']) yields a nullable column, a plain type yields NOT NULL. Line/regex based, not an Avro parser: assumes one field object per line and does not handle nested records, arrays, maps, enums, fixed, logical types, defaults, or namespaces.",
+  "summary": "Convert Avro schema to SQL CREATE TABLE",
+  "tags": [
+    "convert",
+    "schema",
+    "avro",
+    "sql"
+  ],
+  "steps": [
+    {
+      "section": "Normalize",
+      "description": "Normalize line endings to LF so the per-line field regexes are reliable. Output stays LF (standard for SQL scripts).",
+      "action": "eol_lf"
+    },
+    {
+      "section": "Fields to columns",
+      "description": "Nullable union field ['null', T] -> a nullable column (no NOT NULL). The scalar type is tagged @T@ for the type map below.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*\\{\\s*\"name\":\\s*\"([A-Za-z0-9_]+)\",\\s*\"type\":\\s*\\[\\s*\"null\",\\s*\"([a-z]+)\"\\s*\\]\\s*\\},?\\s*$",
+        "replace_with": "  $1 @$2@,"
+      }
+    },
+    {
+      "description": "Nullable union field [T, 'null'] -> a nullable column, other order.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*\\{\\s*\"name\":\\s*\"([A-Za-z0-9_]+)\",\\s*\"type\":\\s*\\[\\s*\"([a-z]+)\",\\s*\"null\"\\s*\\]\\s*\\},?\\s*$",
+        "replace_with": "  $1 @$2@,"
+      }
+    },
+    {
+      "description": "Plain scalar field -> a NOT NULL column.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*\\{\\s*\"name\":\\s*\"([A-Za-z0-9_]+)\",\\s*\"type\":\\s*\"([a-z]+)\"\\s*\\},?\\s*$",
+        "replace_with": "  $1 @$2@ NOT NULL,"
+      }
+    },
+    {
+      "section": "Type map",
+      "description": "Map the tagged Avro scalar types to SQL types (longest key wins).",
+      "action": "replace_map",
+      "options": {
+        "map": {
+          "@long@": "BIGINT",
+          "@int@": "INTEGER",
+          "@double@": "DOUBLE PRECISION",
+          "@float@": "REAL",
+          "@boolean@": "BOOLEAN",
+          "@bytes@": "BYTEA",
+          "@string@": "TEXT"
+        }
+      }
+    },
+    {
+      "section": "Reshape header",
+      "description": "Record name -> CREATE TABLE header and open the column list (field 'name' lines are already converted, so only the record name remains).",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*\"name\":\\s*\"([A-Za-z0-9_]+)\",\\s*$",
+        "replace_with": "CREATE TABLE $1 ("
+      }
+    },
+    {
+      "description": "Drop the Avro scaffolding lines (object braces, the record-type marker, and the fields-array wrapper). Converted column lines have no braces or brackets, so they survive.",
+      "action": "remove_lines_matching",
+      "options": {
+        "pattern": "^\\s*(\"type\"|\"fields\"|[{}\\]])"
+      }
+    },
+    {
+      "section": "Finalize DDL",
+      "description": "Close the statement.",
+      "action": "append",
+      "options": {
+        "text": ");\n"
+      }
+    },
+    {
+      "description": "Drop the trailing comma after the last column so the DDL is valid.",
+      "action": "replace_regex",
+      "options": {
+        "find": ",(\\n\\);)",
+        "replace_with": "$1"
+      }
+    }
+  ]
+}

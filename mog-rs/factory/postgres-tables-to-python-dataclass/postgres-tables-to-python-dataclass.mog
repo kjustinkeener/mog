@@ -1,0 +1,384 @@
+{
+  "name": "pg_dump (Postgres) tables to Python dataclasses",
+  "summary": "Generate Python @dataclass classes from pg_dump --schema-only output",
+  "description": "Generate Python standard-library @dataclass classes from a pg_dump --schema-only export, one class per table. Discards non-table statements (sequences, indexes, triggers, ALTERs). Column names stay snake_case; only the class name is PascalCased (film_actor -> FilmActor). Postgres types map to Python types (integer/serial/smallint/bigint->int, boolean->bool, character varying/text/char->str, numeric/decimal->Decimal, real/double precision->float, timestamp/timestamptz->datetime, date->date, time->time, uuid->UUID, bytea->bytes, json/jsonb->dict). Nullable columns become 'type | None'. Emits a fixed stdlib import header with 'from __future__ import annotations' so the module runs on Python 3.7+. Exotic types (enum, tsvector, text[]) map best-effort (str, list[str]) and are flagged with a # TODO(mog): comment. Assumes LF.",
+  "tags": [
+    "sql",
+    "postgres",
+    "python",
+    "codegen",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-pgdump-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "description": "Remove pg_dump banners, SET block, restrict directives and object comments.",
+      "options": {
+        "file": "strip-pgdump-noise.mog"
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CREATE SEQUENCE statements (multi-line, to the first ';').",
+      "options": {
+        "find": "(?ms)^CREATE SEQUENCE\\b.*?;[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop ALTER SEQUENCE statements.",
+      "options": {
+        "find": "(?ms)^ALTER SEQUENCE\\b.*?;[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop ALTER TABLE statements (constraints, defaults, foreign keys).",
+      "options": {
+        "find": "(?ms)^ALTER TABLE\\b.*?;[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CREATE INDEX statements.",
+      "options": {
+        "find": "(?m)^CREATE (?:UNIQUE )?INDEX\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CREATE TRIGGER statements.",
+      "options": {
+        "find": "(?m)^CREATE TRIGGER\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CREATE VIEW / MATERIALIZED VIEW statements.",
+      "options": {
+        "find": "(?ms)^CREATE (?:MATERIALIZED )?VIEW\\b.*?;[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Collapse the blank lines the removals left behind.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Class shell",
+      "action": "replace_regex",
+      "description": "Rewrite each 'CREATE TABLE public.<tbl> (' into a @dataclass decorator + class header (no closing brace in Python).",
+      "options": {
+        "find": "(?m)^CREATE TABLE (?:public\\.)?(\\w+) \\($",
+        "replace_with": "@dataclass\nclass ${1}:"
+      }
+    },
+    {
+      "section": "Class shell",
+      "action": "replace_regex",
+      "description": "Drop each table-closing ');' entirely (Python has no closing brace).",
+      "options": {
+        "find": "(?m)^\\);$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop DEFAULT clauses from column lines (nextval, now(), literals).",
+      "options": {
+        "find": "(?im)\\s+DEFAULT\\s+.+?(?=(?:\\s+NOT\\s+NULL)?,?\\s*$)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop trailing commas that separated columns.",
+      "options": {
+        "find": "(?m),[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Mark nullable columns (any column line NOT ending in NOT NULL) with a sentinel.",
+      "options": {
+        "find": "(?m)^(    \\w[^\\n]*?)(?<! NOT NULL)$",
+        "replace_with": "${1}@@N@@"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Remove the NOT NULL constraint marker from non-nullable columns.",
+      "options": {
+        "find": "(?m) NOT NULL$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag Postgres enum columns (public.<type>): mapped to str.",
+      "options": {
+        "pattern": "\\bpublic\\.\\w+",
+        "comment": "#",
+        "tag": "TODO",
+        "message": "Postgres enum; consider a Python Enum instead of a plain string.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag Postgres array columns: mapped to a Python list.",
+      "options": {
+        "pattern": "\\w\\[\\]",
+        "comment": "#",
+        "tag": "TODO",
+        "message": "Postgres array; verify element mapping and chosen Python collection.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag Postgres tsvector columns: mapped to str.",
+      "options": {
+        "pattern": "\\btsvector\\b",
+        "comment": "#",
+        "tag": "TODO",
+        "message": "Postgres full-search vector; stored as str, not searchable in Python.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "character varying(n) -> str.",
+      "options": { "find": "(?i)\\bcharacter varying\\(\\d+\\)", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "character varying / varchar -> str.",
+      "options": { "find": "(?i)\\b(?:character varying|varchar)(?:\\(\\d+\\))?", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "character(n) / char(n) / bpchar(n) -> str.",
+      "options": { "find": "(?i)\\b(?:character|char|bpchar)\\(\\d+\\)", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare character / char / bpchar -> str.",
+      "options": { "find": "(?i)\\b(?:character|bpchar|char)\\b", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "timestamp with/without time zone (and bare timestamp) -> datetime.",
+      "options": { "find": "(?i)\\btimestamp(?: with(?:out)? time zone| without time zone)?\\b", "replace_with": "datetime" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "timestamptz -> datetime.",
+      "options": { "find": "(?i)\\btimestamptz\\b", "replace_with": "datetime" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "time with/without time zone / timetz / time -> time (datetime.time).",
+      "options": { "find": "(?i)\\b(?:time(?: with(?:out)? time zone)?|timetz)\\b", "replace_with": "time" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "double precision -> float.",
+      "options": { "find": "(?i)\\bdouble precision\\b", "replace_with": "float" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "numeric(p,s) / decimal(p,s) -> Decimal.",
+      "options": { "find": "(?i)\\b(?:numeric|decimal)\\(\\d+,\\s*\\d+\\)", "replace_with": "Decimal" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare numeric / decimal -> Decimal.",
+      "options": { "find": "(?i)\\b(?:numeric|decimal)\\b", "replace_with": "Decimal" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bigserial / bigint -> int.",
+      "options": { "find": "(?i)\\b(?:bigserial|bigint)\\b", "replace_with": "int" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "smallserial / smallint -> int.",
+      "options": { "find": "(?i)\\b(?:smallserial|smallint)\\b", "replace_with": "int" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "serial / integer / int -> int.",
+      "options": { "find": "(?i)\\b(?:serial|integer|int)\\b", "replace_with": "int" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "boolean / bool -> bool.",
+      "options": { "find": "(?i)\\b(?:boolean|bool)\\b", "replace_with": "bool" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "real -> float.",
+      "options": { "find": "(?i)\\breal\\b", "replace_with": "float" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare double -> float.",
+      "options": { "find": "(?i)\\bdouble\\b", "replace_with": "float" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "Postgres enum reference (public.<type>) -> str (flagged above).",
+      "options": { "find": "(?i)\\bpublic\\.\\w+", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "text[] array -> list[str] (flagged above).",
+      "options": { "find": "(?i)\\btext\\[\\]", "replace_with": "list[str]" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "tsvector -> str (flagged above).",
+      "options": { "find": "(?i)\\btsvector\\b", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "text -> str.",
+      "options": { "find": "(?i)\\btext\\b", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "uuid -> UUID.",
+      "options": { "find": "(?i)\\buuid\\b", "replace_with": "UUID" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bytea -> bytes.",
+      "options": { "find": "(?i)\\bbytea\\b", "replace_with": "bytes" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "date -> date (datetime.date; identity map, kept explicit).",
+      "options": { "find": "(?i)\\bdate\\b", "replace_with": "date" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "jsonb / json -> dict (assumes object payloads; use str for raw JSON).",
+      "options": { "find": "(?i)\\bjsonb?\\b", "replace_with": "dict" }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Rewrite nullable columns into a dataclass field with a 'type | None' annotation.",
+      "options": {
+        "find": "(?m)^(    )(\\w+) (\\S+)@@N@@(.*)$",
+        "replace_with": "${1}${2}: ${3} | None${4}"
+      }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Rewrite non-nullable columns into a dataclass field with a plain annotation.",
+      "options": {
+        "find": "(?m)^(    )(\\w+) (\\S+)( # .*)?$",
+        "replace_with": "${1}${2}: ${3}${4}"
+      }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Safety: strip any leftover nullability sentinel.",
+      "options": { "find": "@@N@@", "replace_with": "" }
+    },
+    {
+      "section": "PascalCase",
+      "action": "to_pascal",
+      "description": "PascalCase each class name (the table identifier); field names stay snake_case.",
+      "only_lines_matching": "^class ",
+      "scope": { "field": { "index": 2, "delimiter": " " } }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Collapse multiple blank lines to a single blank between classes.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim leading blank lines.",
+      "options": { "find": "\\A\\n+", "replace_with": "" }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim trailing blank lines to a single final newline.",
+      "options": { "find": "\\n\\s*\\z", "replace_with": "\n" }
+    },
+    {
+      "section": "Header",
+      "action": "replace_regex",
+      "description": "Prepend the fixed stdlib import header (last, so the type-map regexes never touch 'date'/'time'/'decimal' in the imports).",
+      "options": {
+        "find": "\\A",
+        "replace_with": "from __future__ import annotations\nfrom dataclasses import dataclass\nfrom datetime import date, datetime, time\nfrom decimal import Decimal\nfrom uuid import UUID\n\n"
+      }
+    }
+  ]
+}

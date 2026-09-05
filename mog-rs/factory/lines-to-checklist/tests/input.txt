@@ -1,0 +1,4 @@
+Write the spec
+Review with the team
+
+Ship it

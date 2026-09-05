@@ -1,0 +1,5 @@
+services:
+  app:
+    environment:
+      NAME: App
+      PORT: '8080'

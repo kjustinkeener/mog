@@ -1,0 +1,15 @@
+{
+  "name": "YAML to TOML",
+  "description": "Convert a YAML document to TOML, bridging through JSON. Best for a YAML mapping (an object at the top level); key order is preserved. Anchors/aliases and multi-document streams are not supported.",
+  "summary": "Convert YAML to TOML",
+  "tags": [
+    "yaml",
+    "toml",
+    "config",
+    "convert"
+  ],
+  "steps": [
+    { "action": "yaml_to_json", "description": "Parse YAML into JSON" },
+    { "action": "json_to_toml", "description": "Serialize the JSON as TOML" }
+  ]
+}

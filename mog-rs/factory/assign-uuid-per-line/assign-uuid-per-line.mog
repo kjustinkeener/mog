@@ -1,0 +1,9 @@
+{
+  "name": "Assign a UUID to each line",
+  "description": "Prefix every non-empty line with a fresh RFC-4122 v4 UUID and a comma, using the per-match $uuid replacement token (one distinct UUID per line). A live run produces random UUIDs; runs are reproducible only when the RNG is pinned (--pin-seed, and under mog --test). Handy for tagging records or log lines with a within-run unique id.",
+  "summary": "Prefix each line with a fresh UUID",
+  "tags": ["identifier", "codegen", "comment", "single-action"],
+  "steps": [
+    { "action": "replace_regex", "options": { "find": "(.+)", "replace_with": "$uuid,$1" } }
+  ]
+}

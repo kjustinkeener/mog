@@ -1,0 +1,7 @@
+CREATE TABLE users (
+  id BIGINT NOT NULL,
+  name TEXT NOT NULL,
+  email TEXT,
+  active BOOLEAN NOT NULL,
+  score DOUBLE PRECISION NOT NULL
+);

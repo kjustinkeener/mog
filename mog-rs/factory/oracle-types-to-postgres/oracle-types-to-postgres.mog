@@ -1,0 +1,22 @@
+{
+  "name": "Convert Oracle column types to Postgres",
+  "description": "Translate a list of SQL data types from Oracle to PostgreSQL, one type per line: VARCHAR2(n)->VARCHAR(n), NUMBER(p,s)->DECIMAL(p,s), NUMBER (no scale)->its Postgres equivalent, DATE->TIMESTAMP(0) (Oracle DATE carries a time component), CLOB->TEXT, BLOB->BYTEA. Blank lines pass through so a column list's spacing is kept. Parse-based (polyglot-sql), so precision and scale are preserved exactly. Converts a column-type list only, not full CREATE TABLE statements.",
+  "summary": "Map a list of Oracle data types to Postgres types",
+  "tags": [
+    "sql",
+    "oracle",
+    "postgres",
+    "migrate",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "sql_datatype_convert",
+      "description": "Convert each line's Oracle type to its Postgres equivalent",
+      "options": {
+        "from": "oracle",
+        "to": "postgres"
+      }
+    }
+  ]
+}

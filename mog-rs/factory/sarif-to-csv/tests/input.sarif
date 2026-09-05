@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Semgrep",
+          "semanticVersion": "1.86.0",
+          "rules": [
+            {
+              "id": "python.lang.security.audit.exec-detected"
+            },
+            {
+              "id": "generic.secrets.hardcoded-token"
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "python.lang.security.audit.exec-detected",
+          "level": "error",
+          "message": {
+            "text": "Detected the use of exec(), which is dangerous.\nAudit the input, or remove the call."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/loader.py"
+                },
+                "region": {
+                  "startLine": 42,
+                  "startColumn": 5
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "generic.secrets.hardcoded-token",
+          "level": "warning",
+          "message": {
+            "text": "Hardcoded token assigned to \"API_KEY\"; move it to the environment"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "config/settings.py"
+                },
+                "region": {
+                  "startLine": 7
+                }
+              }
+            },
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "config/settings.prod.py"
+                },
+                "region": {
+                  "startLine": 9
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "generic.style.no-todo",
+          "kind": "informational",
+          "message": {
+            "text": "TODO left in shipped code"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/ui/app,v2.tsx"
+                },
+                "region": {
+                  "startLine": 118
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tool": {
+        "driver": {
+          "name": "gitleaks",
+          "semanticVersion": "8.18.4"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "aws-access-token",
+          "message": {
+            "text": "aws-access-token has detected a secret."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "infra/terraform/main.tf"
+                },
+                "region": {
+                  "startLine": 231
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tool": {
+        "driver": {
+          "name": "Trivy",
+          "semanticVersion": "0.53.0"
+        }
+      },
+      "results": []
+    }
+  ]
+}

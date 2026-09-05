@@ -1,0 +1,6 @@
+BEGIN alpha
+body one
+END
+BEGIN beta
+body two
+END

@@ -1,0 +1,17 @@
+{
+  "name": "List to SQL VALUES tuples",
+  "description": "Turn a plain list (one value per line) into a comma-joined SQL VALUES list like ('a'),('b'),('c'), ready to drop into a bulk INSERT. Each value is SQL-escaped (embedded quotes doubled) and wrapped in ('...'). Blank lines are dropped. For a single-column IN (...) list instead, see sql-in-clause.",
+  "summary": "Build SQL VALUES tuples from a list",
+  "tags": [
+    "sql",
+    "json",
+    "list",
+    "convert"
+  ],
+  "steps": [
+    { "action": "remove_empty_lines", "description": "Drop blank lines" },
+    { "action": "escape_sql", "description": "SQL-quote each value", "options": { "quote": true } },
+    { "action": "wrap_lines", "description": "Wrap each as a single-column tuple", "options": { "prefix": "(", "suffix": ")" } },
+    { "action": "join_lines", "description": "Comma-join the tuples", "options": { "separator": "," } }
+  ]
+}

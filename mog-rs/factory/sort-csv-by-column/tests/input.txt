@@ -1,0 +1,4 @@
+alice,30,nyc
+bob,25,sf
+carol,40,la
+dave,2,chi

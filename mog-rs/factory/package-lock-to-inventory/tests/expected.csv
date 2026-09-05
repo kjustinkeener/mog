@@ -1,0 +1,8 @@
+name,version,resolved_host,dev,integrity_present
+@babel/core,7.24.7,registry.npmjs.org,false,true
+lodash,4.17.21,registry.npmjs.org,false,true
+semver,6.3.1,registry.yarnpkg.com,false,true
+typescript,5.4.5,registry.npmjs.org,true,true
+shared-utils,,,false,false
+left-pad,1.3.0,,true,false
+tar-fs,2.1.1,codeload.github.com,false,true

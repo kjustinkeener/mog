@@ -1,0 +1,21 @@
+{
+  "name": "Mocking (random) case",
+  "summary": "Randomly upper/lower each letter (seeded, reproducible)",
+  "description": "Randomly upper- or lower-case each letter. A fixed seed makes the output reproducible, so the golden is stable. Mostly a novelty (the 'mocking SpongeBob' effect); the seed keeps it deterministic.",
+  "tags": [
+    "case",
+    "text",
+    "random",
+    "ml",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "random_case",
+      "description": "Randomly recase each letter",
+      "options": {
+        "seed": 42
+      }
+    }
+  ]
+}

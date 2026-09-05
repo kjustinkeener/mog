@@ -1,0 +1,86 @@
+{
+  "name": "Snowflake to BigQuery (DDL/SQL)",
+  "description": "Rewrite Snowflake SQL toward BigQuery: double-quoted identifiers to backticks, :: casts to CAST(...), Snowflake type keywords to BigQuery types (NUMBER->NUMERIC, VARCHAR/STRING->STRING, TIMESTAMP_NTZ->DATETIME, VARIANT->JSON, ...), and safe 1:1 function renames (NVL->IFNULL, IFF->IF). Not a semantic transpiler: it does not reorder DATEADD/DATEDIFF args, translate LISTAGG/QUALIFY/semi-structured access, or catch type keywords that collide with column names. Assumes LF text.",
+  "summary": "Convert Snowflake SQL to BigQuery",
+  "tags": [
+    "sql",
+    "snowflake",
+    "bigquery",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "sql-requote-quote-to-backtick",
+    "sql-colon-cast-to-cast"
+  ],
+  "steps": [
+    {
+      "section": "Casts",
+      "description": "Rewrite expr::TYPE to CAST(expr AS TYPE) (BigQuery has no ::). Run before requoting so quoted operands still start with a quote.",
+      "action": "run_mog",
+      "options": {
+        "file": "sql-colon-cast-to-cast.mog"
+      }
+    },
+    {
+      "section": "Identifiers",
+      "description": "Snowflake \"id\" identifiers to BigQuery `id` backticks.",
+      "action": "run_mog",
+      "options": {
+        "file": "sql-requote-quote-to-backtick.mog"
+      }
+    },
+    {
+      "section": "Types",
+      "description": "Map Snowflake type keywords to BigQuery types (whole-word, case-insensitive; longest match wins).",
+      "action": "replace_map",
+      "options": {
+        "ignore_case": true,
+        "whole_word": true,
+        "map": {
+          "TIMESTAMP_NTZ": "DATETIME",
+          "TIMESTAMP_TZ": "TIMESTAMP",
+          "TIMESTAMP_LTZ": "TIMESTAMP",
+          "DOUBLE PRECISION": "FLOAT64",
+          "NUMBER": "NUMERIC",
+          "DECIMAL": "NUMERIC",
+          "INTEGER": "INT64",
+          "BIGINT": "INT64",
+          "SMALLINT": "INT64",
+          "TINYINT": "INT64",
+          "BYTEINT": "INT64",
+          "INT": "INT64",
+          "FLOAT8": "FLOAT64",
+          "FLOAT4": "FLOAT64",
+          "FLOAT": "FLOAT64",
+          "DOUBLE": "FLOAT64",
+          "REAL": "FLOAT64",
+          "VARCHAR": "STRING",
+          "NVARCHAR": "STRING",
+          "CHARACTER": "STRING",
+          "CHAR": "STRING",
+          "TEXT": "STRING",
+          "BOOLEAN": "BOOL",
+          "VARIANT": "JSON",
+          "OBJECT": "JSON",
+          "VARBINARY": "BYTES",
+          "BINARY": "BYTES"
+        }
+      }
+    },
+    {
+      "section": "Functions",
+      "description": "Safe 1:1 function renames (same argument shape).",
+      "action": "replace_map",
+      "options": {
+        "ignore_case": true,
+        "whole_word": true,
+        "map": {
+          "NVL": "IFNULL",
+          "IFF": "IF"
+        }
+      }
+    }
+  ]
+}

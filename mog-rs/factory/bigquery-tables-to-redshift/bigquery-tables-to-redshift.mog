@@ -1,0 +1,39 @@
+{
+  "name": "BigQuery to Redshift (DDL/SQL)",
+  "description": "Convert BigQuery SQL toward Amazon Redshift: backtick-quoted identifiers to double quotes, and type keywords (STRING->VARCHAR, INT64->BIGINT, FLOAT64->DOUBLE PRECISION, NUMERIC->DECIMAL, BOOL->BOOLEAN, BYTES->VARBYTE, TIMESTAMP->TIMESTAMPTZ, DATETIME->TIMESTAMP, JSON->SUPER). Redshift accepts CAST and ::, so casts pass through. The inverse of redshift-tables-to-bigquery. Minimal-diff, not a semantic transpiler. Assumes LF text.",
+  "summary": "Convert BigQuery SQL to Amazon Redshift",
+  "tags": [
+    "sql",
+    "bigquery",
+    "redshift",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "sql-requote-backtick-to-quote"
+  ],
+  "steps": [
+    { "section": "Identifiers", "action": "run_mog", "description": "`id` -> \"id\"", "options": { "file": "sql-requote-backtick-to-quote.mog" } },
+    {
+      "section": "Types",
+      "action": "replace_map",
+      "options": {
+        "ignore_case": true,
+        "whole_word": true,
+        "map": {
+          "STRING": "VARCHAR",
+          "INT64": "BIGINT",
+          "FLOAT64": "DOUBLE PRECISION",
+          "BIGNUMERIC": "DECIMAL",
+          "NUMERIC": "DECIMAL",
+          "BOOL": "BOOLEAN",
+          "BYTES": "VARBYTE",
+          "TIMESTAMP": "TIMESTAMPTZ",
+          "DATETIME": "TIMESTAMP",
+          "JSON": "SUPER"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "Strip Markdown bold/italic emphasis",
+  "description": "Remove asterisk emphasis markers, keeping the text: **bold** becomes bold and *italic* becomes italic. Underscore emphasis (_x_) is left alone to protect snake_case identifiers. For a fuller Markdown-to-text pass, see strip-markdown.",
+  "summary": "Remove Markdown bold and italic asterisk markers",
+  "tags": [
+    "markdown",
+    "strip",
+    "text"
+  ],
+  "steps": [
+    { "action": "replace_regex", "description": "**bold** -> bold", "options": { "find": "\\*\\*([^*]+)\\*\\*", "replace_with": "$1" } },
+    { "action": "replace_regex", "description": "*italic* -> italic", "options": { "find": "\\*([^*]+)\\*", "replace_with": "$1" } }
+  ]
+}

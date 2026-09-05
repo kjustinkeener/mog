@@ -1,0 +1,9 @@
+{
+  "name": "Base64 Encode",
+  "description": "Encode the whole input as Base64. Handy on Windows where a base64 CLI is not reliably present. Pairs with base64-decode.",
+  "summary": "Encode input as Base64",
+  "tags": ["base64", "encode"],
+  "steps": [
+    { "action": "base64_encode", "description": "Encode the text as Base64" }
+  ]
+}

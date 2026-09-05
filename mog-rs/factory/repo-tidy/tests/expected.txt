@@ -1,0 +1,6 @@
+line one trailing ws
+	tab indent kept
+internal  double  spaces  kept
+
+after blank run
+no final newline

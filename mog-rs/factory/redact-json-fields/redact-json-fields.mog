@@ -1,0 +1,17 @@
+{
+  "name": "Redact JSON fields",
+  "description": "Mask sensitive fields in a JSONL log stream (one object per line) by setting them to [REDACTED] so logs can be shared without leaking secrets. Demo redacts password and token; edit the step paths for your fields (dotted paths like user.email work). The field is added if a line lacks it, so best on a uniform stream where the field is present. For a single JSON object, drop the jsonl option.",
+  "summary": "Mask sensitive fields in JSON logs",
+  "tags": [
+    "json",
+    "jsonl",
+    "redact",
+    "pii",
+    "secrets",
+    "privacy"
+  ],
+  "steps": [
+    { "action": "json_set", "description": "Redact password", "options": { "path": "password", "value": "[REDACTED]", "jsonl": true } },
+    { "action": "json_set", "description": "Redact token", "options": { "path": "token", "value": "[REDACTED]", "jsonl": true } }
+  ]
+}

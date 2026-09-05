@@ -1,0 +1,67 @@
+{
+  "name": "MySQL SHOW CREATE TABLE to SQLite",
+  "summary": "Convert a MySQL table export to SQLite DDL",
+  "description": "Convert MySQL SHOW CREATE TABLE output to SQLite: strips MySQL storage noise, drops AUTO_INCREMENT (SQLite uses INTEGER PRIMARY KEY AUTOINCREMENT; flagged), and maps enum(...)->TEXT and json->TEXT (SQLite has flexible typing, so most types pass through as affinities). Validated by executing the result in a real SQLite engine.",
+  "tags": [
+    "sql",
+    "mysql",
+    "sqlite",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-mysql-ddl-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "options": {
+        "file": "strip-mysql-ddl-noise.mog"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "AUTO_INCREMENT",
+        "message": "MySQL AUTO_INCREMENT dropped; SQLite needs INTEGER PRIMARY KEY AUTOINCREMENT",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "before"
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace",
+      "options": {
+        "find": " AUTO_INCREMENT",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\benum\\([^)]*\\)",
+        "replace_with": "TEXT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bjson\\b",
+        "replace_with": "TEXT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\btinyint\\(1\\)",
+        "replace_with": "INTEGER"
+      }
+    }
+  ]
+}

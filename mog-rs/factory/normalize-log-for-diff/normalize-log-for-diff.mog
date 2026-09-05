@@ -1,0 +1,16 @@
+{
+  "name": "normalize-log-for-diff",
+  "description": "Replace volatile values in a log (ISO timestamps, UUIDs, long hex hashes, 0x addresses) with stable <TS>/<UUID>/<HASH>/<ADDR> placeholders, so two runs diff down to the real differences. Deterministic and reversible-in-meaning.",
+  "summary": "Mask volatile log values (timestamps, UUIDs, hashes) for diffing",
+  "tags": ["log", "diff", "scan", "config", "normalize"],
+  "steps": [
+    { "description": "ISO 8601 timestamps", "action": "replace_regex",
+      "options": { "find": "\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+\\-]\\d{2}:?\\d{2})?", "replace_with": "<TS>" } },
+    { "description": "UUIDs", "action": "replace_regex",
+      "options": { "find": "\\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\b", "replace_with": "<UUID>" } },
+    { "description": "long hex hashes (md5/sha1/sha256)", "action": "replace_regex",
+      "options": { "find": "\\b[0-9a-fA-F]{32,64}\\b", "replace_with": "<HASH>" } },
+    { "description": "hex addresses", "action": "replace_regex",
+      "options": { "find": "\\b0x[0-9a-fA-F]+\\b", "replace_with": "<ADDR>" } }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Wrap text as a Markdown blockquote",
+  "description": "Prefix every line with '> ' so a block of text becomes a Markdown blockquote, for quoting an email, log excerpt, or passage inside a Markdown document. Every line including blanks is prefixed, keeping the quote contiguous.",
+  "summary": "Wrap text as a Markdown blockquote",
+  "tags": [
+    "markdown",
+    "quote",
+    "docs",
+    "format"
+  ],
+  "steps": [
+    {
+      "action": "prefix_lines",
+      "description": "Prefix each line with a blockquote marker",
+      "options": { "text": "> " }
+    }
+  ]
+}

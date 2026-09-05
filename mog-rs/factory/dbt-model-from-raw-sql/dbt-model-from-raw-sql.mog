@@ -1,0 +1,23 @@
+{
+  "name": "Wrap raw SQL as a dbt model",
+  "description": "Scaffold a dbt model from a raw SELECT: prepend a {{ config(materialized='view') }} block, and flag each hardcoded schema.table reference in a FROM/JOIN so you can replace it with ref() or source(). It marks the references rather than rewriting them, since it cannot know which are models vs sources.",
+  "summary": "Wrap raw SQL as a dbt model",
+  "tags": [
+    "sql",
+    "ml",
+    "analytics",
+    "codemod"
+  ],
+  "steps": [
+    { "action": "prepend", "description": "Add the dbt config block", "options": { "text": "{{ config(materialized='view') }}\n\n" } },
+    {
+      "action": "flag_matching",
+      "description": "Flag hardcoded schema.table refs for ref()/source()",
+      "options": {
+        "pattern": "\\b(FROM|JOIN)\\s+\\w+\\.\\w+",
+        "message": "replace with ref() or source()",
+        "comment": "--"
+      }
+    }
+  ]
+}

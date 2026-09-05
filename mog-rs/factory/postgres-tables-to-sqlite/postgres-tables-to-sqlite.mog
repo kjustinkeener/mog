@@ -1,0 +1,67 @@
+{
+  "name": "pg_dump (Postgres) to SQLite",
+  "summary": "Convert pg_dump --schema-only output to SQLite DDL",
+  "description": "Convert pg_dump --schema-only output to SQLite DDL: strips the pg_dump plumbing, drops the public. qualifier, comments out standalone ALTER TABLE ADD CONSTRAINT PRIMARY KEY (SQLite cannot ALTER-add a PK; flagged), and maps text[]->TEXT (flagged). SQLite's flexible typing accepts the remaining types as affinities. Unmapped cases are flagged inline as TODO(mog). Validated by executing the result in a real SQLite engine.",
+  "tags": [
+    "sql",
+    "postgres",
+    "sqlite",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-pgdump-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "options": {
+        "file": "strip-pgdump-noise.mog"
+      }
+    },
+    {
+      "section": "Identifiers",
+      "action": "replace",
+      "options": {
+        "find": "public.",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Constraints",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?is)ALTER TABLE ONLY [^;]*ADD CONSTRAINT[^;]*PRIMARY KEY[^;]*;",
+        "replace_with": "-- TODO(mog): SQLite cannot ALTER-add a PRIMARY KEY; fold it into the CREATE TABLE"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "\\btext\\[\\]",
+        "message": "Postgres array mapped to TEXT; SQLite has no array type",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\btext\\[\\]",
+        "replace_with": "TEXT"
+      }
+    },
+    {
+      "section": "Functions",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bnow\\(\\)",
+        "replace_with": "CURRENT_TIMESTAMP"
+      }
+    }
+  ]
+}

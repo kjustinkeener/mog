@@ -1,0 +1,83 @@
+{
+  "name": "pg_dump (Postgres) to MySQL",
+  "summary": "Convert pg_dump --schema-only output to MySQL DDL",
+  "description": "Convert pg_dump --schema-only output to MySQL DDL: strips pg_dump plumbing, drops the public. qualifier and ALTER TABLE ONLY, maps types (text[]->JSON flagged, text->TEXT, numeric->DECIMAL, timestamp with/without time zone->DATETIME), and rewrites now()->CURRENT_TIMESTAMP. Not a semantic transpiler; unmapped cases are flagged inline as TODO(mog).",
+  "tags": [
+    "sql",
+    "postgres",
+    "mysql",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-pgdump-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "options": {
+        "file": "strip-pgdump-noise.mog"
+      }
+    },
+    {
+      "section": "Identifiers",
+      "action": "replace",
+      "options": {
+        "find": "public.",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Statement",
+      "action": "replace",
+      "options": {
+        "find": "ALTER TABLE ONLY ",
+        "replace_with": "ALTER TABLE "
+      }
+    },
+    {
+      "section": "Types",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "\\btext\\[\\]",
+        "message": "Postgres array mapped to JSON; MySQL has no array type",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\btext\\[\\]",
+        "replace_with": "JSON"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\btimestamp with(?:out)? time zone\\b",
+        "replace_with": "DATETIME"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bnumeric\\(",
+        "replace_with": "DECIMAL("
+      }
+    },
+    {
+      "section": "Functions",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bnow\\(\\)",
+        "replace_with": "CURRENT_TIMESTAMP"
+      }
+    }
+  ]
+}

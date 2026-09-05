@@ -1,0 +1,12 @@
+{
+  "name": ".env to Docker Compose",
+  "description": "Turn a .env file into a docker-compose fragment placing the variables under services.<service>.environment. Set the service with -D service=... (default app).",
+  "summary": "Convert .env to a Docker Compose fragment",
+  "tags": ["convert", "env", "dotenv", "docker", "yaml"],
+  "constants": { "service": "app" },
+  "steps": [
+    { "description": "Parse the .env into a JSON object.", "action": "env_to_json" },
+    { "description": "Nest it under services.<service>.environment.", "action": "json_wrap", "options": { "path": "services.{{service}}.environment" } },
+    { "description": "Render as compose YAML.", "action": "json_to_yaml" }
+  ]
+}

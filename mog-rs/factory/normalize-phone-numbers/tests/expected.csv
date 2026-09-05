@@ -1,0 +1,10 @@
+name,email,phone
+Ada Byron,ada@example.com,+15551234567
+Bo Diaz,bo@example.com,+442079460958
+Cy Nolan,cy@example.com,+15559876543
+Di Marsh,di@example.com,+15552223333
+Eli Frost,eli@example.com,555CALLNOW # FIXME(mog): not a plausible E.164 value; left as written for review
+Fay Oduya,fay@example.com,12345 # FIXME(mog): not a plausible E.164 value; left as written for review
+Gus Ilic,gus@example.com,+15551234567ext89 # FIXME(mog): not a plausible E.164 value; left as written for review
+Hana Sato,hana@example.com,
+Ivo Petrov,ivo@example.com,+33142685300

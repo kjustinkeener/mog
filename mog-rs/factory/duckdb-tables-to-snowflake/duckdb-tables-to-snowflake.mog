@@ -1,0 +1,69 @@
+{
+  "name": "DuckDB to Snowflake",
+  "summary": "Convert a DuckDB table definition to Snowflake DDL",
+  "description": "Convert DuckDB DDL (e.g. duckdb_tables().sql) to Snowflake: maps JSON->VARIANT, TIMESTAMP->TIMESTAMP_NTZ, TIMESTAMPTZ->TIMESTAMP_TZ, VARCHAR[]/list->ARRAY (flagged), and rewrites CREATE TABLE to CREATE OR REPLACE TABLE. Emits TODO(mog) markers where a construct cannot be mapped mechanically.",
+  "tags": [
+    "sql",
+    "duckdb",
+    "snowflake",
+    "convert",
+    "migration"
+  ],
+  "steps": [
+    {
+      "section": "Types",
+      "action": "eol_lf"
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bVARCHAR\\s*\\[\\]|\\bTEXT\\s*\\[\\]|\\b\\w+\\[\\]",
+        "replace_with": "ARRAY"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "\\bARRAY\\b",
+        "message": "DuckDB LIST/array mapped to Snowflake ARRAY (untyped); element type lost",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bTIMESTAMPTZ\\b",
+        "replace_with": "TIMESTAMP_TZ"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bTIMESTAMP\\b(?!_)",
+        "replace_with": "TIMESTAMP_NTZ"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bJSON\\b",
+        "replace_with": "VARIANT"
+      }
+    },
+    {
+      "section": "Statement",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)^CREATE TABLE ",
+        "replace_with": "CREATE OR REPLACE TABLE "
+      }
+    }
+  ]
+}

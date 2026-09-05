@@ -1,0 +1,2 @@
+{"conversations": [{"from": "human", "value": "What is 2+2?"}, {"from": "gpt", "value": "4"}]}
+{"conversations": [{"from": "system", "value": "Be terse."}, {"from": "human", "value": "Hi"}, {"from": "gpt", "value": "Hello"}]}

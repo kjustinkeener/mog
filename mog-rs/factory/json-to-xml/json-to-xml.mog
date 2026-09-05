@@ -1,0 +1,9 @@
+{
+  "name": "JSON to XML",
+  "description": "Emit JSON as XML, inverting XML to JSON: @keys become attributes, #text becomes text, other keys become child elements (arrays repeat). The top level must be an object; a single key is the root element, else it is wrapped in <root>. The write counterpart to XML to JSON.",
+  "summary": "Convert JSON to XML",
+  "tags": ["convert", "json", "xml", "data"],
+  "steps": [
+    { "description": "Emit the JSON as XML.", "action": "json_to_xml" }
+  ]
+}

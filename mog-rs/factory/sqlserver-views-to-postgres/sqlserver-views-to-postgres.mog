@@ -1,0 +1,305 @@
+{
+  "name": "SQL Server views to PostgreSQL",
+  "description": "Convert a SQL Server SSMS-scripted view (T-SQL CREATE VIEW) to PostgreSQL. Removes the SSMS scaffolding (USE banner, SET ANSI_NULLS/QUOTED_IDENTIFIER), strips square-bracket quoting and the dbo. prefix, drops WITH SCHEMABINDING / VIEW_METADATA, moves a leading TOP (n) to a trailing LIMIT n, and rewrites SELECT-body functions (GETDATE()->now(), GETUTCDATE()/SYSUTCDATETIME()->utc now(), SYSDATETIME()->current_timestamp, ISNULL->COALESCE, LEN->LENGTH) plus common cast type names. Flags constructs it cannot safely rewrite as -- TODO(mog): CROSS/OUTER APPLY, PIVOT/UNPIVOT, part-aware DATEDIFF, TOP ... PERCENT / WITH TIES, '+' string concatenation, CONVERT(...) casts, and schema-qualified scalar UDF calls. Not a SQL parser. Set schema_prefix (or --define schema_prefix=...) to control schema qualification.",
+  "summary": "Convert a real SSMS-scripted SQL Server view to PostgreSQL",
+  "tags": [
+    "sql",
+    "mssql",
+    "postgres",
+    "convert",
+    "migration"
+  ],
+  "constants": {
+    "schema_prefix": ""
+  },
+  "steps": [
+    {
+      "section": "Normalize And Strip Noise",
+      "description": "Normalize to LF first so every later CRLF-sensitive regex (GO-batch anchors) is reliable. Output stays LF (standard for SQL scripts; psql reads it fine).",
+      "action": "eol_lf"
+    },
+    {
+      "description": "Strip SQL Server server/session scaffolding first (object banner comment, SET ANSI_NULLS/QUOTED_IDENTIFIER batches, any CREATE/DROP DATABASE or DROP phase). Runs on the raw SSMS text while GO batches are intact. Reusable across object-kind converters.",
+      "action": "run_mog",
+      "options": {
+        "file": "mssql-strip-server-noise.mog"
+      }
+    },
+    {
+      "section": "Flag Non-Portable Constructs",
+      "description": "Flag schema-qualified scalar UDF calls ([dbo].[fn_x]( ... )) BEFORE the bracket/dbo strip, while the schema is still visible. A trailing '(' distinguishes a function call from a plain table reference in FROM. Postgres has no dbo schema and the function must be ported separately.",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "\\[dbo\\]\\.\\[[A-Za-z_][A-Za-z0-9_]*\\]\\s*\\(",
+        "message": "schema-qualified scalar function call: port the SQL Server UDF to PostgreSQL and re-qualify",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "before"
+      }
+    },
+    {
+      "description": "Flag CROSS APPLY / OUTER APPLY: no direct Postgres equivalent (rewrite as a LATERAL join).",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "(?i)\\b(CROSS|OUTER)\\s+APPLY\\b",
+        "message": "APPLY has no PostgreSQL equivalent; rewrite as a LATERAL join",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "before"
+      }
+    },
+    {
+      "description": "Flag PIVOT / UNPIVOT: not supported in Postgres (rewrite with conditional aggregation, or the tablefunc crosstab).",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "(?i)\\b(UN)?PIVOT\\b",
+        "message": "PIVOT/UNPIVOT is not supported in PostgreSQL; rewrite with conditional aggregation (CASE/FILTER) or tablefunc crosstab",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "before"
+      }
+    },
+    {
+      "description": "Flag part-aware DATEDIFF: Postgres has no DATEDIFF (for day diffs use end::date - start::date, else EXTRACT / AGE).",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "(?i)\\bDATEDIFF\\s*\\(",
+        "message": "PostgreSQL has no part-aware DATEDIFF; for day diffs use (end::date - start::date), otherwise compute via EXTRACT / AGE",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "before"
+      }
+    },
+    {
+      "description": "Flag CONVERT(...) casts: the optional style argument is not portable; rewrite as CAST(expr AS type) (and to_char/to_date for styled datetime conversions).",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "(?i)\\bCONVERT\\s*\\(",
+        "message": "T-SQL CONVERT is style-dependent; rewrite as CAST(expr AS type) or to_char/to_date in PostgreSQL",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "before"
+      }
+    },
+    {
+      "description": "Flag TOP ... PERCENT / WITH TIES: cannot be moved to a plain LIMIT (needs a window function / percentage of rows).",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "(?i)\\bTOP\\b[^\\n]*\\b(PERCENT|WITH\\s+TIES)\\b",
+        "message": "TOP PERCENT / WITH TIES has no plain-LIMIT equivalent; rewrite with a window function (e.g. RANK/PERCENT_RANK)",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "before"
+      }
+    },
+    {
+      "description": "Flag '+' string concatenation (a string literal adjacent to '+'): Postgres uses || and treats NULL differently.",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "('[^']*'\\s*\\+|\\+\\s*')",
+        "message": "'+' string concatenation is not portable; use || in PostgreSQL (and handle NULL operands, e.g. with COALESCE or concat())",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "before"
+      }
+    },
+    {
+      "section": "Rewrite Quoting And Schema",
+      "description": "Strip T-SQL square-bracket quoting: opening bracket.",
+      "action": "replace",
+      "options": {
+        "find": "[",
+        "replace_with": ""
+      }
+    },
+    {
+      "description": "Strip T-SQL square-bracket quoting: closing bracket.",
+      "action": "replace",
+      "options": {
+        "find": "]",
+        "replace_with": ""
+      }
+    },
+    {
+      "description": "Schema qualifier: rewrite the SQL Server 'dbo.' prefix. Default schema_prefix is empty, so objects become unqualified and resolve via search_path (public) -- the idiomatic Postgres result. Set schema_prefix to 'public.' or keep 'dbo.' as needed.",
+      "action": "replace",
+      "options": {
+        "find": "dbo.",
+        "replace_with": "{{schema_prefix}}",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "USE <db> + its GO -> a documenting comment (Postgres has no USE; you connect to a database instead).",
+      "action": "replace_regex",
+      "options": {
+        "find": "USE (\\w+)\\nGO\\n",
+        "replace_with": "-- Database: ${1}\n\n",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Rewrite View Wrapper",
+      "description": "Drop the view option clause 'WITH SCHEMABINDING' / 'WITH VIEW_METADATA' (and combinations): Postgres has no per-view equivalent. Removes the whole clause line so CREATE VIEW <name> flows straight into AS.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\nWITH (?:SCHEMABINDING|VIEW_METADATA)(?:\\s*,\\s*(?:SCHEMABINDING|VIEW_METADATA))*",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Move a leading TOP (n) / TOP n on the view's SELECT to a trailing LIMIT n (Postgres has no TOP). Non-greedy to the batch-terminating GO; the negative lookahead leaves TOP ... PERCENT / WITH TIES for the flag above. Runs while GO is still the terminator.",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bSELECT[ \\t]+TOP[ \\t]*\\(?[ \\t]*(?>(\\d+))[ \\t]*\\)?(?![ \\t]*PERCENT)(?![ \\t]+WITH[ \\t]+TIES)([\\s\\S]*?)(\\nGO\\n)",
+        "replace_with": "SELECT${2}\nLIMIT ${1}${3}"
+      }
+    },
+    {
+      "section": "Rewrite Functions",
+      "description": "Function map: getutcdate() -> now() in UTC (run before getdate()).",
+      "action": "replace",
+      "options": {
+        "find": "getutcdate()",
+        "replace_with": "(now() at time zone 'utc')",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: sysutcdatetime() -> now() in UTC.",
+      "action": "replace",
+      "options": {
+        "find": "sysutcdatetime()",
+        "replace_with": "(now() at time zone 'utc')",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: sysdatetime() -> current_timestamp.",
+      "action": "replace",
+      "options": {
+        "find": "sysdatetime()",
+        "replace_with": "current_timestamp",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: getdate() -> now().",
+      "action": "replace",
+      "options": {
+        "find": "getdate()",
+        "replace_with": "now()",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: ISNULL(a, b) -> COALESCE(a, b) (whole-word so it never bites into another identifier).",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bISNULL\\(",
+        "replace_with": "COALESCE(",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: LEN(x) -> LENGTH(x). Note: LEN ignores trailing spaces in T-SQL while LENGTH counts them; identical for the common case.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bLEN\\(",
+        "replace_with": "LENGTH(",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Rewrite Cast Types",
+      "description": "Type name in a CAST: nvarchar(max) -> text (run before varchar(max), which it contains).",
+      "action": "replace",
+      "options": {
+        "find": "nvarchar(max)",
+        "replace_with": "text",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type name in a CAST: varchar(max) -> text.",
+      "action": "replace",
+      "options": {
+        "find": "varchar(max)",
+        "replace_with": "text",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type name in a CAST: nvarchar -> varchar (Postgres varchar is already Unicode).",
+      "action": "replace",
+      "options": {
+        "find": "nvarchar",
+        "replace_with": "varchar",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type name in a CAST: datetime2(n) -> timestamp (run before bare datetime).",
+      "action": "replace_regex",
+      "options": {
+        "find": "datetime2(\\(\\d+\\))?",
+        "replace_with": "timestamp",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type name in a CAST: datetime -> timestamp (whole word).",
+      "action": "replace",
+      "options": {
+        "find": "datetime",
+        "replace_with": "timestamp",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type name in a CAST: uniqueidentifier -> uuid.",
+      "action": "replace",
+      "options": {
+        "find": "uniqueidentifier",
+        "replace_with": "uuid",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type name in a CAST: bit -> boolean (whole word).",
+      "action": "replace",
+      "options": {
+        "find": "bit",
+        "replace_with": "boolean",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Finalize And Format",
+      "description": "Turn the view's terminating GO batch separator into a statement terminator, plus a blank line after.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\nGO\\n",
+        "replace_with": ";\n\n",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Canonical whitespace finalize via the shared fragment (tidy_chars picks the punctuation to de-space).",
+      "action": "run_mog",
+      "options": {
+        "file": "sql-finalize-whitespace.mog",
+        "with": {
+          "tidy_chars": ";"
+        }
+      }
+    }
+  ],
+  "dependencies": [
+    "mssql-strip-server-noise",
+    "sql-finalize-whitespace"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": ".properties to YAML",
+  "description": "Convert a Java .properties file (key=value or key:value, #/! comments) to YAML with flat, dotted keys.",
+  "summary": "Convert Java .properties to YAML",
+  "tags": ["convert", "config", "java", "yaml"],
+  "steps": [
+    { "description": "Parse the .properties into JSON.", "action": "properties_to_json" },
+    { "description": "Render the JSON as YAML.", "action": "json_to_yaml" }
+  ]
+}

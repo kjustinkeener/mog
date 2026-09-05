@@ -1,0 +1,101 @@
+{
+  "name": "Oracle (SQL Developer GET_DDL) to BigQuery table DDL",
+  "summary": "Convert Oracle table DDL to BigQuery",
+  "description": "Convert an Oracle DBMS_METADATA.GET_DDL table export to runnable BigQuery standard-SQL DDL. Strips the GET_DDL scaffolding (schema qualifier, double-quote quoting, ENABLE, USING INDEX, storage tail) and maps types: NUMBER(p,0)->INT64, NUMBER(p,s)->NUMERIC(p,s), bare NUMBER->NUMERIC, VARCHAR2/NVARCHAR2/CHAR/NCHAR/CLOB/NCLOB/LONG->STRING, BINARY_FLOAT/BINARY_DOUBLE/FLOAT->FLOAT64, RAW/LONG RAW/BLOB->BYTES, ROWID/UROWID->STRING, TIMESTAMP WITH [LOCAL] TIME ZONE->TIMESTAMP, bare/precision TIMESTAMP->DATETIME, DATE->DATETIME (Oracle DATE carries a time-of-day). Appends NOT ENFORCED to the inline PRIMARY KEY and switches CREATE TABLE to CREATE OR REPLACE TABLE. Converts table DDL only, not sequences/triggers/PL-SQL; assumes the standard GET_DDL layout.",
+  "tags": [
+    "sql",
+    "oracle",
+    "bigquery",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-oracle-getddl-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "options": { "file": "strip-oracle-getddl-noise.mog" }
+    },
+    {
+      "section": "Types",
+      "description": "NUMBER(p,0) integer -> INT64 (BigQuery's 64-bit integer; covers NUMBER(1,0) flags too).",
+      "action": "replace_regex",
+      "options": { "find": "\\bNUMBER\\(\\d+,\\s*0\\)", "replace_with": "INT64", "ignore_case": true }
+    },
+    {
+      "description": "NUMBER(p,s) with a scale -> NUMERIC(p,s).",
+      "action": "replace_regex",
+      "options": { "find": "\\bNUMBER\\((\\d+,\\s*\\d+)\\)", "replace_with": "NUMERIC($1)", "ignore_case": true }
+    },
+    {
+      "description": "bare NUMBER -> NUMERIC.",
+      "action": "replace_regex",
+      "options": { "find": "\\bNUMBER\\b", "replace_with": "NUMERIC", "ignore_case": true }
+    },
+    {
+      "description": "VARCHAR2(n)/NVARCHAR2(n) -> STRING(n) (BigQuery STRING is Unicode; the length is valid parameterized-STRING syntax).",
+      "action": "replace_regex",
+      "options": { "find": "\\bN?VARCHAR2\\b", "replace_with": "STRING", "ignore_case": true }
+    },
+    {
+      "description": "CLOB/NCLOB/LONG (character LOB) -> STRING.",
+      "action": "replace_regex",
+      "options": { "find": "\\b(?:N?CLOB|LONG)\\b", "replace_with": "STRING", "ignore_case": true }
+    },
+    {
+      "description": "CHAR(n)/NCHAR(n) -> STRING(n) (run after the VARCHAR2 rules so it does not bite them).",
+      "action": "replace_regex",
+      "options": { "find": "\\bN?CHAR\\b", "replace_with": "STRING", "ignore_case": true }
+    },
+    {
+      "description": "LONG RAW / RAW(n) / BLOB (binary) -> BYTES.",
+      "action": "replace_regex",
+      "options": { "find": "\\b(?:LONG\\s+RAW|RAW|BLOB)\\b", "replace_with": "BYTES", "ignore_case": true }
+    },
+    {
+      "description": "BINARY_FLOAT / BINARY_DOUBLE / FLOAT -> FLOAT64.",
+      "action": "replace_regex",
+      "options": { "find": "\\b(?:BINARY_FLOAT|BINARY_DOUBLE|FLOAT)\\b", "replace_with": "FLOAT64", "ignore_case": true }
+    },
+    {
+      "description": "ROWID / UROWID -> STRING (no BigQuery physical-address type).",
+      "action": "replace_regex",
+      "options": { "find": "\\bU?ROWID\\b", "replace_with": "STRING", "ignore_case": true }
+    },
+    {
+      "description": "TIMESTAMP(n)? WITH [LOCAL] TIME ZONE (an instant) -> a sentinel, so the bare-TIMESTAMP rule below does not turn it into DATETIME. Resolved to BigQuery TIMESTAMP at the end.",
+      "action": "replace_regex",
+      "options": { "find": "\\bTIMESTAMP\\s*(?:\\(\\d+\\))?\\s+WITH(?:\\s+LOCAL)?\\s+TIME ZONE", "replace_with": "@@BQTS@@", "ignore_case": true }
+    },
+    {
+      "description": "Remaining TIMESTAMP(n) / bare TIMESTAMP (wall-clock) -> DATETIME (BigQuery DATETIME has no precision argument).",
+      "action": "replace_regex",
+      "options": { "find": "\\bTIMESTAMP\\s*(?:\\(\\d+\\))?", "replace_with": "DATETIME", "ignore_case": true }
+    },
+    {
+      "description": "Oracle DATE carries a time-of-day -> DATETIME (not DATE).",
+      "action": "replace_regex",
+      "options": { "find": "\\bDATE\\b", "replace_with": "DATETIME", "ignore_case": true }
+    },
+    {
+      "description": "Resolve the with-time-zone sentinel to BigQuery TIMESTAMP (an absolute instant).",
+      "action": "replace",
+      "options": { "find": "@@BQTS@@", "replace_with": "TIMESTAMP" }
+    },
+    {
+      "section": "Constraints",
+      "description": "BigQuery accepts only PRIMARY KEY ... NOT ENFORCED: append NOT ENFORCED to the inline key.",
+      "action": "replace_regex",
+      "options": { "find": "PRIMARY KEY \\(([^)]*)\\)", "replace_with": "PRIMARY KEY (${1}) NOT ENFORCED", "ignore_case": true }
+    },
+    {
+      "section": "Finalize",
+      "description": "BigQuery redeploy idiom: CREATE TABLE -> CREATE OR REPLACE TABLE (idempotent).",
+      "action": "replace",
+      "options": { "find": "CREATE TABLE ", "replace_with": "CREATE OR REPLACE TABLE ", "ignore_case": true }
+    }
+  ]
+}

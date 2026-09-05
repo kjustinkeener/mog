@@ -1,0 +1,9 @@
+{
+  "name": "ROT13",
+  "description": "Apply the classic ROT13 letter substitution to ASCII letters. Self-inverse: run it again to decode. Digits, punctuation, whitespace, and non-ASCII bytes pass through untouched.",
+  "summary": "Apply the ROT13 letter cipher (self-inverse)",
+  "tags": ["encode", "redact", "single-action"],
+  "steps": [
+    { "action": "rot13", "options": {} }
+  ]
+}

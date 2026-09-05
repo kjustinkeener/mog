@@ -1,0 +1,18 @@
+{
+  "name": "snake_case to PascalCase",
+  "summary": "Convert snake_case identifiers to PascalCase",
+  "description": "Recase each snake_case (or kebab-case) identifier to PascalCase (UpperCamelCase): every word is capitalized and separators are dropped. Best on a list or column of identifiers, one per line.",
+  "tags": [
+    "case",
+    "identifier",
+    "codemod",
+    "convert",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "to_pascal",
+      "description": "Recase each identifier to PascalCase"
+    }
+  ]
+}

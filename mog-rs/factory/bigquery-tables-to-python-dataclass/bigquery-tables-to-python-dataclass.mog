@@ -1,0 +1,462 @@
+{
+  "name": "BigQuery tables to Python dataclasses",
+  "summary": "Generate Python @dataclass classes from a BigQuery DDL export",
+  "description": "Generate Python standard-library @dataclass classes from a BigQuery DDL export (INFORMATION_SCHEMA.TABLES.ddl or 'bq show'), one class per table. Discards non-table statements (CREATE SCHEMA, views, ALTERs) and BigQuery's physical-layout trailers (PARTITION BY, CLUSTER BY, table and column OPTIONS). Column names stay snake_case (BigQuery's own convention, and the keys the client returns); only the class name is PascalCased. BigQuery types map to Python types (INT64 -> int, FLOAT64 -> float, NUMERIC/BIGNUMERIC -> Decimal, BOOL -> bool, STRING -> str, BYTES -> bytes, DATE -> date, TIME -> time, DATETIME/TIMESTAMP -> datetime, JSON -> dict[str, Any], STRUCT<...> -> dict[str, Any], ARRAY<T> -> list[T]). BigQuery columns are NULLABLE by default -- only an explicit NOT NULL makes a column required -- so the 'type | None' annotation is driven by the ABSENCE of NOT NULL; ARRAY columns are never null. Emits a fixed stdlib import header with 'from __future__ import annotations' so the module runs on Python 3.7+. Semi-structured and lossy types (JSON, STRUCT, BIGNUMERIC) are flagged with a # TODO(mog): comment. Assumes LF.",
+  "tags": [
+    "sql",
+    "bigquery",
+    "python",
+    "codegen",
+    "convert",
+    "migration"
+  ],
+  "steps": [
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop the export's leading '--' comment banners and per-table headers.",
+      "options": {
+        "find": "(?m)^--.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CREATE SCHEMA / CREATE DATASET statements.",
+      "options": {
+        "find": "(?im)^CREATE (?:SCHEMA|DATASET)\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop DROP TABLE / DROP VIEW statements.",
+      "options": {
+        "find": "(?im)^DROP (?:TABLE|VIEW)\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CREATE VIEW / MATERIALIZED VIEW statements (multi-line, to the first ';').",
+      "options": {
+        "find": "(?ims)^CREATE (?:OR REPLACE )?(?:MATERIALIZED )?VIEW\\b.*?;[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop ALTER TABLE statements (SET OPTIONS, ADD COLUMN, drops).",
+      "options": {
+        "find": "(?ims)^ALTER TABLE\\b.*?;[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop the table-level OPTIONS(...) trailer (description, labels, expiration).",
+      "options": {
+        "find": "(?ims)^OPTIONS\\(.*?\\);[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop PARTITION BY trailers (BigQuery physical layout, not part of the row type).",
+      "options": {
+        "find": "(?im)^PARTITION BY\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CLUSTER BY trailers (BigQuery physical layout, not part of the row type).",
+      "options": {
+        "find": "(?im)^CLUSTER BY\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Strip the backtick quoting BigQuery puts around table and column identifiers.",
+      "options": {
+        "find": "`",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Collapse the blank lines the removals left behind.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Class shell",
+      "action": "replace_regex",
+      "description": "Rewrite each 'CREATE OR REPLACE TABLE <project>.<dataset>.<tbl>' plus its own-line '(' into the type header.",
+      "options": {
+        "find": "(?m)^CREATE (?:OR REPLACE )?TABLE (?:IF NOT EXISTS )?(?:[\\w-]+\\.)*(\\w+)\\n\\($",
+        "replace_with": "@dataclass\nclass ${1}:"
+      }
+    },
+    {
+      "section": "Class shell",
+      "action": "replace_regex",
+      "description": "Rewrite each table-closing ')' (with or without a trailing ';') into the closing form.",
+      "options": {
+        "find": "(?m)^\\)[ \\t]*;?[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop per-column OPTIONS(...) clauses (column descriptions and policy tags).",
+      "options": {
+        "find": "(?im)\\s+OPTIONS\\([^)]*\\)(?=,?[ \\t]*$)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop DEFAULT clauses from column lines (literals, CURRENT_TIMESTAMP(), GENERATE_UUID()).",
+      "options": {
+        "find": "(?im)\\s+DEFAULT\\s+.+?(?=(?:\\s+NOT\\s+NULL)?,?\\s*$)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop trailing commas that separated columns.",
+      "options": {
+        "find": "(?m),[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "BigQuery ARRAY columns are never NULL (an absent value is the empty array), so mark them NOT NULL before the nullability pass.",
+      "options": {
+        "find": "(?m)^(    \\w+ ARRAY<[^\\n]*>)(?! NOT NULL)$",
+        "replace_with": "${1} NOT NULL"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Mark nullable columns with a sentinel: in BigQuery a column is NULLABLE unless it explicitly says NOT NULL, so nullability is driven by the ABSENCE of the constraint.",
+      "options": {
+        "find": "(?m)^(    \\w[^\\n]*?)(?<! NOT NULL)$",
+        "replace_with": "${1}@@N@@"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Remove the NOT NULL constraint marker from non-nullable columns.",
+      "options": {
+        "find": "(?m) NOT NULL$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery JSON columns: mapped to dict.",
+      "options": {
+        "pattern": "\\bJSON\\b",
+        "comment": "#",
+        "tag": "TODO",
+        "message": "BigQuery semi-structured column; typed as dict (assumes object payloads) -- use a TypedDict for field-level checking.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery STRUCT columns: mapped to dict.",
+      "options": {
+        "pattern": "\\bSTRUCT<",
+        "comment": "#",
+        "tag": "TODO",
+        "message": "BigQuery record type; flattened to dict -- declare a nested dataclass or TypedDict for typed field access.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery ARRAY columns: mapped to a Python list.",
+      "options": {
+        "pattern": "\\bARRAY<",
+        "comment": "#",
+        "tag": "TODO",
+        "message": "BigQuery repeated column; never null (an absent value is the empty list) -- verify the element mapping.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery BIGNUMERIC columns: mapped to Decimal.",
+      "options": {
+        "pattern": "\\bBIGNUMERIC\\b",
+        "comment": "#",
+        "tag": "TODO",
+        "message": "BigQuery 76-digit exact numbers exceed the default context precision of 28; raise getcontext().prec before arithmetic.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "STRUCT<...> -> dict (flagged above).",
+      "options": {
+        "find": "(?i)\\bSTRUCT<[^>]*>",
+        "replace_with": "dict"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "BIGNUMERIC(p,s) -> Decimal (flagged above).",
+      "options": {
+        "find": "(?i)\\bBIGNUMERIC\\(\\d+,\\s*\\d+\\)",
+        "replace_with": "Decimal"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare BIGNUMERIC -> Decimal (flagged above).",
+      "options": {
+        "find": "(?i)\\bBIGNUMERIC\\b",
+        "replace_with": "Decimal"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "NUMERIC(p,s) / DECIMAL(p,s) -> Decimal.",
+      "options": {
+        "find": "(?i)\\b(?:NUMERIC|DECIMAL)\\(\\d+,\\s*\\d+\\)",
+        "replace_with": "Decimal"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare NUMERIC / DECIMAL -> Decimal.",
+      "options": {
+        "find": "(?i)\\b(?:NUMERIC|DECIMAL)\\b",
+        "replace_with": "Decimal"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "INT64 / INT / INTEGER -> int.",
+      "options": {
+        "find": "(?i)\\b(?:INT64|INTEGER|INT)\\b",
+        "replace_with": "int"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "FLOAT64 / FLOAT -> float.",
+      "options": {
+        "find": "(?i)\\b(?:FLOAT64|FLOAT)\\b",
+        "replace_with": "float"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "BOOL / BOOLEAN -> bool.",
+      "options": {
+        "find": "(?i)\\b(?:BOOLEAN|BOOL)\\b",
+        "replace_with": "bool"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "STRING(n) -> str.",
+      "options": {
+        "find": "(?i)\\bSTRING\\(\\d+\\)",
+        "replace_with": "str"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare STRING -> str.",
+      "options": {
+        "find": "(?i)\\bSTRING\\b",
+        "replace_with": "str"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "BYTES(n) / BYTES -> bytes.",
+      "options": {
+        "find": "(?i)\\bBYTES(?:\\(\\d+\\))?",
+        "replace_with": "bytes"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "TIMESTAMP -> datetime.",
+      "options": {
+        "find": "(?i)\\bTIMESTAMP\\b",
+        "replace_with": "datetime"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "DATETIME -> datetime.",
+      "options": {
+        "find": "(?i)\\bDATETIME\\b",
+        "replace_with": "datetime"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "DATE -> date (datetime.date).",
+      "options": {
+        "find": "(?i)\\bDATE\\b",
+        "replace_with": "date"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "TIME -> time (datetime.time).",
+      "options": {
+        "find": "(?i)\\bTIME\\b",
+        "replace_with": "time"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "JSON -> dict (flagged above).",
+      "options": {
+        "find": "(?i)\\bJSON\\b",
+        "replace_with": "dict"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "ARRAY<T> -> list[T] (flagged above).",
+      "options": {
+        "find": "(?i)\\bARRAY<([^<>]+)>",
+        "replace_with": "list[${1}]"
+      }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Rewrite nullable columns into a dataclass field with a 'type | None' annotation.",
+      "options": {
+        "find": "(?m)^(    )(\\w+) (\\S+)@@N@@(.*)$",
+        "replace_with": "${1}${2}: ${3} | None${4}"
+      }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Rewrite non-nullable columns into a dataclass field with a plain annotation.",
+      "options": {
+        "find": "(?m)^(    )(\\w+) (\\S+)( # .*)?$",
+        "replace_with": "${1}${2}: ${3}${4}"
+      }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Safety: strip any leftover nullability sentinel.",
+      "options": {
+        "find": "@@N@@",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "PascalCase",
+      "action": "to_pascal",
+      "description": "PascalCase each class name (the table identifier); field names stay snake_case.",
+      "only_lines_matching": "^class ",
+      "scope": {
+        "field": {
+          "index": 2,
+          "delimiter": " "
+        }
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Collapse multiple blank lines to a single blank between declarations.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim leading blank lines.",
+      "options": {
+        "find": "\\A\\n+",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim trailing blank lines to a single final newline.",
+      "options": {
+        "find": "\\n\\s*\\z",
+        "replace_with": "\n"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Widen the bare dict annotation to dict[str, Any] so the output passes a strict type checker. Runs after nullability, and is anchored to the annotation so it never touches the word 'dict' inside a TODO comment.",
+      "options": {
+        "find": "(?m)^(    \\w+: )dict\\b",
+        "replace_with": "${1}dict[str, Any]"
+      }
+    },
+    {
+      "section": "Header",
+      "action": "replace_regex",
+      "description": "Prepend the fixed stdlib import header (last, so the type-map regexes never touch 'date'/'time'/'Decimal' in the imports).",
+      "options": {
+        "find": "\\A",
+        "replace_with": "from __future__ import annotations\nfrom dataclasses import dataclass\nfrom datetime import date, datetime, time\nfrom decimal import Decimal\nfrom typing import Any\n\n"
+      }
+    }
+  ]
+}

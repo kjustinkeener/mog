@@ -1,0 +1,26 @@
+{
+  "name": "Qualify SQL columns with a schema",
+  "description": "Rewrite a SELECT so every bare column is prefixed with the table it belongs to, using a schema you supply as a reference source. Point the 'schema' source at a CSV of 'table,column,type' rows with --source schema=<path> (an optional header row is skipped). Each unqualified column is matched against that schema and rewritten to table.column; a column that exists in two joined tables is genuinely ambiguous and is reported as an error rather than guessed. With 'expand_stars' on, SELECT * is expanded to the explicit, table-qualified column list. 'dialect' selects the SQL flavor for parsing and output. Parse-based via polyglot-sql; the whole input is one statement. This makes a query unambiguous and diff-friendly before it is checked in.",
+  "summary": "Prefix each SELECT column with its table using a schema",
+  "tags": [
+    "sql",
+    "qualify",
+    "schema",
+    "compare",
+    "single-action"
+  ],
+  "sources": {
+    "schema": "sql-qualify-columns.Schema.csv"
+  },
+  "steps": [
+    {
+      "action": "sql_qualify",
+      "description": "Prefix each column with its owning table; expand SELECT *",
+      "options": {
+        "ref": "schema",
+        "dialect": "postgres",
+        "expand_stars": true
+      }
+    }
+  ]
+}

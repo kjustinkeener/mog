@@ -1,0 +1,19 @@
+{
+  "name": "Lines to JSON array",
+  "description": "Turn a plain list (one item per line) into a single-line JSON array of strings: each line is escaped and quoted as a JSON string, the lines are joined with commas, and the whole thing is wrapped in [ ]. Blank lines are dropped first. Handy for pasting a list into a config or code as a JSON array.",
+  "summary": "Convert a list of lines to a JSON array",
+  "tags": [
+    "json",
+    "list",
+    "convert",
+    "encode"
+  ],
+  "steps": [
+    { "action": "remove_empty_lines", "description": "Drop blank lines" },
+    { "action": "escape_json", "description": "Escape + quote each line as a JSON string", "options": { "quote": true } },
+    { "action": "join_lines", "description": "Join into one line with commas", "options": { "separator": "," } },
+    { "action": "replace_regex", "description": "Drop the trailing newline so the bracket lands correctly", "options": { "find": "\\n", "replace_with": "" } },
+    { "action": "prepend", "description": "Open the array", "options": { "text": "[" } },
+    { "action": "append", "description": "Close the array", "options": { "text": "]" } }
+  ]
+}

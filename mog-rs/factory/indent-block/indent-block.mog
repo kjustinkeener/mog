@@ -1,0 +1,21 @@
+{
+  "name": "Indent every line",
+  "summary": "Add leading spaces to each line",
+  "description": "Add a fixed amount of leading indentation (default 4 spaces) to every line. Useful for nesting a block under a parent, or formatting a snippet for a Markdown code fence. The inverse of dedent-block.",
+  "tags": [
+    "whitespace",
+    "indent",
+    "format",
+    "prefix",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "indent",
+      "description": "Indent each line by 4 spaces",
+      "options": {
+        "spaces": 4
+      }
+    }
+  ]
+}

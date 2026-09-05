@@ -1,0 +1,16 @@
+{
+  "name": "EDI X12 to CSV (flat)",
+  "description": "Flatten an EDI X12 interchange into CSV: one row per segment, one column per element. Turns the ~ segment terminator into newlines, then re-delimits each segment from the * element separator to comma (quote-aware). Composite (>) separators are left inside their cells, so this is a flat dump, not a full transaction parse. Good for inspecting or loading an X12 file into a spreadsheet.",
+  "summary": "Flatten EDI X12 segments to CSV",
+  "tags": [
+    "edi",
+    "csv",
+    "convert",
+    "interchange"
+  ],
+  "steps": [
+    { "action": "replace", "description": "Segment terminator ~ -> newline", "options": { "find": "~", "replace_with": "\n" } },
+    { "action": "change_delimiter", "description": "Elements: * -> comma", "options": { "from": "*", "to": "," } },
+    { "action": "remove_empty_lines", "description": "Drop the trailing empty segment" }
+  ]
+}

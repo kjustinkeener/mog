@@ -1,0 +1,208 @@
+{
+  "name": "JUnit XML to CSV",
+  "description": "Turn a JUnit / xUnit test report (surefire, pytest --junitxml, Jest, Go gotestsum, CTest ...) into a CSV table with one row per test case and the columns suite,classname,name,time,status. status is derived from the case's child element -- <failure> is failed, <error> is error, <skipped> is skipped, and a case with none of them passed -- so a bare self-closing <testcase/> is correctly reported as a pass. Both report shapes are handled: a single <testsuite> root and a <testsuites> wrapper holding several suites (the suite name is carried down onto its own cases). Element and attribute text is XML-unescaped and the result is RFC 4180 CSV, so test names holding commas, quotes or ampersands survive intact. Scope: attributes are read off each <testcase> element, so a report is expected to keep name/classname/time as attributes (they are, in every generator above); <properties>, <system-out>, <system-err> and failure bodies are not exported, and any line that does not resolve to a suite or case row is flagged rather than dropped. Sort by status or time to get the failing or slow tests out of a CI artifact without opening it.",
+  "summary": "Convert a JUnit/xUnit XML report to a CSV of test cases",
+  "tags": [
+    "junit",
+    "xml",
+    "csv",
+    "convert",
+    "testing",
+    "ci"
+  ],
+  "steps": [
+    {
+      "section": "Put each element on one line",
+      "action": "replace_regex",
+      "description": "Fold the whole report onto a single line so no element is split across lines.",
+      "options": {
+        "find": "\\s*\\r?\\n\\s*",
+        "replace_with": " "
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Start a new line at every <testsuite> and <testcase> element.",
+      "options": {
+        "find": "<(testsuite|testcase)\\b",
+        "replace_with": "\n<${1} "
+      }
+    },
+    {
+      "action": "keep_lines_matching",
+      "description": "Keep only the suite and case lines (drops the XML declaration, <testsuites> and properties).",
+      "options": {
+        "pattern": "^<(testsuite|testcase)\\s"
+      }
+    },
+    {
+      "section": "Derive each case status from its child element",
+      "action": "replace_regex_multiline",
+      "description": "A case containing <failure> is failed.",
+      "options": {
+        "find": "(?m)^(?!.*@@ST@@)(<testcase .*<failure\\b.*)$",
+        "replace_with": "${1} @@ST@@failed"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "A case containing <error> is error.",
+      "options": {
+        "find": "(?m)^(?!.*@@ST@@)(<testcase .*<error\\b.*)$",
+        "replace_with": "${1} @@ST@@error"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "A case containing <skipped> is skipped.",
+      "options": {
+        "find": "(?m)^(?!.*@@ST@@)(<testcase .*<skipped\\b.*)$",
+        "replace_with": "${1} @@ST@@skipped"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Every remaining case passed.",
+      "options": {
+        "find": "(?m)^(?!.*@@ST@@)(<testcase .*)$",
+        "replace_with": "${1} @@ST@@passed"
+      }
+    },
+    {
+      "section": "Pick up the attributes",
+      "action": "replace_regex_multiline",
+      "description": "Capture each case's classname attribute.",
+      "options": {
+        "find": "(?m)^(<testcase [^\\n]*?\\bclassname=\"([^\"]*)\"[^\\n]*)$",
+        "replace_with": "${1} @@CN@@${2}@@"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Give a case with no classname an empty one.",
+      "options": {
+        "find": "(?m)^(<testcase (?:(?!@@CN@@)[^\\n])*)$",
+        "replace_with": "${1} @@CN@@@@"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Capture each case's name attribute.",
+      "options": {
+        "find": "(?m)^(<testcase [^\\n]*?\\bname=\"([^\"]*)\"[^\\n]*)$",
+        "replace_with": "${1} @@NM@@${2}@@"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Capture each case's time attribute.",
+      "options": {
+        "find": "(?m)^(<testcase [^\\n]*?\\btime=\"([^\"]*)\"[^\\n]*)$",
+        "replace_with": "${1} @@TM@@${2}@@"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Give a case with no time an empty one.",
+      "options": {
+        "find": "(?m)^(<testcase (?:(?!@@TM@@)[^\\n])*)$",
+        "replace_with": "${1} @@TM@@@@"
+      }
+    },
+    {
+      "section": "Build the rows",
+      "action": "replace_regex_multiline",
+      "description": "Rewrite each suite line as a suite-name row with the other columns blank.",
+      "options": {
+        "find": "(?m)^<testsuite [^\\n]*?\\bname=\"([^\"]*)\"[^\\n]*$",
+        "replace_with": "${1}\u001f@@SUITEROW@@\u001f\u001f\u001f"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Rewrite each case line as a row with a blank suite column.",
+      "options": {
+        "find": "(?m)^<testcase [^\\n]*@@ST@@(\\w+) @@CN@@(.*?)@@ @@NM@@(.*?)@@ @@TM@@(.*?)@@$",
+        "replace_with": "\u001f${2}\u001f${3}\u001f${4}\u001f${1}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Mark genuinely empty cells so the fill-down cannot invent a value for them.",
+      "options": {
+        "find": "(?m)(?<=\\x1f)(?=\\x1f|$)",
+        "replace_with": "@@E@@"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "Flag any line the shapes above did not turn into a row.",
+      "options": {
+        "pattern": "^<test",
+        "message": "element was not recognised as a suite or case row; check the report shape",
+        "comment": "#",
+        "tag": "WARN",
+        "position": "before"
+      }
+    },
+    {
+      "action": "fill_down",
+      "description": "Carry each suite name down onto its own cases.",
+      "options": {
+        "delimiter": "\u001f"
+      }
+    },
+    {
+      "action": "remove_lines_matching",
+      "description": "Drop the suite marker rows now that their names are carried down.",
+      "options": {
+        "pattern": "@@SUITEROW@@"
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Restore the marked empty cells.",
+      "options": {
+        "find": "@@E@@",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Emit the CSV table",
+      "action": "html_decode",
+      "description": "Decode the XML entities in the suite, class and test names.",
+      "options": {}
+    },
+    {
+      "action": "replace",
+      "description": "Double every embedded double quote.",
+      "options": {
+        "find": "\"",
+        "replace_with": "\"\""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Wrap any field holding a comma or a quote in double quotes.",
+      "options": {
+        "find": "(?m)(^|\\x1f)([^\\x1f\\n]*[\",][^\\x1f\\n]*)(?=\\x1f|$)",
+        "replace_with": "${1}\"${2}\""
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Swap each unit separator for a comma.",
+      "options": {
+        "find": "\u001f",
+        "replace_with": ","
+      }
+    },
+    {
+      "action": "prepend",
+      "description": "Add the CSV header row.",
+      "options": {
+        "text": "suite,classname,name,time,status\n"
+      }
+    }
+  ]
+}

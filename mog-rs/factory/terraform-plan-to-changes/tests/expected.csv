@@ -1,0 +1,7 @@
+action,address,type,name,provider
+replace,aws_iam_role.runner,aws_iam_role,runner,registry.terraform.io/hashicorp/aws
+replace,module.network.aws_subnet.private,aws_subnet,private,registry.terraform.io/hashicorp/aws
+delete,module.network.aws_nat_gateway.legacy,aws_nat_gateway,legacy,registry.terraform.io/hashicorp/aws
+update,aws_s3_bucket.assets,aws_s3_bucket,assets,registry.terraform.io/hashicorp/aws
+create,aws_s3_bucket.logs,aws_s3_bucket,logs,registry.terraform.io/hashicorp/aws
+no-op,random_pet.suffix,random_pet,suffix,registry.terraform.io/hashicorp/random

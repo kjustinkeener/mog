@@ -1,0 +1,22 @@
+{
+  "name": "Redact email addresses",
+  "description": "Replace every email address with [EMAIL] so a log, config, or message can be shared without exposing addresses. Matches the common local@domain.tld shape. For a broader PII sweep (keys, phone numbers, IPs too) use the redact-pii recipe.",
+  "summary": "Redact email addresses to [EMAIL]",
+  "tags": [
+    "redact",
+    "pii",
+    "email",
+    "privacy",
+    "security"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Replace email addresses with a placeholder",
+      "options": {
+        "find": "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
+        "replace_with": "[EMAIL]"
+      }
+    }
+  ]
+}

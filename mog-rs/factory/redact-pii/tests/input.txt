@@ -1,0 +1,5 @@
+Contact: jane.doe@example.com or 555-123-4567
+SSN 123-45-6789, card 4111 1111 1111 1234
+Server 192.168.1.10, key AKIAABCDEFGHIJKLMNOP
+stripe sk_live_abcdefghij1234567890
+Bob Smith called

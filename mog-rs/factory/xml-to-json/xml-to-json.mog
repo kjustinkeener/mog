@@ -1,0 +1,9 @@
+{
+  "name": "XML to JSON",
+  "description": "Parse XML into JSON (reading only). Attributes become @name keys, child elements become keys by tag (repeated tags become arrays), and text becomes #text (or the element's value when it has no attributes or children). Single-document XML.",
+  "summary": "Convert XML to JSON",
+  "tags": ["convert", "xml", "json", "data"],
+  "steps": [
+    { "description": "Convert the XML document to JSON.", "action": "xml_to_json" }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "JSON to JSONL",
+  "description": "Expand a JSON array into JSONL: one compact JSON object (or value) per line. A non-array document becomes a single line. Pairs with JSONL to JSON.",
+  "summary": "Convert a JSON array to JSONL, one object per line",
+  "tags": ["convert", "json", "jsonl"],
+  "steps": [
+    { "description": "Expand the JSON array into one value per line.", "action": "json_to_jsonl" }
+  ]
+}

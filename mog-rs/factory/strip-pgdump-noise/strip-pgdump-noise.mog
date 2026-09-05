@@ -1,0 +1,23 @@
+{
+  "name": "Strip pg_dump schema-only noise",
+  "summary": "Remove pg_dump plumbing, leaving the real CREATE/ALTER statements",
+  "description": "Strip the boilerplate that 'pg_dump --schema-only' wraps around the real schema, so a downstream dialect converter sees clean statements. Removes the dump banners, the psql \\restrict / \\unrestrict directives (pg_dump 16+), the SET / pg_catalog.set_config session block, the default_tablespace / access_method lines, and the '-- Name: ...; Type: ...; Owner:' object banners, then collapses the blank lines they leave. Keeps CREATE TABLE and ALTER TABLE. Target-agnostic; run it first. Assumes LF.",
+  "tags": ["sql", "postgres", "strip", "migration", "fragment"],
+  "steps": [
+    { "action": "eol_lf", "description": "Normalize to LF." },
+    { "action": "replace_regex", "description": "Drop the psql \\restrict / \\unrestrict directives (pg_dump 16+).",
+      "options": { "find": "(?m)^\\\\(?:un)?restrict\\b.*$", "replace_with": "" } },
+    { "action": "replace_regex", "description": "Drop the SET session block.",
+      "options": { "find": "(?m)^SET .*$", "replace_with": "" } },
+    { "action": "replace_regex", "description": "Drop the pg_catalog.set_config search_path line.",
+      "options": { "find": "(?m)^SELECT pg_catalog\\..*$", "replace_with": "" } },
+    { "action": "replace_regex", "description": "Drop the dump banner and dumped-by comments.",
+      "options": { "find": "(?m)^-- (?:PostgreSQL database dump|Dumped ).*$", "replace_with": "" } },
+    { "action": "replace_regex", "description": "Drop the object-banner comment lines.",
+      "options": { "find": "(?m)^-- Name: .*$", "replace_with": "" } },
+    { "action": "replace_regex", "description": "Drop the lone '--' separator lines.",
+      "options": { "find": "(?m)^--$", "replace_with": "" } },
+    { "action": "replace_regex", "description": "Collapse the blank lines left behind.",
+      "options": { "find": "\\n[ \\t]*(?:\\n[ \\t]*)+", "replace_with": "\n\n" } }
+  ]
+}

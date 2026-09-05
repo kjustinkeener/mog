@@ -1,0 +1,22 @@
+{
+  "name": "Make .env.example (blank the values)",
+  "description": "Produce a .env.example from a .env by blanking every value while keeping the keys, so you can commit a template without leaking secrets. Each KEY=value line becomes KEY=; comment (#) and blank lines pass through unchanged.",
+  "summary": "Make a .env.example by blanking values",
+  "tags": [
+    "env",
+    "dotenv",
+    "docs",
+    "secrets",
+    "config"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex_multiline",
+      "description": "Blank the value after the first = on each key line",
+      "options": {
+        "find": "^([A-Za-z_][A-Za-z0-9_]*=).*$",
+        "replace_with": "$1"
+      }
+    }
+  ]
+}

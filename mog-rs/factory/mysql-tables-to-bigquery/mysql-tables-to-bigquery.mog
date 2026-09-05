@@ -1,0 +1,40 @@
+{
+  "name": "MySQL to BigQuery (DDL/SQL)",
+  "description": "Rewrite MySQL SQL toward BigQuery. Both use backtick identifiers, so those pass through; AUTO_INCREMENT is dropped (BigQuery has no auto-increment) and type keywords change (INT/TINYINT/SMALLINT/BIGINT->INT64, VARCHAR/TEXT->STRING, DOUBLE->FLOAT64, DECIMAL->NUMERIC, DATETIME->DATETIME, TIMESTAMP->TIMESTAMP, BLOB->BYTES). Minimal-diff, NOT a semantic transpiler. Assumes LF text.",
+  "summary": "Convert MySQL SQL to BigQuery",
+  "tags": [
+    "sql",
+    "mysql",
+    "bigquery",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "steps": [
+    {
+      "section": "Auto-increment",
+      "action": "replace_regex",
+      "description": "Drop AUTO_INCREMENT (with its leading space)",
+      "options": { "find": "\\s+AUTO_INCREMENT", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "section": "Types",
+      "action": "replace_map",
+      "options": {
+        "ignore_case": true,
+        "whole_word": true,
+        "map": {
+          "BIGINT": "INT64",
+          "SMALLINT": "INT64",
+          "TINYINT": "INT64",
+          "INT": "INT64",
+          "VARCHAR": "STRING",
+          "TEXT": "STRING",
+          "DOUBLE": "FLOAT64",
+          "DECIMAL": "NUMERIC",
+          "BLOB": "BYTES"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Outdent one level",
+  "summary": "Remove up to N leading spaces from each line",
+  "description": "Remove up to a fixed number of leading spaces (default 4) from each line, stripping one indent level without touching deeper relative indentation. Lines with less leading space than the level are trimmed to the margin.",
+  "tags": [
+    "whitespace",
+    "indent",
+    "format",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "outdent",
+      "description": "Remove up to 4 leading spaces",
+      "options": {
+        "spaces": 4
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "name": "Em Dash Cleanup",
+  "description": "Replace em dashes (U+2014), horizontal bars (U+2015), and runs of them with plain ASCII punctuation, preserving spacing: a dash between words becomes a spaced hyphen ' - ', a dash opening a line becomes '- ', and a trailing dash at end of line is dropped along with the space before it. Use it to strip em dashes from prose, commit messages, and docs.",
+  "summary": "Replace em dashes with plain ASCII punctuation",
+  "tags": [
+    "text",
+    "cleanup",
+    "unicode",
+    "prose",
+    "punctuation"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Line-opening dash becomes a plain hyphen bullet",
+      "options": {
+        "find": "(?m)^[ \t]*[\u2014\u2015]+[ \t]*",
+        "replace_with": "- "
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Trailing dash at end of line is dropped with its leading space",
+      "options": {
+        "find": "(?m)[ \t]*[\u2014\u2015]+[ \t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Mid-line dash becomes a spaced hyphen",
+      "options": {
+        "find": "[ \t]*[\u2014\u2015]+[ \t]*",
+        "replace_with": " - "
+      }
+    }
+  ]
+}

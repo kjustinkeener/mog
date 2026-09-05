@@ -1,0 +1,16 @@
+{
+  "name": "Hard-wrap text to a width, quote-aware",
+  "description": "Reflow prose to a fixed column width (like fmt or a mail composer's format=flowed), keeping paragraphs separate. With prefix_aware on, a leading quote or comment marker (> , #, //, --) is detected on each paragraph and carried onto every wrapped line, so a long email reply quoted with '> ' re-wraps as '> ' lines instead of one run-on. Blank lines between paragraphs are preserved verbatim. Set width on the step (default 72 here); long unbreakable words are left intact unless break_long_words is enabled.",
+  "summary": "Reflow prose to a fixed width, keeping > quote prefixes",
+  "tags": [
+    "whitespace",
+    "wrap",
+    "reflow",
+    "email",
+    "markdown",
+    "single-action"
+  ],
+  "steps": [
+    { "action": "wrap_text", "description": "Wrap each paragraph to the width, carrying any quote/comment prefix", "options": { "width": 50, "prefix_aware": true } }
+  ]
+}

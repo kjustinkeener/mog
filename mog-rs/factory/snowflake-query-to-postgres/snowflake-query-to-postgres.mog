@@ -1,0 +1,16 @@
+{
+  "name": "Snowflake query to Postgres",
+  "summary": "Rewrite Snowflake SELECT function calls for PostgreSQL",
+  "description": "Rewrite the common Snowflake scalar-function differences targeting PostgreSQL, for simple (non-nested-argument) call shapes. Handles DATEADD(part, n, expr) -> (expr + INTERVAL 'n part') (Postgres requires the quoted interval literal) and NVL -> COALESCE; the :: cast passes through (Postgres supports it). DATEDIFF is flagged, not converted: Postgres has no part-aware DATEDIFF (for day diffs on dates use end - start, otherwise EXTRACT/AGE). Any DATEADD with nested-call arguments is also flagged with TODO(mog). Not a semantic transpiler.",
+  "tags": ["sql", "snowflake", "postgres", "query", "convert", "migration"],
+  "steps": [
+    { "section": "Date functions", "action": "replace_regex", "description": "DATEADD(part, n, col) -> (col + INTERVAL 'n part'). Postgres needs the quoted interval.",
+      "options": { "find": "(?i)DATEADD\\(\\s*(\\w+)\\s*,\\s*(-?\\d+)\\s*,\\s*(\\w+)\\s*\\)", "replace_with": "($3 + INTERVAL '$2 $1')" } },
+    { "section": "Null functions", "action": "replace_regex", "description": "NVL -> COALESCE.",
+      "options": { "find": "(?i)\\bNVL\\(", "replace_with": "COALESCE(" } },
+    { "section": "Review", "action": "flag_matching", "description": "Flag DATEDIFF (no part-aware Postgres equivalent).",
+      "options": { "pattern": "(?i)DATEDIFF\\(", "message": "Postgres has no part-aware DATEDIFF; for day diffs on dates use (end - start), else compute via EXTRACT / AGE", "comment": "--", "tag": "TODO", "position": "inline" } },
+    { "section": "Review", "action": "flag_matching", "description": "Flag any DATEADD left unconverted (nested arguments).",
+      "options": { "pattern": "DATEADD\\(", "message": "complex DATEADD (nested arguments) not auto-converted; rewrite by hand", "comment": "--", "tag": "TODO", "position": "inline" } }
+  ]
+}

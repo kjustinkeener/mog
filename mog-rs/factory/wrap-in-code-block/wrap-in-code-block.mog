@@ -1,0 +1,15 @@
+{
+  "name": "Wrap text in a Markdown code block",
+  "description": "Fence the whole input in a triple-backtick Markdown code block, so a command's output, a log, or a snippet can be pasted into Markdown as preformatted text. Edit the opening fence on the step to add a language (e.g. ```json) for syntax highlighting.",
+  "summary": "Wrap the whole input in a Markdown code block",
+  "tags": [
+    "markdown",
+    "codemod",
+    "format",
+    "docs"
+  ],
+  "steps": [
+    { "action": "prepend", "description": "Opening fence", "options": { "text": "```\n" } },
+    { "action": "append", "description": "Closing fence", "options": { "text": "```\n" } }
+  ]
+}

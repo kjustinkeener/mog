@@ -1,0 +1,4 @@
+GET /a OK
+GET /b Not Found
+GET /c 302
+GET /d Server Error

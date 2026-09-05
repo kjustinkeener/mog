@@ -1,0 +1,123 @@
+{
+  "name": "Redshift DDL to Databricks",
+  "summary": "Convert a Redshift v_generate_tbl_ddl export to Databricks/Spark DDL",
+  "description": "Convert Redshift v_generate_tbl_ddl output to Databricks/Spark SQL DDL: strips the Redshift plumbing and physical clauses (DISTSTYLE/DISTKEY/SORTKEY/ENCODE, flagged), unquotes identifiers, and maps types (VARCHAR(n)/CHAR(n)->STRING, NUMERIC->DECIMAL, TIMESTAMP WITHOUT/WITH TIME ZONE->TIMESTAMP, SUPER->STRING). Dropped physical clauses are flagged inline as TODO(mog).",
+  "tags": [
+    "sql",
+    "redshift",
+    "databricks",
+    "spark",
+    "convert",
+    "migration"
+  ],
+  "steps": [
+    {
+      "section": "Strip noise",
+      "action": "eol_lf"
+    },
+    {
+      "section": "Strip noise",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?m)^--(?:DROP TABLE|WARNING).*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Strip noise",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)^ALTER TABLE .* owner to .*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Physical",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i) ENCODE \\w+",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Physical",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)^DISTSTYLE \\w+.*$",
+        "replace_with": "-- TODO(mog): dropped Redshift DISTSTYLE"
+      }
+    },
+    {
+      "section": "Physical",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)^\\s*DISTKEY\\s*\\([^)]*\\).*$",
+        "replace_with": "-- TODO(mog): dropped Redshift DISTKEY"
+      }
+    },
+    {
+      "section": "Physical",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?is)\\s*SORTKEY\\s*\\(.*?\\)",
+        "replace_with": "\n-- TODO(mog): dropped Redshift SORTKEY"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bTIMESTAMP WITH(?:OUT)? TIME ZONE\\b",
+        "replace_with": "TIMESTAMP"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\b(?:VAR)?CHAR\\s*\\([^)]*\\)",
+        "replace_with": "STRING"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bNUMERIC\\b",
+        "replace_with": "DECIMAL"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bSUPER\\b",
+        "replace_with": "STRING"
+      }
+    },
+    {
+      "section": "Identifiers",
+      "action": "replace",
+      "options": {
+        "find": "\"public\".",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Identifiers",
+      "action": "replace",
+      "options": {
+        "find": "\"",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Finalize",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "Extract JSON from LLM output",
+  "description": "Pull the JSON out of a chatty model reply so it can be parsed deterministically: prefers a fenced ```json block, otherwise the first balanced { } / [ ] value, and re-indents it (validating it is real JSON). The agent-native post-processing step for structured model output.",
+  "summary": "Extract JSON from chatty LLM output",
+  "tags": [
+    "json",
+    "ai",
+    "extract"
+  ],
+  "steps": [
+    { "action": "extract_json", "description": "Extract and pretty-print the JSON", "options": { "pretty": true } }
+  ]
+}

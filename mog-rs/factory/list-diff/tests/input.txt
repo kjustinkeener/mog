@@ -1,0 +1,4 @@
+install dependencies
+run migrations
+warm cache
+start server

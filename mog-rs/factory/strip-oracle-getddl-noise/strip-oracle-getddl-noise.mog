@@ -1,0 +1,74 @@
+{
+  "name": "Strip Oracle DBMS_METADATA.GET_DDL noise",
+  "summary": "Remove Oracle GET_DDL quoting/schema/ENABLE/USING INDEX boilerplate",
+  "description": "Clean the output of Oracle DBMS_METADATA.GET_DDL (with storage/tablespace transforms already suppressed), so a downstream dialect converter sees a clean CREATE TABLE. Trims the leading whitespace, drops the schema qualifier and the double-quote identifier quoting, removes the ENABLE keyword and the CONSTRAINT USING INDEX clause, and normalizes 'TIMESTAMP (n)' spacing. Leaves the NUMBER/VARCHAR2/CLOB/DATE types for the target converter. Target-agnostic; run it first. Assumes LF.",
+  "tags": [
+    "sql",
+    "oracle",
+    "mssql",
+    "strip",
+    "migration",
+    "fragment"
+  ],
+  "steps": [
+    {
+      "action": "eol_lf"
+    },
+    {
+      "action": "replace_regex",
+      "description": "Trim leading whitespace/newlines.",
+      "options": {
+        "find": "(?s)\\A\\s+",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Drop the \"SCHEMA\". qualifier.",
+      "options": {
+        "find": "\"[A-Z][A-Z0-9_$]*\"\\.",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Unquote identifiers.",
+      "options": {
+        "find": "\"",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Remove ENABLE keyword.",
+      "options": {
+        "find": " ENABLE",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Remove the CONSTRAINT USING INDEX clause.",
+      "options": {
+        "find": "\\s*USING INDEX\\s*",
+        "replace_with": "\n  "
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Normalize TIMESTAMP (n) spacing.",
+      "options": {
+        "find": "TIMESTAMP (",
+        "replace_with": "TIMESTAMP("
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Collapse blank lines.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n"
+      }
+    }
+  ]
+}

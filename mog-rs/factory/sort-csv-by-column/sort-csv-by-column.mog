@@ -1,0 +1,9 @@
+{
+  "name": "Sort CSV rows by a column",
+  "description": "Sort lines by the Nth delimited field instead of by the whole line. Set the column with 'key_field' (1-based) and the delimiter with 'key_delimiter'; 'numeric' compares the key as a number. Here it sorts by the 2nd comma-separated column numerically. It does not treat a header row specially, so strip and re-add a header around this step if your data has one.",
+  "summary": "Sort CSV rows by a chosen column",
+  "tags": ["sort", "csv", "column", "single-action"],
+  "steps": [
+    { "action": "sort_lines", "options": { "key_field": 2, "key_delimiter": ",", "numeric": true } }
+  ]
+}

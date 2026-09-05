@@ -1,0 +1,270 @@
+{
+  "name": "ClickHouse SHOW CREATE TABLE to Snowflake",
+  "summary": "Convert a ClickHouse table export to Snowflake DDL",
+  "tags": [
+    "sql",
+    "clickhouse",
+    "snowflake",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "description": "Convert the output of ClickHouse 'SHOW CREATE TABLE' to runnable Snowflake DDL. (1) Rewrites CREATE TABLE to CREATE OR REPLACE TABLE and drops the ClickHouse database qualifier, (2) strips the engine/physical clauses (ENGINE, SETTINGS, CODEC) and flags the ones carrying intent (PARTITION BY, PRIMARY KEY, ORDER BY, SAMPLE BY, TTL) as TODO(mog), leaving an ORDER BY as a CLUSTER BY hint, (3) models nullability: bare columns become NOT NULL, Nullable(T) unwraps to nullable T, LowCardinality(T) unwraps to T, (4) maps scalar types (Int/UInt widths, Float, Decimal->NUMBER, String->VARCHAR, FixedString(n)->VARCHAR(n), UUID->VARCHAR(36), Date->DATE, DateTime/DateTime64->TIMESTAMP_NTZ or TIMESTAMP_TZ with precision dropped), and (5) collapses composite types (Array->ARRAY, Map->OBJECT, Tuple/Nested->VARIANT, Enum->VARCHAR) and flags each. Not a semantic transpiler. Assumes one table's SHOW CREATE TABLE output.",
+  "steps": [
+    {
+      "section": "Normalize",
+      "action": "eol_lf",
+      "description": "Normalize to LF so every anchored regex below is reliable; SQL scripts stay LF."
+    },
+    {
+      "section": "Statement",
+      "action": "replace",
+      "description": "Snowflake export idiom: CREATE TABLE -> CREATE OR REPLACE TABLE (idempotent reload).",
+      "options": { "find": "CREATE TABLE ", "replace_with": "CREATE OR REPLACE TABLE " }
+    },
+    {
+      "section": "Statement",
+      "action": "replace_regex",
+      "description": "Drop the ClickHouse database qualifier (e.g. default.tbl -> tbl); the table lands in the current Snowflake schema. A migration sets the target schema separately.",
+      "options": { "find": "(?m)^(CREATE OR REPLACE TABLE )[A-Za-z_][A-Za-z0-9_]*\\.", "replace_with": "${1}" }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "PARTITION BY carries physical layout intent but has no Snowflake equivalent (Snowflake manages micro-partitions). Flag it.",
+      "options": { "find": "(?m)^PARTITION BY (.+)$", "replace_with": "-- TODO(mog): dropped ClickHouse PARTITION BY ${1} (Snowflake manages micro-partitions automatically)" }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "ClickHouse PRIMARY KEY is a sparse sort index, not a uniqueness constraint. Flag it rather than emit a Snowflake PRIMARY KEY (which would change semantics).",
+      "options": { "find": "(?m)^PRIMARY KEY (.+)$", "replace_with": "-- TODO(mog): dropped ClickHouse PRIMARY KEY ${1} (ClickHouse PK is a sparse sort index, not an enforced constraint)" }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "ORDER BY is the ClickHouse sort/primary key. Flag it and suggest a Snowflake CLUSTER BY on the same columns as a starting point.",
+      "options": { "find": "(?m)^ORDER BY (.+)$", "replace_with": "-- TODO(mog): dropped ClickHouse ORDER BY ${1}; Snowflake auto-clusters, but consider CLUSTER BY ${1} if this table is large" }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "SAMPLE BY (sampling expression) has no Snowflake equivalent. Flag it.",
+      "options": { "find": "(?m)^SAMPLE BY (.+)$", "replace_with": "-- TODO(mog): dropped ClickHouse SAMPLE BY ${1} (no Snowflake equivalent; use TABLESAMPLE at query time)" }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "Table-level TTL (data expiry) is a ClickHouse retention feature. Flag it; model retention with a Snowflake task or lifecycle policy.",
+      "options": { "find": "(?m)^TTL (.+)$", "replace_with": "-- TODO(mog): dropped ClickHouse TTL ${1} (model retention with a Snowflake task/stream or lifecycle policy)" }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "SETTINGS is pure engine tuning (index_granularity, etc.). Flag-and-drop as internals.",
+      "options": { "find": "(?m)^SETTINGS (.+)$", "replace_with": "-- TODO(mog): dropped ClickHouse SETTINGS ${1} (engine internals; no Snowflake equivalent)" }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "Drop the ENGINE = <engine>(...) line entirely (MergeTree family / Log / etc. are storage internals with no Snowflake counterpart).",
+      "options": { "find": "(?m)^ENGINE = .+\\n?", "replace_with": "" }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "Drop per-column CODEC(...) compression hints (ClickHouse storage internals). Safe no-op when absent.",
+      "options": { "find": "\\s+CODEC\\([^()]*\\)", "replace_with": "" }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Model ClickHouse nullability: append NOT NULL to every column-definition line while the backtick markers still identify them. Nullable columns get it removed in the next step. The comma (if any) is preserved after NOT NULL.",
+      "options": { "find": "(?m)^(    `\\w+`.*?)(,?)$", "replace_with": "${1} NOT NULL${2}" }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Undo NOT NULL on Nullable(...) columns: Nullable means the column is nullable, which is Snowflake's default.",
+      "options": { "find": "(?m)^(    `\\w+`.*Nullable.*?) NOT NULL(,?)$", "replace_with": "${1}${2}" }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Unwrap Nullable(T) -> T (handles one nested-parens level, e.g. Nullable(Decimal(18, 2))). Snowflake columns are nullable unless marked NOT NULL.",
+      "options": { "find": "Nullable\\(([^()]*(?:\\([^()]*\\))?[^()]*)\\)", "replace_with": "${1}" }
+    },
+    {
+      "section": "Identifiers",
+      "action": "replace",
+      "description": "Unquote ClickHouse backtick identifiers (they are simple names; Snowflake folds unquoted names to upper-case, which is the idiomatic result).",
+      "options": { "find": "`", "replace_with": "" }
+    },
+    {
+      "section": "Types",
+      "action": "flag_matching",
+      "description": "Flag Enum columns before they are mapped away: Snowflake has no enum type, so the allowed-value constraint is lost.",
+      "options": {
+        "pattern": "\\bEnum(?:8|16)\\(",
+        "message": "ClickHouse enum mapped to VARCHAR; the allowed-value set is not enforced in Snowflake",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Unwrap LowCardinality(T) -> T (a ClickHouse storage optimization with no Snowflake analog).",
+      "options": { "find": "LowCardinality\\(([^()]*)\\)", "replace_with": "${1}" }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "FixedString(n) -> VARCHAR(n) (Snowflake has no fixed-width string; VARCHAR(n) caps the length).",
+      "options": { "find": "\\bFixedString\\((\\d+)\\)", "replace_with": "VARCHAR(${1})" }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Array(T) -> Snowflake ARRAY (untyped semi-structured; element type dropped).",
+      "options": { "find": "\\bArray\\([^()]*\\)", "replace_with": "ARRAY" }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Map(K, V) -> Snowflake OBJECT (untyped semi-structured; key/value types dropped).",
+      "options": { "find": "\\bMap\\([^()]*\\)", "replace_with": "OBJECT" }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Tuple(...) -> Snowflake VARIANT (positional structure flattened into semi-structured).",
+      "options": { "find": "\\bTuple\\([^()]*\\)", "replace_with": "VARIANT" }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Nested(...) -> Snowflake VARIANT (nested repeated structure flattened).",
+      "options": { "find": "\\bNested\\([^()]*\\)", "replace_with": "VARIANT" }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Enum8(...) / Enum16(...) -> VARCHAR (already flagged above).",
+      "options": { "find": "\\bEnum(?:8|16)\\([^)]*\\)", "replace_with": "VARCHAR" }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "DateTime64(n, 'tz') -> TIMESTAMP_TZ (timezone-aware). Precision is dropped (Snowflake caps at 9; fakesnow drops it on *TZ anyway). Run before the bare DateTime64.",
+      "options": { "find": "\\bDateTime64\\(\\s*\\d+\\s*,\\s*'[^']*'\\s*\\)", "replace_with": "TIMESTAMP_TZ" }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "DateTime64(n) -> TIMESTAMP_NTZ (wall-clock, no zone). Precision dropped.",
+      "options": { "find": "\\bDateTime64\\([^)]*\\)", "replace_with": "TIMESTAMP_NTZ" }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "DateTime('tz') -> TIMESTAMP_TZ. Run before the bare DateTime.",
+      "options": { "find": "\\bDateTime\\(\\s*'[^']*'\\s*\\)", "replace_with": "TIMESTAMP_TZ" }
+    },
+    {
+      "section": "Types",
+      "action": "replace",
+      "description": "bare DateTime -> TIMESTAMP_NTZ (whole word, so it never bites a DateTime64 already mapped or an identifier).",
+      "options": { "find": "DateTime", "replace_with": "TIMESTAMP_NTZ", "whole_word": true }
+    },
+    {
+      "section": "Types",
+      "action": "replace",
+      "description": "Date -> DATE (whole word). Runs after every DateTime* map so it never truncates one.",
+      "options": { "find": "Date", "replace_with": "DATE", "whole_word": true }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Decimal(p, s) -> NUMBER(p, s) (Snowflake's fixed-point type; ClickHouse keeps the same precision/scale).",
+      "options": { "find": "\\bDecimal\\(", "replace_with": "NUMBER(" }
+    },
+    {
+      "section": "Types",
+      "action": "replace_map",
+      "description": "Map ClickHouse scalar types to Snowflake. Widths: Int64->BIGINT, Int32->INTEGER, Int8/16->SMALLINT; unsigned promotes a width where the range needs it (UInt64->NUMBER(20,0)); wide 128/256 ints -> NUMBER(38,0). Float32/64 both -> FLOAT (Snowflake FLOAT is 64-bit). String->VARCHAR, UUID->VARCHAR(36) (Snowflake has no UUID type), Bool->BOOLEAN, IPv4/IPv6->VARCHAR.",
+      "options": {
+        "whole_word": true,
+        "map": {
+          "Int8": "SMALLINT",
+          "Int16": "SMALLINT",
+          "Int32": "INTEGER",
+          "Int64": "BIGINT",
+          "Int128": "NUMBER(38,0)",
+          "Int256": "NUMBER(38,0)",
+          "UInt8": "SMALLINT",
+          "UInt16": "INTEGER",
+          "UInt32": "BIGINT",
+          "UInt64": "NUMBER(20,0)",
+          "UInt128": "NUMBER(38,0)",
+          "UInt256": "NUMBER(38,0)",
+          "Float32": "FLOAT",
+          "Float64": "FLOAT",
+          "Bool": "BOOLEAN",
+          "Boolean": "BOOLEAN",
+          "String": "VARCHAR",
+          "UUID": "VARCHAR(36)",
+          "IPv4": "VARCHAR",
+          "IPv6": "VARCHAR"
+        }
+      }
+    },
+    {
+      "section": "Flag composites",
+      "action": "flag_matching",
+      "description": "Flag ARRAY columns: Snowflake ARRAY is untyped, so the ClickHouse element type was dropped.",
+      "options": {
+        "pattern": "\\bARRAY\\b",
+        "message": "Snowflake ARRAY is untyped; the ClickHouse element type was dropped (verify ingestion/casting)",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag composites",
+      "action": "flag_matching",
+      "description": "Flag OBJECT columns: Snowflake OBJECT is untyped, so the ClickHouse key/value types were dropped.",
+      "options": {
+        "pattern": "\\bOBJECT\\b",
+        "message": "Snowflake OBJECT is untyped; the ClickHouse Map key/value types were dropped",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag composites",
+      "action": "flag_matching",
+      "description": "Flag VARIANT columns: a ClickHouse Tuple/Nested was flattened into semi-structured VARIANT.",
+      "options": {
+        "pattern": "\\bVARIANT\\b",
+        "message": "ClickHouse Tuple/Nested flattened into Snowflake VARIANT; positional/nested field structure is not preserved",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Finalize",
+      "action": "trim_whitespace_right",
+      "description": "Remove any trailing whitespace left on a line."
+    },
+    {
+      "section": "Finalize",
+      "action": "squeeze_blank_lines",
+      "description": "Collapse runs of blank lines to a single blank line."
+    }
+  ]
+}

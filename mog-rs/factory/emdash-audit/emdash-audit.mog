@@ -1,0 +1,44 @@
+{
+  "name": "Em Dash Audit",
+  "description": "Report every dash that needs a human or model decision instead of changing it: each line holding an em dash, horizontal bar, en dash, or two-em dash gets a review marker naming the choice (comma, colon, parentheses, or a new sentence), and dashes that are purely mechanical (a line-opening dash or one trailing at end of line) are marked as handled by dash-cleanup. Preview with --diff or gate with --check; pair it with dash-cleanup, which does the mechanical rewrite.",
+  "summary": "Flag each dash for review instead of rewriting it",
+  "tags": [
+    "text",
+    "review",
+    "unicode",
+    "prose",
+    "audit"
+  ],
+  "steps": [
+    {
+      "action": "flag_matching",
+      "description": "Mid-sentence dash: needs a judgment call",
+      "options": {
+        "pattern": ".*\\S[ \\t]*[\u2014\u2015\u2e3a\u2e3b][ \\t]*\\S|.*\\S[ \\t]+\\u2013[ \\t]+\\S",
+        "message": "dash needs a call: comma, colon, parentheses, or a new sentence",
+        "comment": "#",
+        "tag": "FIXME"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "En dash between word characters is a range: mechanical",
+      "options": {
+        "pattern": "^(?!.*\\(mog\\):).*[0-9A-Za-z]\\u2013[0-9A-Za-z]",
+        "message": "range dash: dash-cleanup makes this a tight hyphen",
+        "comment": "#",
+        "tag": "NOTE"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "Line-opening or trailing dash: mechanical",
+      "options": {
+        "pattern": "^(?!.*\\(mog\\):)(?:[ \\t]*[\u2014\u2015\u2e3a\u2e3b\u2013]|.*[\u2014\u2015\u2e3a\u2e3b\u2013][ \\t]*$)",
+        "message": "mechanical dash: dash-cleanup rewrites this",
+        "comment": "#",
+        "tag": "NOTE"
+      }
+    }
+  ]
+}

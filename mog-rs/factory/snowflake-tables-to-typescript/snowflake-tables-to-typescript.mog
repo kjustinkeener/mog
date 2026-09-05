@@ -1,0 +1,494 @@
+{
+  "name": "Snowflake tables to TypeScript interfaces",
+  "summary": "Generate TypeScript interfaces from a Snowflake GET_DDL export",
+  "description": "Generate TypeScript 'export interface' declarations from a Snowflake table export (SELECT GET_DDL('TABLE', ...) or a Snowsight DDL copy), one interface per table, 2-space indented. Strips the Snowflake-only rendering (statement terminators, inline COMMENT 'x', the glued )COMMENT='x', cluster by, autoincrement, DEFAULT and table-level constraint lines), then rewrites each 'create or replace TABLE' into an interface. Snowflake identifiers are UPPER_SNAKE_CASE: the interface name is PascalCased and members are camelCased (alias your driver's column mapping to match). Snowflake types map to TypeScript types (NUMBER/DECIMAL/INT/FLOAT/DOUBLE/REAL -> number, BOOLEAN -> boolean, VARCHAR/STRING/TEXT/CHAR -> string, DATE/TIME/TIMESTAMP_NTZ/TIMESTAMP_TZ/TIMESTAMP_LTZ -> string as ISO-8601 text, BINARY/VARBINARY -> Uint8Array, VARIANT/OBJECT -> unknown, ARRAY -> unknown[]). Nullable columns get a '<type> | null' union rather than an optional '?' member. Lossy mappings are flagged inline with a // TODO(mog): comment: semi-structured VARIANT/OBJECT/ARRAY, NUMBER(p,0) wider than Number.MAX_SAFE_INTEGER, and NUMBER(p,s) fixed-point columns that a binary float cannot hold exactly. Assumes LF.",
+  "tags": [
+    "sql",
+    "snowflake",
+    "typescript",
+    "codegen",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-snowflake-getddl-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "description": "Remove the Snowflake GET_DDL rendering: statement terminators, inline column COMMENT 'x', the glued table )COMMENT='x', and the cluster by clause.",
+      "options": {
+        "file": "strip-snowflake-getddl-noise.mog"
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop the SQL comment lines the strip fragment leaves behind (the CLUSTER BY note).",
+      "options": {
+        "find": "(?m)^--[^\\n]*\\n?",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop table-level constraint lines (primary key, foreign key, unique, constraint).",
+      "options": {
+        "find": "(?mi)^[ \\t]*(?:primary key|foreign key|unique|constraint)\\b[^\\n]*\\n?",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Collapse the blank lines the removals left behind.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Convert the tab indent GET_DDL emits to four spaces, so column lines have a fixed shape.",
+      "options": {
+        "find": "(?m)^\\t",
+        "replace_with": "    "
+      }
+    },
+    {
+      "section": "Interface shell",
+      "action": "replace_regex",
+      "description": "Rewrite each 'create or replace TABLE <tbl> (' header.",
+      "options": {
+        "find": "(?mi)^create or replace (?:transient |temporary |volatile )?table (?:\\w+\\.)*(\\w+) \\($",
+        "replace_with": "export interface ${1} {"
+      }
+    },
+    {
+      "section": "Interface shell",
+      "action": "replace_regex",
+      "description": "Rewrite each table-closing ')' into a closing brace.",
+      "options": {
+        "find": "(?m)^\\)$",
+        "replace_with": "}"
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop the Snowflake autoincrement / identity clause.",
+      "options": {
+        "find": "(?i)\\s+(?:autoincrement|identity)(?:\\s+start\\s+-?\\d+\\s+increment\\s+-?\\d+)?(?:\\s+(?:no)?order)?",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop COLLATE clauses.",
+      "options": {
+        "find": "(?i)\\s+COLLATE\\s+'[^']*'",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop DEFAULT clauses (sequences, CURRENT_TIMESTAMP(), literals).",
+      "options": {
+        "find": "(?im)\\s+DEFAULT\\s+.+?(?=(?:\\s+NOT\\s+NULL)?,?\\s*$)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop trailing commas that separated columns.",
+      "options": {
+        "find": "(?m),[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Mark nullable columns (any column line NOT ending in NOT NULL) with a sentinel.",
+      "options": {
+        "find": "(?m)^(    \\w[^\\n]*?)(?<! NOT NULL)$",
+        "replace_with": "${1}@@N@@"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Remove the NOT NULL constraint marker from non-nullable columns.",
+      "options": {
+        "find": "(?m) NOT NULL$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag semi-structured VARIANT / OBJECT columns: mapped to unknown.",
+      "options": {
+        "pattern": "\\b(?:VARIANT|OBJECT)\\b",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "Snowflake semi-structured column; narrow the loose mapping with a type guard or a schema validator.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag ARRAY columns: Snowflake arrays are untyped.",
+      "options": {
+        "pattern": "\\bARRAY\\b",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "Snowflake list column has no declared element type; set the element type yourself.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag wide integers (NUMBER(p,0) with p >= 16): beyond Number.MAX_SAFE_INTEGER.",
+      "options": {
+        "pattern": "\\bNUMBER\\((?:1[6-9]|2\\d|3\\d)\\s*,\\s*0\\)",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "Snowflake column can exceed JavaScript's safe range of 2^53; carry wide values losslessly.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag fixed-point columns (NUMBER(p,s) with s > 0): number is a binary float.",
+      "options": {
+        "pattern": "\\bNUMBER\\(\\d+\\s*,\\s*[1-9]\\d*\\)",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "Snowflake fixed-point column; JavaScript cannot hold every scale exactly -- use an exact-arithmetic library.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "TIMESTAMP_NTZ / DATETIME (wall-clock, no zone) -> string.",
+      "options": {
+        "find": "(?i)\\b(?:TIMESTAMP_NTZ|DATETIME)(?:\\(\\d+\\))?",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "TIMESTAMP_TZ / TIMESTAMP_LTZ (zone-aware) -> string.",
+      "options": {
+        "find": "(?i)\\bTIMESTAMP_(?:L?TZ)(?:\\(\\d+\\))?",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "Bare TIMESTAMP (the session default, normally NTZ) -> string.",
+      "options": {
+        "find": "(?i)\\bTIMESTAMP(?:\\(\\d+\\))?",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "TIME -> string.",
+      "options": {
+        "find": "(?i)\\bTIME(?:\\(\\d+\\))?",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "DATE -> string (ISO-8601 text).",
+      "options": {
+        "find": "(?i)\\bDATE\\b",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "NUMBER(p,s) / DECIMAL(p,s) with s > 0 -> number (via sentinel).",
+      "options": {
+        "find": "(?i)\\b(?:NUMBER|DECIMAL|NUMERIC)\\(\\d+\\s*,\\s*[1-9]\\d*\\)",
+        "replace_with": "@@NUMS@@"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "NUMBER(p,0) with p <= 9 -> number (via sentinel).",
+      "options": {
+        "find": "(?i)\\b(?:NUMBER|DECIMAL|NUMERIC)\\([1-9]\\s*,\\s*0\\)",
+        "replace_with": "@@NUMI@@"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "NUMBER(p,0) with p between 10 and 18 -> number (via sentinel).",
+      "options": {
+        "find": "(?i)\\b(?:NUMBER|DECIMAL|NUMERIC)\\(1[0-8]\\s*,\\s*0\\)",
+        "replace_with": "@@NUMM@@"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "NUMBER(p,0) with p >= 19, including Snowflake's NUMBER(38,0) default -> number (via sentinel).",
+      "options": {
+        "find": "(?i)\\b(?:NUMBER|DECIMAL|NUMERIC)\\(\\d+\\s*,\\s*0\\)",
+        "replace_with": "@@NUMB@@"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "NUMBER(p) with no scale -> number (via sentinel).",
+      "options": {
+        "find": "(?i)\\b(?:NUMBER|DECIMAL|NUMERIC)\\(\\d+\\)",
+        "replace_with": "@@NUMB@@"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "Bare NUMBER / DECIMAL / NUMERIC (defaults to NUMBER(38,0)) -> number (via sentinel).",
+      "options": {
+        "find": "(?i)\\b(?:NUMBER|DECIMAL|NUMERIC)\\b",
+        "replace_with": "@@NUMB@@"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "BIGINT / INT / INTEGER (all aliases of NUMBER(38,0) in Snowflake) -> number (via sentinel).",
+      "options": {
+        "find": "(?i)\\b(?:BIGINT|INTEGER|INT)\\b",
+        "replace_with": "@@NUMB@@"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "SMALLINT / TINYINT / BYTEINT (also NUMBER(38,0) in Snowflake) -> number (via sentinel).",
+      "options": {
+        "find": "(?i)\\b(?:SMALLINT|TINYINT|BYTEINT)\\b",
+        "replace_with": "@@NUMB@@"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "FLOAT / FLOAT4 / FLOAT8 / DOUBLE PRECISION / DOUBLE / REAL -> number.",
+      "options": {
+        "find": "(?i)\\b(?:DOUBLE PRECISION|FLOAT8|FLOAT4|FLOAT|DOUBLE|REAL)\\b",
+        "replace_with": "number"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "BOOLEAN -> boolean.",
+      "options": {
+        "find": "(?i)\\bBOOLEAN\\b",
+        "replace_with": "boolean"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "VARCHAR(n) / CHAR(n) / CHARACTER(n) -> string.",
+      "options": {
+        "find": "(?i)\\b(?:VARCHAR|CHARACTER VARYING|CHARACTER|NVARCHAR2|NVARCHAR|CHAR)\\(\\d+\\)",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "Bare VARCHAR / STRING / TEXT / CHAR -> string.",
+      "options": {
+        "find": "(?i)\\b(?:VARCHAR|CHARACTER VARYING|CHARACTER|STRING|TEXT|CHAR)\\b",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "VARIANT -> unknown (flagged above).",
+      "options": {
+        "find": "(?i)\\bVARIANT\\b",
+        "replace_with": "unknown"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "OBJECT -> unknown (flagged above).",
+      "options": {
+        "find": "(?i)\\bOBJECT\\b",
+        "replace_with": "unknown"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "ARRAY -> unknown[] (flagged above).",
+      "options": {
+        "find": "(?i)\\bARRAY\\b",
+        "replace_with": "unknown[]"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "GEOGRAPHY / GEOMETRY -> string (carry the GeoJSON/WKT text through).",
+      "options": {
+        "find": "(?i)\\b(?:GEOGRAPHY|GEOMETRY)\\b",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "BINARY(n) / VARBINARY -> Uint8Array (last, so it cannot be re-matched by an earlier rule).",
+      "options": {
+        "find": "(?i)\\b(?:VARBINARY|BINARY)(?:\\(\\d+\\))?",
+        "replace_with": "Uint8Array"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "Resolve the fixed-point sentinel to number.",
+      "options": {
+        "find": "@@NUMS@@",
+        "replace_with": "number"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "Resolve the small-integer sentinel to number.",
+      "options": {
+        "find": "@@NUMI@@",
+        "replace_with": "number"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "Resolve the mid-integer sentinel to number.",
+      "options": {
+        "find": "@@NUMM@@",
+        "replace_with": "number"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "Resolve the wide-integer sentinel to number.",
+      "options": {
+        "find": "@@NUMB@@",
+        "replace_with": "number"
+      }
+    },
+    {
+      "section": "Members",
+      "action": "replace_regex",
+      "description": "Rewrite nullable columns into a TypeScript member with a '| null' union (2-space indent).",
+      "options": {
+        "find": "(?m)^(    )(\\w+) (\\S+)@@N@@(.*)$",
+        "replace_with": "  ${2}: ${3} | null;${4}"
+      }
+    },
+    {
+      "section": "Members",
+      "action": "replace_regex",
+      "description": "Rewrite non-nullable columns into a TypeScript member (2-space indent).",
+      "options": {
+        "find": "(?m)^    (\\w+) (\\S+)( // .*)?$",
+        "replace_with": "  ${1}: ${2};${3}"
+      }
+    },
+    {
+      "section": "Members",
+      "action": "replace_regex",
+      "description": "Safety: strip any leftover nullability sentinel.",
+      "options": {
+        "find": "@@N@@",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Naming",
+      "action": "to_pascal",
+      "description": "PascalCase each interface name (the Snowflake table identifier).",
+      "only_lines_matching": "^export interface ",
+      "scope": {
+        "field": {
+          "index": 3,
+          "delimiter": " "
+        }
+      }
+    },
+    {
+      "section": "Naming",
+      "action": "to_camel",
+      "description": "camelCase each member name; Snowflake returns UPPER_SNAKE_CASE identifiers.",
+      "only_lines_matching": "^  \\w",
+      "scope": {
+        "field": {
+          "index": 3,
+          "delimiter": " "
+        }
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Collapse multiple blank lines to a single blank between interfaces.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim leading blank lines.",
+      "options": {
+        "find": "\\A\\n+",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim trailing blank lines to a single final newline.",
+      "options": {
+        "find": "\\n\\s*\\z",
+        "replace_with": "\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Demote Markdown headings one level",
+  "description": "Add one # to every ATX heading, so H1 becomes H2, H2 becomes H3, and so on (H6 is left as-is, since it is the deepest level Markdown allows). Handy when nesting a whole document beneath a new top-level heading. Only lines that start with # are affected; code fences and text are left alone.",
+  "summary": "Demote Markdown headings one level (H1 to H2)",
+  "tags": [
+    "markdown",
+    "docs",
+    "convert"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex_multiline",
+      "description": "Prepend a # to heading lines up to H5",
+      "options": {
+        "find": "^(#{1,5} )",
+        "replace_with": "#$1"
+      }
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+Error: boom
+    at foo (/app/src/index.js:LINE:COL)
+    at bar (/app/src/index.js:LINE:COL)
+    handle at 0xADDR

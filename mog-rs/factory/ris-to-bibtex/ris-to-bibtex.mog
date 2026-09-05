@@ -1,0 +1,29 @@
+{
+  "name": "RIS to BibTeX",
+  "description": "Convert RIS reference records (from EndNote / Zotero / PubMed) to BibTeX. Maps the RIS TY type to a BibTeX entry type (JOUR->article, BOOK->book, CPAPER->inproceedings, GEN->misc) and RIS tags to BibTeX fields (AU->author, TI->title, JO->journal, T2->booktitle, PY->year, VL->volume, IS->number, SP->pages, PB->publisher, DO->doi, UR->url). Each entry gets a numbered placeholder cite key (ref1, ref2, ...); rename them to taste. The inverse of bibtex-to-ris. Multiple authors on separate AU lines each become their own author line.",
+  "summary": "Convert RIS references to BibTeX",
+  "tags": [
+    "citation",
+    "convert",
+    "interchange"
+  ],
+  "steps": [
+    {"section":"Entry type -> @type","action":"replace_regex_multiline","description":"JOUR -> article","options":{"find":"^TY  - JOUR.*$","replace_with":"@article{ref@@SEQ@@,"}},
+    {"action":"replace_regex_multiline","description":"BOOK -> book","options":{"find":"^TY  - BOOK.*$","replace_with":"@book{ref@@SEQ@@,"}},
+    {"action":"replace_regex_multiline","description":"CPAPER -> inproceedings","options":{"find":"^TY  - CPAPER.*$","replace_with":"@inproceedings{ref@@SEQ@@,"}},
+    {"action":"replace_regex_multiline","description":"GEN -> misc","options":{"find":"^TY  - GEN.*$","replace_with":"@misc{ref@@SEQ@@,"}},
+    {"section":"Tags -> fields","action":"replace_regex_multiline","description":"author","options":{"find":"^AU  - (.*)$","replace_with":"  author = {$1},"}},
+    {"action":"replace_regex_multiline","description":"title","options":{"find":"^TI  - (.*)$","replace_with":"  title = {$1},"}},
+    {"action":"replace_regex_multiline","description":"journal","options":{"find":"^JO  - (.*)$","replace_with":"  journal = {$1},"}},
+    {"action":"replace_regex_multiline","description":"booktitle","options":{"find":"^T2  - (.*)$","replace_with":"  booktitle = {$1},"}},
+    {"action":"replace_regex_multiline","description":"year","options":{"find":"^PY  - (.*)$","replace_with":"  year = {$1},"}},
+    {"action":"replace_regex_multiline","description":"volume","options":{"find":"^VL  - (.*)$","replace_with":"  volume = {$1},"}},
+    {"action":"replace_regex_multiline","description":"number","options":{"find":"^IS  - (.*)$","replace_with":"  number = {$1},"}},
+    {"action":"replace_regex_multiline","description":"pages","options":{"find":"^SP  - (.*)$","replace_with":"  pages = {$1},"}},
+    {"action":"replace_regex_multiline","description":"publisher","options":{"find":"^PB  - (.*)$","replace_with":"  publisher = {$1},"}},
+    {"action":"replace_regex_multiline","description":"doi","options":{"find":"^DO  - (.*)$","replace_with":"  doi = {$1},"}},
+    {"action":"replace_regex_multiline","description":"url","options":{"find":"^UR  - (.*)$","replace_with":"  url = {$1},"}},
+    {"section":"End of record","action":"replace_regex_multiline","description":"ER -> closing brace","options":{"find":"^ER  -.*$","replace_with":"}"}},
+    {"action":"stamp_sequence","description":"Number the placeholder cite keys","options":{"find":"@@SEQ@@","start":1}}
+  ]
+}

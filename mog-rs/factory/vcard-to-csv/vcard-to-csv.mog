@@ -1,0 +1,39 @@
+{
+  "name": "vCard contacts to CSV",
+  "description": "Flatten simple vCard (.vcf) contact cards into a CSV table, one row per contact. Drops the BEGIN:VCARD and VERSION lines, treats each END:VCARD as a record boundary, then pivots the remaining FIELD:value lines into columns (union of field names, first-seen order). Mechanical: fields with structured parameters (e.g. TEL;TYPE=CELL:...) keep the parameter in the column name, so best on plain cards.",
+  "summary": "Flatten vCard contacts to a CSV table",
+  "tags": [
+    "contacts",
+    "csv",
+    "convert",
+    "interchange"
+  ],
+  "steps": [
+    {
+      "section": "Unwrap",
+      "action": "remove_lines_matching",
+      "description": "Drop the BEGIN:VCARD and VERSION metadata lines",
+      "options": {
+        "pattern": "^(BEGIN:VCARD|VERSION:.*)$"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Turn each END:VCARD into a blank line (a record boundary)",
+      "options": {
+        "find": "^END:VCARD$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Tabulate",
+      "action": "records_to_columns",
+      "description": "Pivot FIELD:value stanzas into a CSV table",
+      "options": {
+        "separator": ":",
+        "delimiter": ",",
+        "header": true
+      }
+    }
+  ]
+}

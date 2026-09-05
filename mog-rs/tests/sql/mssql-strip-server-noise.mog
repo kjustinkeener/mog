@@ -1,0 +1,70 @@
+{
+  "name": "Strip SQL Server script noise",
+  "description": "Remove the server/session/DROP scaffolding that SSMS 'Generate Scripts' emits around real object DDL: object banners, SET options, CREATE/DROP DATABASE, ALTER DATABASE settings, the guarded DROP phase, ALTER TABLE DROP/CHECK CONSTRAINT lines, and extended properties. Leaves CREATE/ALTER-ADD DDL untouched. Composable: run this first (via run_mog) from any MSSQL->target converter. Operates on the raw SSMS text (brackets intact); each rule eats a whole GO batch, so it must run before GO is rewritten to ';'.",
+  "steps": [
+    {
+      "description": "Normalize to LF so every GO-batch anchor below is reliable.",
+      "action": "eol_lf"
+    },
+    {
+      "description": "Drop SSMS object banner comment lines: /****** Object: ... Script Date: ... ******/.",
+      "action": "replace_regex",
+      "options": { "find": "/\\*+ Object:[^\\n]*\\*+/\\n", "replace_with": "" }
+    },
+    {
+      "description": "Remove SET ANSI_NULLS batches.",
+      "action": "replace_regex",
+      "options": { "find": "SET ANSI_NULLS (ON|OFF)\\nGO\\n", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Remove SET QUOTED_IDENTIFIER batches.",
+      "action": "replace_regex",
+      "options": { "find": "SET QUOTED_IDENTIFIER (ON|OFF)\\nGO\\n", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Remove SET ANSI_PADDING batches (SSMS emits these around indexes).",
+      "action": "replace_regex",
+      "options": { "find": "SET ANSI_PADDING (ON|OFF)\\nGO\\n", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Remove the CREATE DATABASE batch (no Postgres equivalent; you create/connect separately).",
+      "action": "replace_regex",
+      "options": { "find": "CREATE DATABASE [\\s\\S]*?\\nGO\\n", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Remove every ALTER DATABASE ... SET ... batch (compat level, ANSI options, query store, filestream, ...).",
+      "action": "replace_regex",
+      "options": { "find": "ALTER DATABASE [\\s\\S]*?\\nGO\\n", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Remove EXEC sys.sp_db_vardecimal_storage_format.",
+      "action": "replace_regex",
+      "options": { "find": "EXEC sys\\.sp_db_vardecimal_storage_format[\\s\\S]*?\\nGO\\n", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Remove guarded drops: IF EXISTS (SELECT ... sys.objects ...) DROP <object>. SSMS emits 'IF  EXISTS' with variable spacing.",
+      "action": "replace_regex",
+      "options": { "find": "IF\\s+EXISTS\\s*\\(SELECT[\\s\\S]*?\\nGO\\n", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Remove plain DROP <object> batches (database/table/view/proc/function/sequence/synonym/schema/index).",
+      "action": "replace_regex",
+      "options": { "find": "DROP (DATABASE|TABLE|VIEW|PROCEDURE|FUNCTION|SEQUENCE|SYNONYM|SCHEMA|INDEX) [^\\n]*\\nGO\\n", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Remove ALTER TABLE ... DROP CONSTRAINT batches (drop-phase constraint teardown).",
+      "action": "replace_regex",
+      "options": { "find": "ALTER TABLE [^\\n]*DROP CONSTRAINT[^\\n]*\\nGO\\n", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Remove SSMS constraint re-enable lines: ALTER TABLE x CHECK CONSTRAINT y (no Postgres equivalent). Note the single space around CHECK, so this never matches 'WITH CHECK ADD CONSTRAINT'.",
+      "action": "replace_regex",
+      "options": { "find": "ALTER TABLE [^\\n]* CHECK CONSTRAINT [^\\n]*\\nGO\\n", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Remove extended-property calls (sp_addextendedproperty / sp_dropextendedproperty).",
+      "action": "replace_regex",
+      "options": { "find": "EXEC sys\\.sp_(add|drop)extendedproperty[\\s\\S]*?\\nGO\\n", "replace_with": "", "ignore_case": true }
+    }
+  ]
+}

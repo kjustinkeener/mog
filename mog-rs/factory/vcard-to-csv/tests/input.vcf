@@ -1,0 +1,11 @@
+BEGIN:VCARD
+VERSION:3.0
+FN:Ada Lovelace
+EMAIL:ada@example.com
+TEL:555-0100
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Bob Stone
+EMAIL:bob@example.com
+END:VCARD

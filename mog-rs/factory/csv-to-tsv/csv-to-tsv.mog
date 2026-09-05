@@ -1,0 +1,22 @@
+{
+  "name": "CSV to TSV",
+  "description": "Convert comma-separated values to tab-separated values, quote-aware: a field that contained the comma delimiter is unwrapped (tabs rarely need quoting), so \"a,b\" becomes a single a,b cell joined by tabs. The inverse of tsv-to-csv. Single-line fields only (an embedded newline inside a quoted field is not supported).",
+  "summary": "Convert CSV to tab-separated values",
+  "tags": [
+    "csv",
+    "tsv",
+    "convert",
+    "data",
+    "fragment"
+  ],
+  "steps": [
+    {
+      "action": "change_delimiter",
+      "description": "Re-delimit each line from comma to tab",
+      "options": {
+        "from": ",",
+        "to": "\t"
+      }
+    }
+  ]
+}

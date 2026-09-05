@@ -1,0 +1,25 @@
+{
+  "name": "New lines only (subtract a baseline)",
+  "description": "Keep only the input lines that are NOT already in a baseline list, so you see just what is new. Point the 'baseline' source at the previous snapshot (a known-good allowlist, yesterday's dependency list, an already-triaged error set) with --source baseline=<path>; each surviving line is one the baseline did not contain. Lines are trimmed before comparing, and input order and duplicates are preserved.",
+  "summary": "Keep only lines not in a baseline list",
+  "tags": [
+    "compare",
+    "diff",
+    "audit",
+    "dedupe",
+    "filter"
+  ],
+  "sources": {
+    "baseline": "new-lines-only.Baseline.txt"
+  },
+  "steps": [
+    {
+      "action": "subtract",
+      "description": "Drop every line present in the baseline list; keep the rest",
+      "options": {
+        "ref": "baseline",
+        "trim": true
+      }
+    }
+  ]
+}

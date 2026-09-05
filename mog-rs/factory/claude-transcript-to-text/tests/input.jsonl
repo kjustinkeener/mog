@@ -1,0 +1,7 @@
+{"type":"custom-title","title":"Session"}
+{"type":"user","message":{"role":"user","content":"What is 2+2?"}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"thinking","thinking":"add them"},{"type":"text","text":"It is 4."}]}}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","content":"noise"}]}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","name":"calc"}]}}
+{"type":"system","subtype":"meta"}
+{"type":"user","message":{"role":"user","content":"Thanks!"}}

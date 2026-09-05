@@ -1,0 +1,3 @@
+dn,uid,cn,mail
+"uid=alice,ou=people,dc=example,dc=com",alice,Alice Smith,alice@example.com
+"uid=bob,ou=people,dc=example,dc=com",bob,Bob Jones,bob@example.com

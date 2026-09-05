@@ -1,0 +1,18 @@
+{
+  "name": "Markdown table to YAML",
+  "description": "Convert a GitHub-flavored Markdown table into a YAML list of mappings, one entry per row keyed by the header cells. Values are kept as strings.",
+  "summary": "Convert a Markdown table to a YAML list",
+  "tags": [
+    "markdown",
+    "table",
+    "yaml",
+    "convert",
+    "docs",
+    "data"
+  ],
+  "steps": [
+    { "action": "markdown_table_to_csv", "description": "Parse the table into CSV" },
+    { "action": "csv_to_json", "description": "Rows to a JSON array of objects", "options": { "array": true } },
+    { "action": "json_to_yaml", "description": "Serialize as YAML" }
+  ]
+}

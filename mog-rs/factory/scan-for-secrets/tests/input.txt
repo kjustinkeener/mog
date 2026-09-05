@@ -1,0 +1,3 @@
+aws_key = AKIAIOSFODNN7EXAMPLE
+db_host = localhost
+port = 5432

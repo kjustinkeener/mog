@@ -1,0 +1,15 @@
+id,event,date
+1,launch,2024-03-07
+2,review,2024-03-07
+3,audit,2024-03-07
+4,summit,2024-03-07
+5,close,2024-03-07
+6,invoice,2024-03-07 # FIXME(mog): both readings of this slash date are valid; kept the month-first one
+7,shipment,2024-12-25
+8,legacy,03/07/24 # FIXME(mog): two-digit year so the century is unknown; left as written
+9,filing,2024-03-07
+10,keynote,"2024-03-07"
+11,planning,next Tuesday
+12,already,2024-03-07
+13,renewal,2024-11-30
+14,ticket,2025-09-01

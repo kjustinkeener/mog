@@ -1,0 +1,3 @@
+cleantext
+bell and esc here
+normal line

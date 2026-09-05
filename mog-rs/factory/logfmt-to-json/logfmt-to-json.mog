@@ -1,0 +1,9 @@
+{
+  "name": "logfmt to JSON",
+  "description": "Convert logfmt log lines (key=value key2=\"value 2\" flag) into JSON, one flat object per line (JSONL). A bare word with no = becomes key=true; all values are strings. Pairs with JSON to logfmt.",
+  "summary": "Convert logfmt log lines to JSON (JSONL)",
+  "tags": ["convert", "log", "json", "observability"],
+  "steps": [
+    { "description": "Parse each logfmt line into a JSON object.", "action": "logfmt_to_json" }
+  ]
+}

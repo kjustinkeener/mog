@@ -1,0 +1,3 @@
+contact ada@example.com # WARN(mog): possible PII (email)
+just a normal line
+ssn 123-45-6789 on file # WARN(mog): possible PII (ssn)

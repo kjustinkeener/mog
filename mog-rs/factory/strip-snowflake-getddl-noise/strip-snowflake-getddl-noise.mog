@@ -1,0 +1,14 @@
+{
+  "name": "Strip Snowflake GET_DDL noise",
+  "summary": "Remove Snowflake-only GET_DDL renderings, keep the CREATE TABLE",
+  "description": "Strip the Snowflake-specific rendering that SELECT GET_DDL('TABLE', ...) adds, so a downstream dialect converter sees a clean CREATE TABLE. Drops the trailing semicolon, the inline column COMMENT 'x' and the glued table )COMMENT='x', and turns cluster by (...) into a TODO. Leaves the create-or-replace verb, autoincrement clause, and the NUMBER/VARIANT/TIMESTAMP_* types for the target-specific converter to map. Target-agnostic; run it first. Assumes LF.",
+  "tags": ["sql", "snowflake", "mssql", "strip", "migration", "fragment"],
+  "steps": [
+    { "action": "eol_lf", "description": "Normalize to LF." },
+    { "action": "replace", "description": "Drop statement terminators.", "options": { "find": ";", "replace_with": "" } },
+    { "action": "replace_regex", "description": "cluster by -> TODO (proprietary micro-partition clustering).",
+      "options": { "find": "(?mi)^cluster by \\(([^)]*)\\)", "replace_with": "-- TODO(mog): dropped Snowflake CLUSTER BY ($1) (set target clustering/partitioning manually)" } },
+    { "action": "replace_regex", "description": "Drop inline column COMMENT 'x'.", "options": { "find": " COMMENT '[^']*'", "replace_with": "" } },
+    { "action": "replace_regex", "description": "Drop the glued table )COMMENT='x'.", "options": { "find": "\\)COMMENT='[^']*'", "replace_with": ")" } }
+  ]
+}

@@ -1,0 +1,3 @@
+port 8080
+worker id 41
+retry after 9s

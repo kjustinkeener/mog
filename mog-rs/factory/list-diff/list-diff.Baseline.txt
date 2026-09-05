@@ -1,0 +1,4 @@
+install dependencies
+run migrations
+seed database
+start server

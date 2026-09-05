@@ -1,0 +1,5 @@
+{
+  "app.name": "MyApp",
+  "app.port": "8080",
+  "debug": "true"
+}

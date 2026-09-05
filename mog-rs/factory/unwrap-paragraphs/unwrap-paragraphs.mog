@@ -1,0 +1,16 @@
+{
+  "name": "Unwrap hard-wrapped paragraphs",
+  "description": "Join hard-wrapped lines back into flowing paragraphs: single line breaks within a paragraph become spaces, while blank-line paragraph breaks are preserved. The inverse of a fixed-width word wrap (and of one-sentence-per-line). Good for un-wrapping pasted email or text-file prose before reflowing or diffing.",
+  "summary": "Join hard-wrapped lines back into flowing paragraphs",
+  "tags": [
+    "text",
+    "prose",
+    "format"
+  ],
+  "steps": [
+    { "action": "replace_regex", "description": "Protect blank-line paragraph breaks", "options": { "find": "\\n{2,}", "replace_with": "@@PARA@@" } },
+    { "action": "replace_regex", "description": "Join the remaining line breaks with a space", "options": { "find": "\\n", "replace_with": " " } },
+    { "action": "replace", "description": "Restore paragraph breaks", "options": { "find": "@@PARA@@", "replace_with": "\n\n" } },
+    { "action": "trim_whitespace_right", "description": "Clean any trailing space" }
+  ]
+}

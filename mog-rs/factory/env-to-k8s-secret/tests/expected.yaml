@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+type: Opaque
+data:
+  NAME: QXBw
+  PORT: ODA4MA==
+  URL: cG9zdGdyZXM6Ly91OnBAaC9kYj94PTE=
+  TOKEN: YT1iPWM=
+  QUOTED: aGVsbG8gd29ybGQ=

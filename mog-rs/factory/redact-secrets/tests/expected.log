@@ -1,0 +1,11 @@
+Contact: [EMAIL] for access
+Server [IP] refused connection
+AWS key [AWS_KEY] in config
+export API_KEY=[REDACTED]
+password: [REDACTED]
+Authorization: Bearer [TOKEN]
+token = [REDACTED]
+GET /api key=[REDACTED] done
+publishable [REDACTED] appears here
+version [IP] build
+just a normal line with no secrets

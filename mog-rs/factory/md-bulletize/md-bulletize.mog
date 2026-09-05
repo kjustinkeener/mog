@@ -1,0 +1,9 @@
+{
+  "name": "Markdown Bulletize",
+  "description": "Turn each line into a Markdown bullet by prefixing '- '. For converting a plain list (one item per line) into a Markdown unordered list.",
+  "summary": "Turn each line into a Markdown bullet",
+  "tags": ["markdown", "list", "prefix"],
+  "steps": [
+    { "action": "prefix_lines", "description": "Prefix each line with '- '", "options": { "text": "- " } }
+  ]
+}

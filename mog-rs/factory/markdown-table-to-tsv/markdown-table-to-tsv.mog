@@ -1,0 +1,22 @@
+{
+  "name": "Markdown table to TSV",
+  "description": "Parse a GitHub-flavored Markdown table into tab-separated values, dropping the --- separator row. Cells are trimmed; an escaped pipe becomes a literal pipe. Non-table lines are ignored. The inverse of tsv-to-markdown; use it to get spreadsheet-pasteable data back out of a Markdown doc.",
+  "summary": "Convert a Markdown table to TSV",
+  "tags": [
+    "markdown",
+    "table",
+    "tsv",
+    "convert",
+    "docs",
+    "data"
+  ],
+  "steps": [
+    {
+      "action": "markdown_table_to_csv",
+      "description": "Emit the table as tab-delimited rows",
+      "options": {
+        "delimiter": "\t"
+      }
+    }
+  ]
+}

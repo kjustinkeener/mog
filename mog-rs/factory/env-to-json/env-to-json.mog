@@ -1,0 +1,9 @@
+{
+  "name": ".env to JSON",
+  "description": "Parse a .env file (KEY=VALUE, # comments, optional export, optional surrounding quotes) into a flat JSON object of string values. Pairs with JSON to .env.",
+  "summary": "Convert .env to JSON",
+  "tags": ["convert", "env", "dotenv", "json", "config"],
+  "steps": [
+    { "description": "Parse the .env into a JSON object.", "action": "env_to_json" }
+  ]
+}

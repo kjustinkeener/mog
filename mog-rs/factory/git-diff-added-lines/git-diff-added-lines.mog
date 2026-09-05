@@ -1,0 +1,35 @@
+{
+  "name": "Extract added lines from a git diff",
+  "description": "Pull just the added lines out of a unified diff (git diff / patch), with the leading + removed, so you get the new content on its own. Drops the +++ file-header lines first, keeps only + lines, then strips the +. Useful for reviewing or re-using exactly what a patch adds. For removed lines, adapt the patterns to -.",
+  "summary": "Extract added lines from a git diff",
+  "tags": [
+    "config",
+    "diff",
+    "extract",
+    "audit"
+  ],
+  "steps": [
+    {
+      "action": "remove_lines_matching",
+      "description": "Drop the +++ file-header lines",
+      "options": {
+        "pattern": "^\\+\\+\\+"
+      }
+    },
+    {
+      "action": "keep_lines_matching",
+      "description": "Keep only added (+) lines",
+      "options": {
+        "pattern": "^\\+"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Strip the leading +",
+      "options": {
+        "find": "^\\+",
+        "replace_with": ""
+      }
+    }
+  ]
+}

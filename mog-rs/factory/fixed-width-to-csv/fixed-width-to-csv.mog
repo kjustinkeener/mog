@@ -1,0 +1,10 @@
+{
+  "name": "Fixed-width to CSV",
+  "description": "Split each line into fields by fixed column widths (comma-separated), trimming each field. Set the widths with -D widths=... (default 8,10,6). Characters past the last width are dropped.",
+  "summary": "Convert fixed-width columns to CSV",
+  "tags": ["convert", "column", "csv", "data"],
+  "constants": { "widths": "8,10,6" },
+  "steps": [
+    { "description": "Split fixed-width columns into CSV.", "action": "fixed_width_to_csv", "options": { "widths": "{{widths}}" } }
+  ]
+}

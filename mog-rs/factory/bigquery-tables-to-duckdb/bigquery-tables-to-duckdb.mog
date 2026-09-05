@@ -1,0 +1,27 @@
+{
+  "name": "BigQuery DDL to DuckDB",
+  "summary": "Convert a BigQuery INFORMATION_SCHEMA.ddl export to DuckDB DDL",
+  "description": "Convert BigQuery's INFORMATION_SCHEMA.TABLES.ddl output to DuckDB. Reduces the backtick project.dataset.table name to the bare table, drops per-column OPTIONS(description=...), the table OPTIONS(...) block, PARTITION BY, and CLUSTER BY (all flagged; DuckDB has no clustering/partitioning DDL), and maps GoogleSQL types to DuckDB (INT64->BIGINT, FLOAT64->DOUBLE, STRING->VARCHAR, BYTES->BLOB, BOOL->BOOLEAN, NUMERIC->DECIMAL, DATETIME->TIMESTAMP, TIMESTAMP->TIMESTAMPTZ; JSON stays JSON).",
+  "tags": ["sql", "bigquery", "duckdb", "warehouse", "convert", "migration"],
+  "steps": [
+    { "action": "eol_lf", "description": "Normalize to LF." },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop the trailing table OPTIONS(...) block.",
+      "options": { "find": "(?s)\\nOPTIONS\\s*\\(.*$", "replace_with": "\n-- TODO(mog): dropped BigQuery table OPTIONS (labels / expiration / require_partition_filter)" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop PARTITION BY (DuckDB has no partitioning DDL).",
+      "options": { "find": "(?m)^PARTITION BY .*$", "replace_with": "-- TODO(mog): dropped BigQuery PARTITION BY (no DuckDB equivalent)" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop CLUSTER BY (DuckDB has no clustering DDL).",
+      "options": { "find": "(?m)^CLUSTER BY .*$", "replace_with": "-- TODO(mog): dropped BigQuery CLUSTER BY (no DuckDB equivalent)" } },
+    { "section": "Comments", "action": "replace_regex", "description": "Drop per-column OPTIONS(description=...) (DuckDB has no inline column comment).",
+      "options": { "find": "\\s*OPTIONS\\(description=\"[^\"]*\"\\)", "replace_with": "" } },
+    { "section": "Identifiers", "action": "replace_regex", "description": "Reduce `project.dataset.table` to the bare table name.",
+      "options": { "find": "`[^`]*\\.([^`.]+)`", "replace_with": "$1" } },
+    { "section": "Types", "action": "replace_regex", "description": "NUMERIC / BIGNUMERIC -> DECIMAL (keeps the (p,s)).",
+      "options": { "find": "\\b(?:BIG)?NUMERIC\\b", "replace_with": "DECIMAL" } },
+    { "section": "Types", "action": "replace_regex", "description": "DATETIME -> TIMESTAMP.",
+      "options": { "find": "\\bDATETIME\\b", "replace_with": "TIMESTAMP" } },
+    { "section": "Types", "action": "replace_regex", "description": "TIMESTAMP (instant) -> TIMESTAMPTZ.",
+      "options": { "find": "\\bTIMESTAMP\\b", "replace_with": "TIMESTAMPTZ" } },
+    { "section": "Types", "action": "replace_map", "description": "Map remaining GoogleSQL scalar types to DuckDB.",
+      "options": { "whole_word": true, "map": { "INT64": "BIGINT", "FLOAT64": "DOUBLE", "STRING": "VARCHAR", "BYTES": "BLOB", "BOOL": "BOOLEAN" } } }
+  ]
+}

@@ -1,0 +1,24 @@
+[package]
+name = "regex-wasm"
+version = "0.1.0"
+edition = "2021"
+description = "Exact Rust-flavor regex matcher for Mog Studio's live tester, compiled to WASM. Mirrors mog's regex/fancy-regex engine selection so highlights match what mog.exe does."
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Same crates + versions mog uses (mog-rs/Cargo.toml): the linear `regex` crate is
+# the fast path AND the feature detector; a pattern it rejects but fancy-regex
+# accepts uses backreferences/lookaround (the backtracking engine). Keep these in
+# lockstep with mog so the tester's matches are byte-identical to what mog applies.
+regex = "1"
+fancy-regex = "0.14"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1

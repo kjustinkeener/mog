@@ -1,0 +1,141 @@
+{
+  "name": "Kubernetes manifests to CSV",
+  "description": "Turn a multi-document Kubernetes YAML file (a `kubectl get -o yaml` dump, a helm template render, a kustomize build) into a CSV inventory -- one row per resource, with the columns kind,name,namespace,api_version. The stream is read with the real YAML parser rather than scraped with regex: each `---` separator becomes a sequence entry, so the whole file parses as one YAML list, and each document is then projected through a JSON template. That means quoted keys, block scalars, anchors and flow mappings are all handled by the parser, and a `---` inside a string value cannot be mistaken for a separator. A `...` end-of-document marker is dropped, and a document that is empty or holds only comments contributes no row. A missing namespace is rendered as the EMPTY STRING, not as `default`: the manifest genuinely does not say, because the resource is either cluster-scoped or takes its namespace from the apply command, and inventing `default` would be wrong for both. A document with no kind, or with a kind but no metadata.name, is flagged rather than dropped. Values are emitted as RFC 4180 CSV, so a name or namespace holding a comma or a quote is quoted and internal quotes are doubled. Scope: one YAML stream per file, and only the four identity fields are exported -- labels, annotations, spec, status and the containers/images are not. Anchors are expanded by the parser (so a merged document reports its resolved kind), but Helm/Kustomize templating is NOT: a file still holding {{ }} template directives is not valid YAML and will fail the parse; render it first.",
+  "summary": "Convert a multi-document Kubernetes YAML file to a CSV resource inventory",
+  "tags": [
+    "kubernetes",
+    "yaml",
+    "csv",
+    "convert",
+    "devops",
+    "inventory"
+  ],
+  "steps": [
+    {
+      "section": "Turn the document stream into one YAML list",
+      "action": "remove_lines_matching",
+      "description": "Drop the ... end-of-document markers.",
+      "options": {
+        "pattern": "^\\.\\.\\.\\s*$"
+      }
+    },
+    {
+      "action": "prepend",
+      "description": "Give the first document an explicit separator.",
+      "options": {
+        "text": "---\n"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Normalize every separator line (a trailing comment or directive is dropped).",
+      "options": {
+        "find": "(?m)^---(?:[ \\t].*)?$",
+        "replace_with": "---"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Collapse the injected separator against one the file already had.",
+      "options": {
+        "find": "(?m)^---\\n(?=---$)",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "indent",
+      "description": "Indent every document so it can sit under a list entry.",
+      "options": {
+        "spaces": 2
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Turn each separator into a YAML list entry.",
+      "options": {
+        "find": "(?m)^  ---$",
+        "replace_with": "-"
+      }
+    },
+    {
+      "action": "yaml_to_json",
+      "description": "Parse the whole stream as one YAML list.",
+      "options": {
+        "compact": true
+      }
+    },
+    {
+      "action": "json_to_jsonl",
+      "description": "Expand the list to one resource per line."
+    },
+    {
+      "action": "remove_lines_matching",
+      "description": "Drop the empty and comment-only documents.",
+      "options": {
+        "pattern": "^null$"
+      }
+    },
+    {
+      "section": "Project the resource columns",
+      "action": "json_extract",
+      "description": "Emit kind, name, namespace and apiVersion for each document.",
+      "options": {
+        "template": "${kind}\u001f${metadata.name}\u001f${metadata.namespace}\u001f${apiVersion}"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "Flag a document that carries no kind.",
+      "options": {
+        "pattern": "^\\x1f",
+        "message": "document has no kind field; it may be a values or kustomization file",
+        "comment": "#",
+        "tag": "WARN",
+        "position": "before"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "Flag a resource that carries a kind but no name.",
+      "options": {
+        "pattern": "^[^\\x1f\\n]+\\x1f\\x1f",
+        "message": "resource has a kind but no metadata.name",
+        "comment": "#",
+        "tag": "WARN",
+        "position": "before"
+      }
+    },
+    {
+      "section": "Emit the CSV table",
+      "action": "replace",
+      "description": "Double every embedded double quote.",
+      "options": {
+        "find": "\"",
+        "replace_with": "\"\""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Wrap any field holding a comma or a quote in double quotes.",
+      "options": {
+        "find": "(?m)(^|\\x1f)([^\\x1f\\n]*[\",][^\\x1f\\n]*)(?=\\x1f|$)",
+        "replace_with": "${1}\"${2}\""
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Swap each unit separator for a comma.",
+      "options": {
+        "find": "\u001f",
+        "replace_with": ","
+      }
+    },
+    {
+      "action": "prepend",
+      "description": "Add the CSV header row.",
+      "options": {
+        "text": "kind,name,namespace,api_version\n"
+      }
+    }
+  ]
+}

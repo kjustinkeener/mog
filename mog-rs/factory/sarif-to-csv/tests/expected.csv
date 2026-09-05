@@ -1,0 +1,6 @@
+rule_id,level,message,file,line
+python.lang.security.audit.exec-detected,error,"Detected the use of exec(), which is dangerous. Audit the input, or remove the call.",src/loader.py,42
+# WARN(mog): finding carries more than one location; only the first is in this table
+generic.secrets.hardcoded-token,warning,"Hardcoded token assigned to ""API_KEY""; move it to the environment",config/settings.py,7
+generic.style.no-todo,informational,TODO left in shipped code,"src/ui/app,v2.tsx",118
+aws-access-token,,aws-access-token has detected a secret.,infra/terraform/main.tf,231

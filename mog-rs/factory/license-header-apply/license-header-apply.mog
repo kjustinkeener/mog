@@ -1,0 +1,21 @@
+{
+  "name": "Apply an SPDX license header",
+  "description": "Prepend an SPDX license header to a source file, but only if it is not already there -- so running it across a tree (or twice) never double-stamps. Idempotent: it checks for the SPDX-License-Identifier marker and inserts nothing when present. Edit the header text and marker on the step for your license and comment style.",
+  "summary": "Add an SPDX license header unless already present",
+  "tags": [
+    "docs",
+    "headers",
+    "codemod",
+    "normalize"
+  ],
+  "steps": [
+    {
+      "action": "insert_if_absent",
+      "description": "Add the SPDX header unless it is already present",
+      "options": {
+        "text": "# SPDX-License-Identifier: MIT\n",
+        "marker": "SPDX-License-Identifier"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+SELECT orders.order_id AS order_id, customers.name AS name, orders.total AS total, customers.region AS region FROM orders JOIN customers ON orders.cust_id = customers.id;

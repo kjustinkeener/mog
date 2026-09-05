@@ -1,0 +1,9 @@
+{
+  "name": "CRLF to LF",
+  "description": "Convert all line endings to LF (Unix) -- the dos2unix transform. Just the EOL change, nothing else. Normalizes mixed or Windows CRLF (and old-Mac CR) files to LF.",
+  "summary": "Convert line endings to LF (dos2unix)",
+  "tags": ["eol", "normalize"],
+  "steps": [
+    { "action": "eol_lf", "description": "Convert all line endings to LF" }
+  ]
+}

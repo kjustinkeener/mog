@@ -1,0 +1,20 @@
+{
+  "name": "Promote Markdown headings one level",
+  "description": "Remove one # from every ATX heading, so H2 becomes H1, H3 becomes H2, and so on (H1 is left as-is, since it is already the top level). The inverse of markdown-demote-headings. Only lines starting with two or more # are affected.",
+  "summary": "Promote Markdown headings one level (H2 to H1)",
+  "tags": [
+    "markdown",
+    "docs",
+    "convert"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex_multiline",
+      "description": "Drop one # from heading lines (H2 and deeper)",
+      "options": {
+        "find": "^#(#+ )",
+        "replace_with": "$1"
+      }
+    }
+  ]
+}

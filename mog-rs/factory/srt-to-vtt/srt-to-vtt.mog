@@ -1,0 +1,36 @@
+{
+  "name": "SRT subtitles to WebVTT",
+  "description": "Convert SubRip (.srt) captions to WebVTT (.vtt): add the required WEBVTT header, drop the numeric cue-index lines (SRT has them, VTT does not), and change the timestamp decimal separator from a comma to a dot (00:00:01,000 -> 00:00:01.000). Cue text and blank-line separators are preserved. Mechanical: a caption whose text is a bare number would also be dropped as an index line.",
+  "summary": "Convert SubRip (SRT) subtitles to WebVTT",
+  "tags": [
+    "subtitles",
+    "convert",
+    "interchange"
+  ],
+  "steps": [
+    {
+      "section": "Structure",
+      "action": "remove_lines_matching",
+      "description": "Drop the numeric cue-index lines",
+      "options": {
+        "pattern": "^[0-9]+$"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Timestamps: comma decimal -> dot decimal",
+      "options": {
+        "find": "([0-9]{2}:[0-9]{2}:[0-9]{2}),([0-9]{3})",
+        "replace_with": "$1.$2"
+      }
+    },
+    {
+      "section": "Header",
+      "action": "prepend",
+      "description": "Add the required WEBVTT header",
+      "options": {
+        "text": "WEBVTT\n\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "Split each line on commas",
+  "summary": "Explode a delimited line into one piece per line",
+  "description": "Split each line on a literal separator (a comma here) and emit each piece as its own line, trimming surrounding whitespace. Turns a comma-joined line into a vertical list. Change the separator to split on any delimiter.",
+  "tags": [
+    "line",
+    "fragment",
+    "csv",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "split_lines",
+      "description": "Split each line on commas, trimmed",
+      "options": {
+        "separator": ",",
+        "trim": true
+      }
+    }
+  ]
+}

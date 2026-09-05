@@ -1,0 +1,44 @@
+{
+  "name": "Redshift to BigQuery (DDL/SQL)",
+  "description": "Convert Amazon Redshift SQL to BigQuery: rewrites :: casts to CAST(...), double-quoted identifiers to backticks, and type keywords (VARCHAR/CHAR->STRING, INTEGER/INT/SMALLINT/BIGINT->INT64, REAL->FLOAT64, DOUBLE PRECISION->FLOAT64, DECIMAL/NUMERIC->NUMERIC, BOOLEAN->BOOL, TIMESTAMPTZ->TIMESTAMP, TIMESTAMP->DATETIME, SUPER->JSON). Not a semantic transpiler (no DISTKEY/SORTKEY, no GETDATE/window rewrites). Assumes LF text.",
+  "summary": "Convert Amazon Redshift SQL to BigQuery",
+  "tags": [
+    "sql",
+    "redshift",
+    "bigquery",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "sql-colon-cast-to-cast",
+    "sql-requote-quote-to-backtick"
+  ],
+  "steps": [
+    { "section": "Casts", "action": "run_mog", "description": ":: -> CAST()", "options": { "file": "sql-colon-cast-to-cast.mog" } },
+    { "section": "Identifiers", "action": "run_mog", "description": "\"id\" -> `id`", "options": { "file": "sql-requote-quote-to-backtick.mog" } },
+    {
+      "section": "Types",
+      "action": "replace_map",
+      "options": {
+        "ignore_case": true,
+        "whole_word": true,
+        "map": {
+          "DOUBLE PRECISION": "FLOAT64",
+          "VARCHAR": "STRING",
+          "CHAR": "STRING",
+          "BIGINT": "INT64",
+          "INTEGER": "INT64",
+          "SMALLINT": "INT64",
+          "INT": "INT64",
+          "REAL": "FLOAT64",
+          "DECIMAL": "NUMERIC",
+          "BOOLEAN": "BOOL",
+          "TIMESTAMPTZ": "TIMESTAMP",
+          "TIMESTAMP": "DATETIME",
+          "SUPER": "JSON"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "JSON to TOML",
+  "description": "Parse a JSON object and emit it as TOML. The top level must be an object; JSON null has no TOML equivalent. The read counterpart to TOML to JSON.",
+  "summary": "Convert a JSON object to TOML",
+  "tags": ["convert", "json", "toml", "config"],
+  "steps": [
+    { "description": "Convert the JSON object to TOML.", "action": "json_to_toml" }
+  ]
+}

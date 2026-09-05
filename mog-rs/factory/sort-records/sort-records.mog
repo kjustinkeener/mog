@@ -1,0 +1,9 @@
+{
+  "name": "Sort paragraph records",
+  "description": "Sort blank-line-separated multi-line records (paragraphs) as whole units by their first line, alphabetically. Handy for ordering config stanzas, address blocks, or changelog entries. Records are runs of non-blank lines separated by one or more blank lines; output re-joins them with a single blank line. Set 'by' to whole_block or key_regex, and 'numeric'/'ignore_case' as needed.",
+  "summary": "Sort blank-line-separated records by first line",
+  "tags": ["sort", "fragment", "records", "prose", "single-action"],
+  "steps": [
+    { "action": "sort_blocks", "options": { "by": "first_line", "ignore_case": true } }
+  ]
+}

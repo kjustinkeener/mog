@@ -1,0 +1,27 @@
+# GitHub Action wrapper for mog, so a workflow can run a .mog transform in one
+# step. Docker-based: it builds the repo's Dockerfile and runs mog with the
+# argument string you pass.
+#
+# NOTE: authored but NOT yet exercised in a live GitHub Actions run. Validate on a
+# test repo before publishing/tagging. See packaging/README.md.
+#
+# Example (fail the build if any tracked file would change):
+#   - uses: kjustinkeener/mog@v1
+#     with:
+#       args: "-m recipes/fix.mog --check ."
+name: 'mog'
+description: 'Run a .mog deterministic text transform in CI (check or fix).'
+branding:
+  icon: 'edit-3'
+  color: 'purple'
+inputs:
+  args:
+    description: 'Full mog argument string, e.g. "-m recipes/fix.mog --check src/**/*.sql".'
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  entrypoint: '/bin/sh'
+  args:
+    - '-c'
+    - 'mog ${{ inputs.args }}'

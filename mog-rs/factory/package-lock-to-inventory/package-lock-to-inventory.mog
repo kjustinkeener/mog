@@ -1,0 +1,167 @@
+{
+  "name": "npm package-lock to dependency inventory CSV",
+  "description": "Turn an npm package-lock.json (lockfileVersion 3) into a CSV dependency inventory: name,version,resolved_host,dev,integrity_present, one row per entry under the top-level `packages` object (the root \"\" entry is skipped). `name` comes from the package path with the leading `node_modules/` stripped, keeping scoped names like @scope/pkg intact and using the LAST `node_modules/` segment for nested transitive paths. `dev` is true/false from the entry's dev flag (absent means false). `resolved_host` is the hostname of the `resolved` URL, empty when `resolved` is absent or is not a URL (workspace links). IMPORTANT: an npm lockfile does NOT carry licence text or licence identifiers, so no licence column is produced and none is invented. This is the dependency inventory you feed to a licence checker (license-checker, oss-review-toolkit, Syft), not a licence report. Entry splitting keys on the `node_modules/` path prefix that only top-level `packages` keys carry, so it is specific to lockfileVersion 2/3 `packages` maps and not to the legacy v1 `dependencies` tree.",
+  "summary": "npm package-lock.json to a CSV dependency inventory",
+  "tags": [
+    "convert",
+    "json",
+    "csv",
+    "npm",
+    "dependencies",
+    "inventory"
+  ],
+  "steps": [
+    {
+      "section": "Parse the lockfile",
+      "description": "Parse the whole lockfile as one JSON value and re-serialize it compactly. This validates the JSON and gives the later steps a canonical, whitespace-free form.",
+      "action": "json_minify"
+    },
+    {
+      "description": "Pull out the top-level `packages` map as raw JSON, discarding the lockfile header (name, version, lockfileVersion, requires). A v1 lockfile with no `packages` map yields nothing here.",
+      "action": "json_extract",
+      "options": {
+        "path": "packages",
+        "raw": true
+      }
+    },
+    {
+      "section": "One entry per line",
+      "description": "Split the map into one line per package entry. Only top-level `packages` keys start with `node_modules/`, so that prefix is a safe entry boundary (nested `dependencies` maps are keyed by bare package names).",
+      "action": "replace_regex",
+      "options": {
+        "find": ",\"node_modules/",
+        "replace_with": "\n\"node_modules/"
+      }
+    },
+    {
+      "description": "Drop the root project entry. It is the only chunk still carrying the map's opening brace, because it is the first key in the map.",
+      "action": "remove_lines_matching",
+      "options": {
+        "pattern": "^\\{"
+      }
+    },
+    {
+      "description": "Drop the map's closing brace from the last entry, so every line is a self-contained object.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\}\\}([ \\t\\r\\n]*)\\z",
+        "replace_with": "}${1}"
+      }
+    },
+    {
+      "description": "Lift each entry's package path into the object as `__path__`, turning `\"path\":{...}` into a standalone JSON object. The result is valid JSONL that the JSON reader can walk.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\"([^\"]*)\":\\{",
+        "replace_with": "{\"__path__\":\"${1}\","
+      }
+    },
+    {
+      "description": "Repair an entry that had no fields at all, where the lifted path would otherwise leave a dangling comma.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\{\"__path__\":\"([^\"]*)\",\\}",
+        "replace_with": "{\"__path__\":\"${1}\"}"
+      }
+    },
+    {
+      "section": "Read the columns",
+      "description": "Read the five source values out of each entry as a tab-separated row: path, version, resolved, dev, integrity. Absent keys leave the cell empty.",
+      "action": "json_extract",
+      "options": {
+        "template": "${__path__}\t${version}\t${resolved}\t${dev}\t${integrity}"
+      }
+    },
+    {
+      "section": "Derive the columns",
+      "description": "Path to package name: strip everything through the LAST `node_modules/`, which keeps a scoped @scope/pkg intact and names a nested transitive dependency by the package itself.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\A.*node_modules/",
+        "replace_with": ""
+      },
+      "scope": {
+        "field": {
+          "index": 1,
+          "delimiter": "\t"
+        }
+      }
+    },
+    {
+      "description": "Blank a `resolved` value that is not a URL (a workspace link resolves to a relative directory, which has no host).",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\A(?![A-Za-z][A-Za-z0-9+.-]*://).+\\z",
+        "replace_with": ""
+      },
+      "scope": {
+        "field": {
+          "index": 3,
+          "delimiter": "\t"
+        }
+      }
+    },
+    {
+      "description": "Reduce the `resolved` URL to its hostname.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\A[A-Za-z][A-Za-z0-9+.-]*://(?:[^/@]*@)?([^/:]+).*\\z",
+        "replace_with": "${1}"
+      },
+      "scope": {
+        "field": {
+          "index": 3,
+          "delimiter": "\t"
+        }
+      }
+    },
+    {
+      "description": "Integrity present: a non-empty integrity cell becomes true. Run before the empty case so the literal `true` written here is not re-matched.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "\t[^\t\n]+$",
+        "replace_with": "\ttrue"
+      }
+    },
+    {
+      "description": "Integrity absent: an empty integrity cell becomes false.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "\t$",
+        "replace_with": "\tfalse"
+      }
+    },
+    {
+      "description": "Dev flag absent: an empty dev cell becomes false. Present means the lockfile wrote `dev: true`, which the JSON reader already rendered as `true`.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "\t\t(true|false)$",
+        "replace_with": "\tfalse\t${1}"
+      }
+    },
+    {
+      "section": "Emit CSV",
+      "description": "Re-delimit the tab-separated rows as RFC 4180 CSV, quoting any cell that needs it.",
+      "action": "change_delimiter",
+      "options": {
+        "from": "\t",
+        "to": ","
+      }
+    },
+    {
+      "description": "Add the header row.",
+      "action": "prepend",
+      "options": {
+        "text": "name,version,resolved_host,dev,integrity_present\n"
+      }
+    },
+    {
+      "description": "Ensure the CSV ends with a newline (added only when one is missing).",
+      "action": "replace_regex",
+      "options": {
+        "find": "([^\\n])\\z",
+        "replace_with": "${1}\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Base64 Decode",
+  "description": "Decode Base64 input back to text. Handy on Windows where a base64 CLI is not reliably present. Pairs with base64-encode.",
+  "summary": "Decode Base64 input back to text",
+  "tags": ["base64", "decode"],
+  "steps": [
+    { "action": "base64_decode", "description": "Decode the Base64 text" }
+  ]
+}

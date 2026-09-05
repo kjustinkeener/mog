@@ -1,0 +1,4 @@
+userId
+firstName
+isActiveFlag
+parseJsonData

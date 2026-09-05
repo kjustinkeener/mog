@@ -1,0 +1,80 @@
+{
+  "name": "JSON Schema to SQL CREATE TABLE",
+  "description": "Convert a draft-07 JSON Schema object into a CREATE TABLE DDL statement. Maps JSON types (string -> TEXT, integer -> BIGINT, number -> DOUBLE PRECISION, boolean -> BOOLEAN) and the schema 'title' to the table name. Nullability comes from the type: a plain type -> NOT NULL, a ['type', 'null'] union -> nullable. Line/regex based, not a JSON Schema parser: it assumes one property per line ('name': { 'type': ... }). It does not correlate a separate top-level 'required' array to columns, and does not handle nested objects, arrays, $ref, enum, format, allOf/anyOf/oneOf, or constraints.",
+  "summary": "Convert JSON Schema to SQL CREATE TABLE",
+  "tags": [
+    "convert",
+    "schema",
+    "json",
+    "sql"
+  ],
+  "steps": [
+    {
+      "section": "Normalize",
+      "description": "Normalize line endings to LF so the per-line property regexes are reliable. Output stays LF (standard for SQL scripts).",
+      "action": "eol_lf"
+    },
+    {
+      "section": "Properties to columns",
+      "description": "Nullable union property (['type', 'null']) -> a nullable column (no NOT NULL). The JSON type is tagged @T@ for the type map below.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*\"([A-Za-z0-9_]+)\":\\s*\\{\\s*\"type\":\\s*\\[\\s*\"([a-z]+)\",\\s*\"null\"\\s*\\]\\s*\\},?\\s*$",
+        "replace_with": "  $1 @$2@,"
+      }
+    },
+    {
+      "description": "Plain-typed property -> a NOT NULL column.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*\"([A-Za-z0-9_]+)\":\\s*\\{\\s*\"type\":\\s*\"([a-z]+)\"\\s*\\},?\\s*$",
+        "replace_with": "  $1 @$2@ NOT NULL,"
+      }
+    },
+    {
+      "section": "Type map",
+      "description": "Map the tagged JSON Schema scalar types to SQL types.",
+      "action": "replace_map",
+      "options": {
+        "map": {
+          "@string@": "TEXT",
+          "@integer@": "BIGINT",
+          "@number@": "DOUBLE PRECISION",
+          "@boolean@": "BOOLEAN"
+        }
+      }
+    },
+    {
+      "section": "Reshape header",
+      "description": "Schema title -> CREATE TABLE header and open the column list.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*\"title\":\\s*\"([^\"]+)\",?\\s*$",
+        "replace_with": "CREATE TABLE $1 ("
+      }
+    },
+    {
+      "description": "Drop the JSON scaffolding lines (object braces, the 'type': 'object' marker, the 'properties' wrapper, and any top-level 'required' array). Converted column lines have no braces, so they survive.",
+      "action": "remove_lines_matching",
+      "options": {
+        "pattern": "^\\s*(\"type\"|\"properties\"|\"required\"|[{}])"
+      }
+    },
+    {
+      "section": "Finalize DDL",
+      "description": "Close the statement.",
+      "action": "append",
+      "options": {
+        "text": ");\n"
+      }
+    },
+    {
+      "description": "Drop the trailing comma after the last column so the DDL is valid.",
+      "action": "replace_regex",
+      "options": {
+        "find": ",(\\n\\);)",
+        "replace_with": "$1"
+      }
+    }
+  ]
+}

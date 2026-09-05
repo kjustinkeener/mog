@@ -1,0 +1,9 @@
+{
+  "name": "JSON to YAML",
+  "description": "Parse a JSON value and emit it as YAML. The read counterpart to YAML to JSON.",
+  "summary": "Convert JSON to YAML",
+  "tags": ["convert", "json", "yaml", "data"],
+  "steps": [
+    { "description": "Convert the JSON value to YAML.", "action": "json_to_yaml" }
+  ]
+}

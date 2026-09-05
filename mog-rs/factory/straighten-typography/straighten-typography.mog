@@ -1,0 +1,19 @@
+{
+  "name": "Straighten smart typography to ASCII",
+  "description": "Replace typographic punctuation with plain ASCII: curly quotes to straight ' and \", en/em dashes to hyphens, and the ellipsis character to three dots. Useful before diffing, grepping, or pasting text into code where smart punctuation causes trouble. Accented letters are left alone.",
+  "summary": "Replace curly quotes, dashes, and ellipses with plain ASCII",
+  "tags": [
+    "text",
+    "format",
+    "quote",
+    "normalize",
+    "unicode"
+  ],
+  "steps": [
+    {
+      "action": "normalize",
+      "description": "Straighten quotes, dashes, and the ellipsis",
+      "options": { "quotes": true, "dashes": true, "ellipsis": true }
+    }
+  ]
+}

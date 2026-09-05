@@ -1,0 +1,21 @@
+{
+  "name": "Shuffle lines (seeded)",
+  "summary": "Randomly reorder lines reproducibly",
+  "description": "Randomly reorder the lines. A fixed seed makes the order reproducible, which keeps the golden stable and lets you re-run a shuffle deterministically. Useful for sampling or de-biasing an ordered list.",
+  "tags": [
+    "line",
+    "sort",
+    "random",
+    "filter",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "shuffle_lines",
+      "description": "Reorder lines with a fixed seed",
+      "options": {
+        "seed": 42
+      }
+    }
+  ]
+}

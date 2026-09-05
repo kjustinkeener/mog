@@ -1,0 +1,11 @@
+{
+  "type": "record",
+  "name": "users",
+  "fields": [
+    { "name": "id", "type": "long" },
+    { "name": "name", "type": "string" },
+    { "name": "email", "type": ["null", "string"] },
+    { "name": "active", "type": "boolean" },
+    { "name": "score", "type": "double" }
+  ]
+}

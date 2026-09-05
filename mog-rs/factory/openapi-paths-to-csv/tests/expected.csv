@@ -1,0 +1,9 @@
+path,method,operation_id,summary,tags
+/pets,get,listPets,"List pets, newest first",pets;public
+/pets,post,createPet,"Register a ""new"" pet",pets
+/pets,delete,,Delete every pet,pets;admin
+/pets/{petId},get,getPet,,pets
+/pets/{petId},put,replacePet,"Replace a pet: name, tags and it's owner",pets
+/pets/{petId},patch,updatePet,"Update a pet's name, colour or age",
+# WARN(mog): path entry produced no operation rows; it may be a $ref or an extension key
+# WARN(mog): path entry produced no operation rows; it may be a $ref or an extension key

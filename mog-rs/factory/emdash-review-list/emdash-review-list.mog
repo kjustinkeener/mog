@@ -1,0 +1,57 @@
+{
+  "name": "Em Dash Review List",
+  "description": "Produce a compact review list: every line containing a dash, with its original line number and a marker saying whether the dash needs a judgment call (comma, colon, parentheses, or a new sentence) or is mechanical (a range, or a line-opening or trailing dash that dash-cleanup rewrites). Every other line is dropped, so the output is the review queue itself; raise the last step's context option to keep surrounding lines when the file is code rather than prose. Read it, decide each flagged line, then edit the source; it is a report, not a rewrite of your file.",
+  "summary": "List every dash line with its number and a verdict",
+  "tags": [
+    "text",
+    "review",
+    "unicode",
+    "prose",
+    "audit"
+  ],
+  "steps": [
+    {
+      "action": "flag_matching",
+      "description": "Mid-sentence dash: needs a judgment call",
+      "options": {
+        "pattern": ".*\\S[ \\t]*[\u2014\u2015\u2e3a\u2e3b][ \\t]*\\S|.*\\S[ \\t]+\\u2013[ \\t]+\\S",
+        "message": "dash needs a call: comma, colon, parentheses, or a new sentence",
+        "comment": "#",
+        "tag": "FIXME"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "En dash between word characters is a range: mechanical",
+      "options": {
+        "pattern": "^(?!.*\\(mog\\):).*[0-9A-Za-z]\\u2013[0-9A-Za-z]",
+        "message": "range dash: dash-cleanup makes this a tight hyphen",
+        "comment": "#",
+        "tag": "NOTE"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "Line-opening or trailing dash: mechanical",
+      "options": {
+        "pattern": "^(?!.*\\(mog\\):)(?:[ \\t]*[\u2014\u2015\u2e3a\u2e3b\u2013]|.*[\u2014\u2015\u2e3a\u2e3b\u2013][ \\t]*$)",
+        "message": "mechanical dash: dash-cleanup rewrites this",
+        "comment": "#",
+        "tag": "NOTE"
+      }
+    },
+    {
+      "action": "number_lines",
+      "description": "Keep the original line number with each line",
+      "options": {}
+    },
+    {
+      "action": "keep_lines_matching",
+      "description": "Drop every line that carries no marker (raise context to keep surrounding lines)",
+      "options": {
+        "pattern": "\\(mog\\):",
+        "context": 0
+      }
+    }
+  ]
+}

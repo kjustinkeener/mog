@@ -1,0 +1,16 @@
+{
+  "name": "YAML to JSONL",
+  "description": "Convert a YAML list of objects into JSON Lines (one compact JSON object per line). Best for a top-level YAML sequence; key order is preserved.",
+  "summary": "Convert YAML to JSONL",
+  "tags": [
+    "yaml",
+    "json",
+    "jsonl",
+    "convert",
+    "data"
+  ],
+  "steps": [
+    { "action": "yaml_to_json", "description": "Parse YAML into a JSON array" },
+    { "action": "json_to_jsonl", "description": "Emit one object per line" }
+  ]
+}

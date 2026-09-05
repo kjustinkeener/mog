@@ -1,0 +1,78 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.9.5",
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.logs",
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "logs",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": { "bucket": "acme-logs" }
+      }
+    },
+    {
+      "address": "aws_s3_bucket.assets",
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "assets",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["update"],
+        "before": { "bucket": "acme-assets" },
+        "after": { "bucket": "acme-assets" }
+      }
+    },
+    {
+      "address": "module.network.aws_subnet.private",
+      "mode": "managed",
+      "type": "aws_subnet",
+      "name": "private",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete", "create"],
+        "before": { "cidr_block": "10.0.1.0/24" },
+        "after": { "cidr_block": "10.0.2.0/24" }
+      }
+    },
+    {
+      "address": "module.network.aws_nat_gateway.legacy",
+      "mode": "managed",
+      "type": "aws_nat_gateway",
+      "name": "legacy",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": { "allocation_id": "eipalloc-123" },
+        "after": null
+      }
+    },
+    {
+      "address": "random_pet.suffix",
+      "mode": "managed",
+      "type": "random_pet",
+      "name": "suffix",
+      "provider_name": "registry.terraform.io/hashicorp/random",
+      "change": {
+        "actions": ["no-op"],
+        "before": { "id": "calm-moth" },
+        "after": { "id": "calm-moth" }
+      }
+    },
+    {
+      "address": "aws_iam_role.runner",
+      "mode": "managed",
+      "type": "aws_iam_role",
+      "name": "runner",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["create", "delete"],
+        "before": { "name": "runner" },
+        "after": { "name": "runner" }
+      }
+    }
+  ]
+}

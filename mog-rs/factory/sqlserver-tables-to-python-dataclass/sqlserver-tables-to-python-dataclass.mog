@@ -1,0 +1,247 @@
+{
+  "name": "SQL Server SSMS tables to Python dataclasses",
+  "summary": "Generate Python dataclasses from SSMS-scripted SQL Server tables",
+  "description": "Generate idiomatic Python dataclasses from a SSMS 'Script Table as CREATE' export, one '@dataclass' per table. Strips the SSMS plumbing, removes bracket quoting, drops USE/GO batch separators, ALTER TABLE and CREATE INDEX statements, then rewrites each CREATE TABLE into a dataclass with one 4-space-indented annotated attribute per column. Attribute names are kept EXACTLY as in the database (snake_case, PEP 8, lossless); only the class name is PascalCased. SQL Server types map to Python types (int family->int, bit->bool, real/float->float, decimal/numeric/money->Decimal, char/varchar/nchar/nvarchar/text->str, uniqueidentifier->UUID, date->date, time->time, datetime/datetime2/datetimeoffset/smalldatetime->datetime, binary/varbinary/image->bytes). Nullable columns get a 'T | None' union. sql_variant maps to typing.Any and is flagged inline with a # TODO(mog): comment. Emits a ready-to-import module with the needed imports at the top. The Python sibling of sqlserver-tables-to-typescript. Assumes LF.",
+  "tags": [
+    "sql",
+    "mssql",
+    "python",
+    "codegen",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "mssql-strip-server-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "description": "Strip SSMS server noise (SET ANSI_NULLS, object banners, ON [PRIMARY]).",
+      "options": { "file": "mssql-strip-server-noise.mog" }
+    },
+    {
+      "section": "Unquote",
+      "action": "replace",
+      "description": "Remove SQL Server opening bracket quotes.",
+      "options": { "find": "[", "replace_with": "" }
+    },
+    {
+      "section": "Unquote",
+      "action": "replace",
+      "description": "Remove SQL Server closing bracket quotes.",
+      "options": { "find": "]", "replace_with": "" }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop USE <db> batch header.",
+      "options": { "find": "(?im)^USE .*\\nGO\\n", "replace_with": "" }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop ALTER TABLE batches.",
+      "options": { "find": "(?ims)^ALTER TABLE\\b.*?\\nGO\\n", "replace_with": "" }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CREATE INDEX batches.",
+      "options": { "find": "(?ims)^CREATE (?:UNIQUE )?(?:CLUSTERED |NONCLUSTERED )?INDEX\\b.*?\\nGO\\n", "replace_with": "" }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop remaining GO batch separators.",
+      "options": { "find": "(?im)^GO$", "replace_with": "" }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Normalize the leading tab indent SSMS uses to 4 spaces.",
+      "options": { "find": "(?m)^\\t", "replace_with": "    " }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Collapse the blank lines the removals left behind.",
+      "options": { "find": "\\n[ \\t]*(?:\\n[ \\t]*)+", "replace_with": "\n\n" }
+    },
+    {
+      "section": "Class shell",
+      "action": "replace_regex",
+      "description": "Rewrite each 'CREATE TABLE <schema>.<tbl>(' into a @dataclass header.",
+      "options": { "find": "(?m)^CREATE TABLE (?:\\w+\\.)?(\\w+)\\($", "replace_with": "@dataclass\nclass ${1}:" }
+    },
+    {
+      "section": "Class shell",
+      "action": "replace_regex",
+      "description": "Remove each table-closing ') ON [PRIMARY]...' line.",
+      "options": { "find": "(?m)^\\).*$", "replace_with": "" }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop IDENTITY(seed,increment) markers.",
+      "options": { "find": "(?i) IDENTITY\\(\\d+,\\s*\\d+\\)", "replace_with": "" }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop trailing commas that separated columns.",
+      "options": { "find": "(?m),[ \\t]*$", "replace_with": "" }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Mark nullable columns (4-space indent, ending in bare NULL) with a sentinel.",
+      "options": { "find": "(?m)^(    \\w[^\\n]*?)(?<!NOT) NULL$", "replace_with": "${1}@@N@@" }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Remove the NOT NULL constraint marker from non-nullable columns.",
+      "options": { "find": "(?m) NOT NULL$", "replace_with": "" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "datetime family -> datetime.",
+      "options": { "find": "(?i)\\b(?:datetimeoffset|datetime2|smalldatetime|datetime)\\b(?:\\(\\d+\\))?", "replace_with": "datetime" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "date -> date.",
+      "options": { "find": "(?i)\\bdate\\b", "replace_with": "date" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "time -> time.",
+      "options": { "find": "(?i)\\btime\\b(?:\\(\\d+\\))?", "replace_with": "time" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "char/varchar/nchar/nvarchar/text -> str.",
+      "options": { "find": "(?i)\\b(?:nvarchar|varchar|nchar|char|ntext|text)\\b(?:\\(\\s*(?:\\d+|max)\\s*\\))?", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "uniqueidentifier -> UUID.",
+      "options": { "find": "(?i)\\buniqueidentifier\\b", "replace_with": "UUID" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "decimal/numeric -> Decimal.",
+      "options": { "find": "(?i)\\b(?:decimal|numeric)\\b(?:\\(\\s*\\d+\\s*(?:,\\s*\\d+\\s*)?\\))?", "replace_with": "Decimal" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "money/smallmoney -> Decimal.",
+      "options": { "find": "(?i)\\b(?:smallmoney|money)\\b", "replace_with": "Decimal" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "real / float -> float.",
+      "options": { "find": "(?i)\\b(?:real|float)\\b(?:\\(\\d+\\))?", "replace_with": "float" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "int family -> int.",
+      "options": { "find": "(?i)\\b(?:bigint|smallint|tinyint|int)\\b", "replace_with": "int" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bit -> bool.",
+      "options": { "find": "(?i)\\bbit\\b", "replace_with": "bool" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "varbinary -> bytes.",
+      "options": { "find": "(?i)\\bvarbinary\\b(?:\\(\\s*(?:\\d+|max)\\s*\\))?", "replace_with": "bytes" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "binary -> bytes.",
+      "options": { "find": "(?i)\\bbinary\\b(?:\\(\\d+\\))?", "replace_with": "bytes" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "image -> bytes.",
+      "options": { "find": "(?i)\\bimage\\b", "replace_with": "bytes" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "sql_variant -> Any (flagged below).",
+      "options": { "find": "(?i)\\bsql_variant\\b", "replace_with": "Any" }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag SQL Server sql_variant columns (mapped to Any).",
+      "options": { "pattern": "\\bAny\\b", "comment": "#", "tag": "TODO", "message": "SQL Server sql_variant; runtime-typed (typing.Any), verify mapping.", "position": "inline" }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Rewrite nullable columns into an annotated attribute with a '| None' union (4-space indent).",
+      "options": { "find": "(?m)^(    )(\\w+) (\\S+)@@N@@( # .*)?$", "replace_with": "    ${2}: ${3} | None${4}" }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Rewrite non-nullable columns into an annotated attribute (4-space indent).",
+      "options": { "find": "(?m)^(    )(\\w+) (\\S+)( # .*)?$", "replace_with": "    ${2}: ${3}${4}" }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Safety: strip any leftover nullability sentinel.",
+      "options": { "find": "@@N@@", "replace_with": "" }
+    },
+    {
+      "section": "PascalCase",
+      "action": "to_pascal",
+      "description": "PascalCase each class name (the table identifier); attributes stay snake_case.",
+      "only_lines_matching": "^class ",
+      "scope": { "field": { "index": 2, "delimiter": " " } }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Collapse multiple blank lines to a single blank between classes.",
+      "options": { "find": "\\n[ \\t]*(?:\\n[ \\t]*)+", "replace_with": "\n\n" }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim leading blank lines.",
+      "options": { "find": "\\A\\n+", "replace_with": "" }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim trailing blank lines to a single final newline.",
+      "options": { "find": "\\n\\s*\\z", "replace_with": "\n" }
+    },
+    {
+      "section": "Header",
+      "action": "replace_regex",
+      "description": "Prepend the future-annotations pragma and dataclass/datetime/decimal/uuid/typing imports.",
+      "options": { "find": "\\A", "replace_with": "from __future__ import annotations\nfrom dataclasses import dataclass\nfrom datetime import date, datetime, time\nfrom decimal import Decimal\nfrom typing import Any\nfrom uuid import UUID\n\n" }
+    }
+  ]
+}

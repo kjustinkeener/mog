@@ -1,0 +1,14 @@
+{
+  "name": "Fill down blank CSV cells",
+  "description": "Fill each blank cell with the last non-blank value seen above it in the same column, the classic fix for a spreadsheet export where merged cells left gaps. Blank lines pass through. Quote-aware; option delimiter (default ,) on the step for other delimiters.",
+  "summary": "Fill down blank CSV cells from above",
+  "tags": [
+    "csv",
+    "fill",
+    "table",
+    "data"
+  ],
+  "steps": [
+    { "action": "fill_down", "description": "Carry the last non-blank value down each column" }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "JSONL to JSON",
+  "description": "Collect JSONL (one JSON value per line) into a single pretty JSON array. The read counterpart to JSON to JSONL.",
+  "summary": "Convert JSONL to a single JSON array",
+  "tags": ["convert", "jsonl", "json"],
+  "steps": [
+    { "description": "Collect the lines into one JSON array.", "action": "jsonl_to_json" }
+  ]
+}

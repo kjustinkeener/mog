@@ -1,0 +1,4 @@
+'plain'
+'has spaces'
+'it'\''s tricky'
+'; rm -rf /'

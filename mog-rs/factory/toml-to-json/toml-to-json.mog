@@ -1,0 +1,9 @@
+{
+  "name": "TOML to JSON",
+  "description": "Parse TOML and emit it as pretty JSON, with key order preserved. Pairs with JSON to TOML.",
+  "summary": "Convert TOML to JSON",
+  "tags": ["convert", "toml", "json", "config"],
+  "steps": [
+    { "description": "Convert the TOML to JSON.", "action": "toml_to_json" }
+  ]
+}

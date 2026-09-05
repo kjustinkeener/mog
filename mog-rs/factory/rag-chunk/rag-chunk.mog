@@ -1,0 +1,14 @@
+{
+  "name": "Chunk text for RAG",
+  "description": "Split a document into overlapping, word-aligned chunks for RAG ingestion or embedding. Each chunk is about `size` characters (snapped to a whitespace boundary so words stay whole), with `overlap` characters carried into the next chunk to preserve context. Chunks are separated by a --- rule; the demo uses small sizes to show the boundaries.",
+  "summary": "Split text into overlapping chunks for RAG",
+  "tags": [
+    "ai",
+    "fragment",
+    "ml",
+    "text"
+  ],
+  "steps": [
+    { "action": "chunk_text", "description": "Split into ~80-char chunks with 15 overlap", "options": { "size": 80, "overlap": 15 } }
+  ]
+}

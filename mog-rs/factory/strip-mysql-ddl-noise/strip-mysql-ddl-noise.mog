@@ -1,0 +1,19 @@
+{
+  "name": "Strip MySQL SHOW CREATE TABLE noise",
+  "summary": "Remove MySQL storage clauses, backticks, and MySQL-only column bits",
+  "description": "Strip the MySQL-specific rendering that SHOW CREATE TABLE adds, so a downstream dialect converter sees a clean CREATE TABLE. Removes the trailing ENGINE=... DEFAULT CHARSET=... COLLATE=... storage clause, the backtick identifier quoting, the redundant DEFAULT NULL, and the MySQL-only ON UPDATE CURRENT_TIMESTAMP auto-refresh (flagged, since it has no portable equivalent). Target-agnostic; run it first. Assumes LF.",
+  "tags": ["sql", "mysql", "strip", "migration", "fragment"],
+  "steps": [
+    { "action": "eol_lf", "description": "Normalize to LF." },
+    { "action": "flag_matching", "description": "Flag the MySQL-only ON UPDATE auto-refresh before removing it.",
+      "options": { "pattern": "(?i)ON UPDATE CURRENT_TIMESTAMP", "message": "MySQL ON UPDATE auto-refresh dropped; no portable equivalent (use a trigger/stream/task)", "comment": "--", "tag": "TODO", "position": "inline" } },
+    { "action": "replace_regex", "description": "Remove the ON UPDATE CURRENT_TIMESTAMP clause.",
+      "options": { "find": "(?i) ON UPDATE CURRENT_TIMESTAMP", "replace_with": "" } },
+    { "action": "replace_regex", "description": "Drop the trailing ENGINE / CHARSET / COLLATE storage clause.",
+      "options": { "find": "(?im)^\\)\\s*ENGINE=.*$", "replace_with": ")" } },
+    { "action": "replace", "description": "Drop backtick identifier quoting.",
+      "options": { "find": "`", "replace_with": "" } },
+    { "action": "replace_regex", "description": "Drop redundant DEFAULT NULL (columns are nullable by default).",
+      "options": { "find": "(?i) DEFAULT NULL", "replace_with": "" } }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Airflow 1 to 2 import paths",
+  "description": "Rewrite common Airflow 1.x import module paths to their Airflow 2.x locations (the _operator / _hook / _sensor suffix modules were renamed). Covers core operators, hooks, and sensors; contrib and provider-package moves are not handled.",
+  "summary": "Rewrite Airflow 1.x import paths to 2.x",
+  "tags": [
+    "codemod",
+    "python",
+    "imports",
+    "migration"
+  ],
+  "steps": [
+    {
+      "action": "replace_map",
+      "description": "Rewrite renamed Airflow module paths",
+      "options": {
+        "map": {
+          "airflow.operators.bash_operator": "airflow.operators.bash",
+          "airflow.operators.python_operator": "airflow.operators.python",
+          "airflow.operators.dummy_operator": "airflow.operators.dummy",
+          "airflow.operators.email_operator": "airflow.operators.email",
+          "airflow.hooks.base_hook": "airflow.hooks.base",
+          "airflow.sensors.base_sensor_operator": "airflow.sensors.base"
+        }
+      }
+    }
+  ]
+}

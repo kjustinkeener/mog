@@ -1,0 +1,21 @@
+{
+  "name": "COBOL copybook to field spec CSV (lossy)",
+  "description": "Lossy parse of a COBOL copybook (the schema, i.e. the PIC clauses) into a CSV field spec: level,name,pic,type. Converts the copybook itself, not copybook-applied data (splitting fixed-width records needs the copybook as a second input, out of scope for a single-input tool). Keeps only elementary lines with a PIC clause and emits the level number, field name, raw PIC string, and a coarse type guess (text if the PIC has X/A, decimal if it has V or COMP-3, else integer). GROUP items (levels with no PIC) are dropped. Does not compute byte lengths, and does not resolve REDEFINES, OCCURS/OCCURS DEPENDING, 88-level condition names, or continuation. Good for a quick field inventory of a copybook.",
+  "summary": "Extract a COBOL copybook field spec to CSV",
+  "tags": [
+    "mainframe",
+    "csv",
+    "schema",
+    "convert",
+    "lossy",
+    "best-effort"
+  ],
+  "steps": [
+    { "section": "Keep field lines", "action": "keep_lines_matching", "description": "Only lines with a PIC clause (drops group items and comments)", "options": { "pattern": "\\bPIC\\b" } },
+    { "section": "Extract columns", "action": "replace_regex_multiline", "description": "level NAME PIC clause. -> level,NAME,pic", "options": { "find": "^\\s*(\\d{2})\\s+([A-Za-z0-9-]+)\\s+PIC\\s+([^.]+?)\\s*\\.\\s*$", "replace_with": "$1,$2,$3" } },
+    { "section": "Derive type", "action": "replace_regex_multiline", "description": "text: PIC contains X or A", "options": { "find": "^(\\d+,[^,]+,[^,]*[XA][^,]*)$", "replace_with": "$1,text" } },
+    { "section": "Derive type", "action": "replace_regex_multiline", "description": "decimal: PIC has V or COMP-3", "options": { "find": "^(\\d+,[^,]+,[^,]*(?:V|COMP-3)[^,]*)$", "replace_with": "$1,decimal" } },
+    { "section": "Derive type", "action": "replace_regex_multiline", "description": "integer: remaining numeric PIC", "options": { "find": "^(\\d+,[^,]+,[^,]*9[^,]*)$", "replace_with": "$1,integer" } },
+    { "section": "Header", "action": "prepend", "description": "CSV header row", "options": { "text": "level,name,pic,type\n" } }
+  ]
+}

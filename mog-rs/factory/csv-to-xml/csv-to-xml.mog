@@ -1,0 +1,23 @@
+{
+  "name": "CSV to XML records",
+  "description": "Turn a CSV with a header row into an XML document: one <record> element per row, wrapped in <records>. Uses a per-row template, so edit the element names on the step to match your columns (the demo maps id and name). Mechanical: values are NOT XML-escaped, so run escape-xml first (or html-escape) if your data can contain & < >.",
+  "summary": "Convert CSV rows to XML records",
+  "tags": [
+    "csv",
+    "xml",
+    "convert",
+    "data"
+  ],
+  "steps": [
+    {
+      "action": "row_to_template",
+      "description": "Render each row as an XML record",
+      "options": {
+        "has_header": true,
+        "template": "  <record>\n    <id>${id}</id>\n    <name>${name}</name>\n  </record>"
+      }
+    },
+    { "action": "prepend", "description": "Root open tag", "options": { "text": "<records>\n" } },
+    { "action": "append", "description": "Root close tag", "options": { "text": "</records>\n" } }
+  ]
+}

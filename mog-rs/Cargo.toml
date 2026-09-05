@@ -1,0 +1,102 @@
+[package]
+name = "mog"
+version = "0.1.0"
+edition = "2021"
+description = "Deterministic batch text-transform engine and CLI: reusable .mog find/replace pipelines with preview and backup."
+license = "MIT"
+authors = ["Justin Keener"]
+repository = "https://github.com/kjustinkeener/mog"
+readme = "README.md"
+keywords = ["text", "cli", "find-replace", "regex", "batch"]
+categories = ["command-line-utilities", "text-processing"]
+
+[[bin]]
+name = "mog"
+path = "src/main.rs"
+
+[lib]
+name = "mog"
+path = "src/lib.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+# preserve_order keeps JSON object keys in their original order (insertion order)
+# instead of sorting them, so the json_* reading actions and .mog round-trips are
+# faithful to the source rather than alphabetized.
+serde_json = { version = "1", features = ["preserve_order"] }
+# YAML reading/writing for the yaml_to_json / json_to_yaml conversions. Parses via
+# serde into a serde_json::Value, so it inherits preserve_order (key order kept).
+serde_yaml = "0.9"
+# Full RFC-4180 CSV reading (multi-line quoted fields) for the csv_to_json /
+# csv_to_markdown document readers. The per-line field ops keep their own
+# single-line parser by design.
+csv = "1"
+# Lightweight read-only XML parser for the xml_to_json reader.
+roxmltree = "0.20"
+fancy-regex = "0.14"
+# Linear-time regex engine. Used as the fast path for patterns with no fancy
+# features (backreferences / lookaround); fancy-regex is a backtracking engine
+# and O(n^2) on large input. `regex` also serves as the feature detector: a
+# pattern it compiles is, by construction, backref/lookaround-free.
+regex = "1"
+encoding_rs = "0.8"
+clap = { version = "4", features = ["derive"] }
+glob = "0.3"
+rayon = "1"
+rand = "0.8"
+anyhow = "1"
+base64 = "0.22"
+urlencoding = "2"
+similar = "2"
+include_dir = "0.7"
+toml = "0.8"
+# Store marketplace: content hashing + ed25519 index signing/verification.
+sha2 = "0.10"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+hex = "0.4"
+ureq = "2"
+# In-place binary self-replacement for `mog update`'s engine track. Handles the
+# Windows "can't overwrite a running exe" case by renaming self aside first.
+self-replace = "1"
+# A pure-Rust port of sqlglot for true warehouse-SQL dialect transpilation, exposed
+# as the `sql_transpile` action (the correctness tier alongside the minimal-diff regex
+# converters). In the default build (footprint is light: pulls only thiserror at
+# runtime). Exact-pinned because it is pre-1.0 (API churn).
+polyglot-sql = { version = "=0.9.2" }
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+tempfile = "3"
+criterion = "0.5"
+
+# Phase 4 baseline: measure where whole-file processing actually hurts before
+# touching the engine. `cargo bench` runs it; harness = false hands main() to
+# criterion instead of libtest.
+[[bench]]
+name = "engine"
+harness = false
+
+# Embeds the application icon into mog.exe (see build.rs). Host-gated: only
+# pulled in on Windows, where the resource compiler lives.
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"
+
+# `mog install` writes the per-user PATH and the Add/Remove Programs key under
+# HKCU (no admin). winreg gives typed, non-truncating registry access (unlike
+# `setx`, which caps PATH at 1024 chars). Windows-only.
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
+
+# Size-optimized profile for shipping artifacts (the downloadable mog.exe, which
+# is also the exe Studio embeds and lays down on install). Inherits release (opt-level 3, so runtime perf is
+# unchanged) and adds cross-crate dead-code elimination + symbol strip: ~57 MB -> ~27 MB.
+# NOT the default release profile because fat LTO + one codegen unit make every build
+# much slower -- the edit/build/test loop stays on plain `--release`; ship with
+# `cargo build --profile dist`.
+[profile.dist]
+inherits = "release"
+lto = "fat"
+codegen-units = 1
+strip = true
+panic = "abort"

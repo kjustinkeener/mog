@@ -1,0 +1,10 @@
+kind,name,namespace,api_version
+Namespace,shop-prod,,v1
+ConfigMap,shop-config,shop-prod,v1
+Deployment,shop-web,shop-prod,apps/v1
+ClusterRole,shop-reader,,rbac.authorization.k8s.io/v1
+Service,"shop-web, external",shop-prod,v1
+# WARN(mog): resource has a kind but no metadata.name
+Secret,,shop-prod,v1
+# WARN(mog): document has no kind field; it may be a values or kustomization file
+,,,

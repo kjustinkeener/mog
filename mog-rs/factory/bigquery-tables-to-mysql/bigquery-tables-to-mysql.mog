@@ -1,0 +1,17 @@
+{
+  "name": "BigQuery to MySQL (DDL/SQL)",
+  "description": "Convert BigQuery Standard SQL toward MySQL: type maps (INT64->BIGINT, FLOAT64->DOUBLE, NUMERIC->DECIMAL, STRING->TEXT, BOOL->TINYINT(1), BYTES->BLOB, DATETIME stays) and SAFE_CAST->CAST. Both dialects quote identifiers with backticks, so those pass through. Minimal-diff, not a semantic transpiler: STRUCT/ARRAY types and BigQuery-only functions are left for review. Assumes LF text.",
+  "summary": "Convert BigQuery SQL to MySQL",
+  "tags": [
+    "sql",
+    "bigquery",
+    "mysql",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "steps": [
+    { "section": "Types", "action": "replace_map", "description": "Map BigQuery types to MySQL (whole-word, case-insensitive)", "options": { "ignore_case": true, "whole_word": true, "map": { "INT64": "BIGINT", "FLOAT64": "DOUBLE", "NUMERIC": "DECIMAL", "STRING": "TEXT", "BYTES": "BLOB", "BOOL": "TINYINT(1)" } } },
+    { "section": "Functions", "action": "replace_regex", "description": "SAFE_CAST -> CAST", "options": { "find": "\\bSAFE_CAST\\b", "replace_with": "CAST", "ignore_case": true } }
+  ]
+}

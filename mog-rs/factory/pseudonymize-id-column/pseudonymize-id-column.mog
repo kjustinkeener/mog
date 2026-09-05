@@ -1,0 +1,26 @@
+{
+  "name": "Pseudonymize an id/email column with a stable hash",
+  "description": "Replace the first column (an email or user id) with a stable, salted hash so the data stays joinable across runs while the real identifier is gone. The same value always maps to the same token (a 16-char hex digest with a 'user_' prefix), so you can still group or join on it; set an explicit salt to make tokens unguessable but stable. Other columns pass through untouched; empty cells stay blank. Input is treated as headerless (every line's field is hashed): scope the step or drop a header row first if your input has one.",
+  "summary": "Replace an id/email column with a stable salted hash",
+  "tags": [
+    "data",
+    "encode",
+    "privacy",
+    "redact",
+    "pii"
+  ],
+  "steps": [
+    {
+      "action": "hash_field",
+      "description": "Hash column 1 to a 16-char prefixed token, salted for stability",
+      "options": {
+        "field": 1,
+        "algorithm": "sha256",
+        "encoding": "hex",
+        "length": 16,
+        "salt": "mog-demo-salt",
+        "prefix": "user_"
+      }
+    }
+  ]
+}

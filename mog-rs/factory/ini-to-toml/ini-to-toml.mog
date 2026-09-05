@@ -1,0 +1,9 @@
+{
+  "name": "INI to TOML",
+  "description": "Convert an INI config to TOML. [section] headers pass through, key=value lines get a type-inferred TOML value (bool/int/float, else a quoted string), and ;/# comment lines become TOML # comments. Best for the common flat/one-level shape.",
+  "summary": "Convert INI to TOML",
+  "tags": ["convert", "config", "ini", "toml"],
+  "steps": [
+    { "description": "Convert the INI config to TOML.", "action": "ini_to_toml" }
+  ]
+}

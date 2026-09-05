@@ -1,0 +1,7 @@
+table,column,type
+orders,order_id,INT
+orders,cust_id,INT
+orders,total,DECIMAL
+customers,id,INT
+customers,name,VARCHAR
+customers,region,VARCHAR

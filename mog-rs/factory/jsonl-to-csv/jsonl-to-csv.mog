@@ -1,0 +1,22 @@
+{
+  "name": "JSONL to CSV",
+  "description": "Convert JSON Lines (one JSON object per line) into a CSV table: collect the objects into an array, then flatten to CSV with a header row (the union of keys). Nested objects/arrays are rendered as compact JSON in their cell.",
+  "summary": "Convert JSONL to CSV",
+  "tags": [
+    "jsonl",
+    "json",
+    "csv",
+    "convert",
+    "data"
+  ],
+  "steps": [
+    {
+      "action": "jsonl_to_json",
+      "description": "Gather the JSONL objects into a JSON array"
+    },
+    {
+      "action": "json_to_csv",
+      "description": "Flatten the array of objects to CSV"
+    }
+  ]
+}

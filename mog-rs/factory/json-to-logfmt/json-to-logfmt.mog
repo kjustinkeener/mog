@@ -1,0 +1,9 @@
+{
+  "name": "JSON to logfmt",
+  "description": "Convert JSONL (one flat JSON object per line) into logfmt log lines (key=value ...), quoting any value that holds a space, = or quote. Null values are skipped. The read counterpart to logfmt to JSON.",
+  "summary": "Convert JSONL to logfmt log lines",
+  "tags": ["convert", "json", "log", "observability"],
+  "steps": [
+    { "description": "Render each JSON object as a logfmt line.", "action": "json_to_logfmt" }
+  ]
+}

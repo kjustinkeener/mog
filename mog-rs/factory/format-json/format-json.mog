@@ -1,0 +1,17 @@
+{
+  "name": "Format (pretty-print) JSON",
+  "description": "Parse the whole input as one JSON value and re-serialize it with 2-space indentation. Because it round-trips through a real JSON parser, it also validates the input (invalid JSON is an error) and normalizes key quoting and spacing. Key order is preserved.",
+  "summary": "Pretty-print and validate JSON",
+  "tags": [
+    "json",
+    "format",
+    "indent",
+    "scan"
+  ],
+  "steps": [
+    {
+      "action": "json_pretty",
+      "description": "Re-serialize with 2-space indentation"
+    }
+  ]
+}

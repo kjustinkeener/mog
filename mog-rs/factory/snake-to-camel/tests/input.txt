@@ -1,0 +1,4 @@
+user_id
+first_name
+is_active_flag
+parse-json-data

@@ -1,0 +1,21 @@
+{
+  "name": "CSV to vCard contacts",
+  "description": "Turn a CSV of contacts (header row with FN, EMAIL, TEL) into vCard (.vcf) cards, one card per row. Uses a per-row template, so you can edit the fields on the step to add ORG, ADR, etc. The inverse of vcard-to-csv. Expects the exact header names FN, EMAIL, TEL; blank cells still emit their line.",
+  "summary": "Convert a CSV of contacts to vCard (.vcf)",
+  "tags": [
+    "csv",
+    "contacts",
+    "convert",
+    "interchange"
+  ],
+  "steps": [
+    {
+      "action": "row_to_template",
+      "description": "Render each row as a vCard card",
+      "options": {
+        "has_header": true,
+        "template": "BEGIN:VCARD\nVERSION:3.0\nFN:${FN}\nEMAIL:${EMAIL}\nTEL:${TEL}\nEND:VCARD"
+      }
+    }
+  ]
+}

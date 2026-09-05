@@ -1,0 +1,9 @@
+{
+  "name": "HTML table to CSV",
+  "description": "Extract an HTML <table> into CSV (regex-based, for simple tables): cell tags are stripped and common entities decoded. Non-table markup is ignored. The read counterpart to CSV to HTML table.",
+  "summary": "Convert an HTML table to CSV",
+  "tags": ["convert", "html", "csv", "table"],
+  "steps": [
+    { "description": "Extract the HTML table rows into CSV.", "action": "html_table_to_csv" }
+  ]
+}

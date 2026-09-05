@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<orders exported="2026-08-14">
+  <order>
+    <id>1001</id>
+    <customer>Ada Lovelace</customer>
+    <city>London, UK</city>
+    <note>Gift wrap &amp; card</note>
+    <total>249.95</total>
+  </order>
+  <order>
+    <id>1002</id>
+    <customer>Grace &quot;Amazing&quot; Hopper</customer>
+    <city>Arlington</city>
+    <note>Leave at the &lt;side&gt; door</note>
+    <total>1120.00</total>
+  </order>
+  <order>
+    <id>1003</id>
+    <customer>Ken Thompson</customer>
+    <city>Murray Hill</city>
+    <note></note>
+    <total>18.40</total>
+  </order>
+  <order>
+    <id>1004</id>
+    <customer>Barbara Liskov</customer>
+    <city>Cambridge, MA</city>
+    <note>Fragile</note>
+    <total>77.05</total>
+  </order>
+</orders>

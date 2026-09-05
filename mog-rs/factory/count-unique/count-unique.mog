@@ -1,0 +1,14 @@
+{
+  "name": "Count unique lines",
+  "description": "Collapse duplicate lines and prefix each with how many times it occurred (like sort | uniq -c). Useful for tallying log messages, tags, or values.",
+  "summary": "Collapse duplicate lines and count each (uniq -c)",
+  "tags": [
+    "line",
+    "list",
+    "dedupe",
+    "single-action"
+  ],
+  "steps": [
+    { "action": "unique_with_count", "description": "Collapse duplicates and prefix a count" }
+  ]
+}

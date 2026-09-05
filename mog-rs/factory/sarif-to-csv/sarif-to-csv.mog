@@ -1,0 +1,112 @@
+{
+  "name": "SARIF to CSV",
+  "description": "Turn a SARIF 2.1.0 static-analysis report (CodeQL, Semgrep, Trivy, ESLint, Bandit, gitleaks ...) into a CSV finding table -- one row per result, with the columns rule_id,level,message,file,line: the fields you actually triage a scanner run with. The report is read with the JSON actions, not scraped with regex: the runs array is lifted out, each run is expanded to one line, every runs[].results[] entry is collected as its own JSON line, and each finding is projected through a template -- so a report holding several runs (several tools in one file) is handled, not just the first. file and line come from the finding's FIRST physical location; a finding carrying more than one location is flagged so you know the table is showing only part of it. Escaped newlines and tabs in a message are folded to spaces to keep each finding on one row, and the result is RFC 4180 CSV, so a message holding a comma or a quote is quoted and internal quotes are doubled. Scope: level is taken as written on the result -- SARIF lets a result inherit its level from the rule's defaultConfiguration, and that inheritance is NOT resolved here, so a blank level means the result did not carry one (kind is used as a fallback). Rule metadata (name, help text, tags), fixes, code flows, related locations, suppressions and the artifacts table are not exported.",
+  "summary": "Convert a SARIF scanner report to a CSV of findings",
+  "tags": [
+    "sarif",
+    "json",
+    "csv",
+    "convert",
+    "security",
+    "ci"
+  ],
+  "steps": [
+    {
+      "section": "Lift the results out of every run",
+      "action": "json_minify",
+      "description": "Parse the report and re-serialize it on a single line."
+    },
+    {
+      "action": "replace_regex",
+      "description": "Drop everything ahead of the runs array.",
+      "options": {
+        "find": "^.*?\"runs\"\\s*:\\s*",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "extract_json",
+      "description": "Take the balanced runs array and discard the rest of the report."
+    },
+    {
+      "action": "json_to_jsonl",
+      "description": "Expand the array to one run per line."
+    },
+    {
+      "action": "json_extract",
+      "description": "Collect every result of every run as its own JSON line.",
+      "options": {
+        "path": "results[*]",
+        "raw": true,
+        "separator": "\n"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Fold escaped newlines and tabs in a message so each finding stays on one row.",
+      "options": {
+        "find": "\\\\[nrt]",
+        "replace_with": " "
+      }
+    },
+    {
+      "section": "Project the finding columns",
+      "action": "json_extract",
+      "description": "Emit rule, level, message, file and line for each finding, plus a second-location probe.",
+      "options": {
+        "template": "${ruleId||rule.id}\u001f${level||kind}\u001f${message.text||message.markdown}\u001f${locations[0].physicalLocation.artifactLocation.uri}\u001f${locations[0].physicalLocation.region.startLine}\u001f${locations[1].physicalLocation.artifactLocation.uri||locations[1].physicalLocation.region.startLine}"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "Flag a finding that carries more than one location.",
+      "options": {
+        "pattern": "\\x1f[^\\x1f\\n]+$",
+        "message": "finding carries more than one location; only the first is in this table",
+        "comment": "#",
+        "tag": "WARN",
+        "position": "before"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Drop the second-location probe column.",
+      "options": {
+        "find": "(?m)^((?:[^\\x1f\\n]*\\x1f){4}[^\\x1f\\n]*)\\x1f[^\\x1f\\n]*$",
+        "replace_with": "${1}"
+      }
+    },
+    {
+      "section": "Emit the CSV table",
+      "action": "replace",
+      "description": "Double every embedded double quote.",
+      "options": {
+        "find": "\"",
+        "replace_with": "\"\""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Wrap any field holding a comma or a quote in double quotes.",
+      "options": {
+        "find": "(?m)(^|\\x1f)([^\\x1f\\n]*[\",][^\\x1f\\n]*)(?=\\x1f|$)",
+        "replace_with": "${1}\"${2}\""
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Swap each unit separator for a comma.",
+      "options": {
+        "find": "\u001f",
+        "replace_with": ","
+      }
+    },
+    {
+      "action": "prepend",
+      "description": "Add the CSV header row.",
+      "options": {
+        "text": "rule_id,level,message,file,line\n"
+      }
+    }
+  ]
+}

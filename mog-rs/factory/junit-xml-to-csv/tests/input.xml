@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="build 4821" tests="8" failures="2" errors="1" skipped="1" time="6.412">
+  <testsuite name="checkout.CartTest" tests="4" failures="1" errors="0" skipped="1" time="3.104" timestamp="2026-08-14T09:12:03">
+    <properties>
+      <property name="java.version" value="21.0.2"/>
+    </properties>
+    <testcase classname="checkout.CartTest" name="addsItemToCart" time="0.412"/>
+    <testcase classname="checkout.CartTest" name="totals with tax, tip &amp; discount" time="0.907">
+      <failure message="expected &lt;12.50&gt; but was &lt;12.05&gt;" type="java.lang.AssertionError">
+java.lang.AssertionError: expected &lt;12.50&gt; but was &lt;12.05&gt;
+        at checkout.CartTest.totals(CartTest.java:88)
+      </failure>
+    </testcase>
+    <testcase classname="checkout.CartTest" name="rejects a &quot;negative&quot; quantity" time="0.311"/>
+    <testcase classname="checkout.CartTest" name="appliesLoyaltyPoints" time="1.474">
+      <skipped message="loyalty service not provisioned"/>
+    </testcase>
+  </testsuite>
+  <testsuite name="api.SearchTest" tests="4" failures="1" errors="1" skipped="0" time="3.308">
+    <testcase classname="api.SearchTest" name="findsByKeyword" time="0.220"/>
+    <testcase classname="api.SearchTest" name="paginates results" time="0.658">
+      <error message="Connection refused" type="java.net.ConnectException"/>
+    </testcase>
+    <testcase classname="api.SearchTest" name="sorts by price, then name" time="1.030">
+      <failure message="ordering mismatch at index 3" type="AssertionError"/>
+    </testcase>
+    <testcase classname="api.SearchTest" name="escapesQueryString" time="1.400">
+      <system-out>query=a%20b</system-out>
+    </testcase>
+  </testsuite>
+</testsuites>

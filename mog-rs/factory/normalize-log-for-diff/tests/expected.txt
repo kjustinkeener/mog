@@ -1,0 +1,4 @@
+<TS> INFO request <UUID> done
+sha256=<HASH>
+allocated at <ADDR>
+plain line stays

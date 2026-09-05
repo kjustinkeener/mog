@@ -1,0 +1,13 @@
+{
+  "name": "CSV to JSON",
+  "description": "Convert CSV (with a header row) to a JSON array of objects keyed by the header. Types are inferred: numbers, true/false, and empty cells become null. Quote-aware but single-line (no newlines inside quoted fields).",
+  "summary": "Convert CSV to a JSON array of objects",
+  "tags": ["convert", "csv", "json", "data"],
+  "steps": [
+    {
+      "description": "Read the CSV into a typed JSON array.",
+      "action": "csv_to_json",
+      "options": { "array": true, "infer": true }
+    }
+  ]
+}

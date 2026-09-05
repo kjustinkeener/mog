@@ -1,0 +1,2 @@
+{"messages":[{"role":"user","content":"Name the capital of France."},{"role":"assistant","content":"Paris."}]}
+{"messages":[{"role":"user","content":"Translate to French.\n\nGood morning"},{"role":"assistant","content":"Bonjour"}]}

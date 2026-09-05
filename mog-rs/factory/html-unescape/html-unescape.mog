@@ -1,0 +1,15 @@
+{
+  "name": "Decode HTML entities",
+  "description": "Reverse HTML entity encoding: named entities (&amp; &lt; &copy; and many more), decimal numeric entities (&#8364;), and hex numeric entities (&#x1F600;) all become their characters. An unknown &name; is left as-is. Useful for turning scraped or exported HTML back into plain text. The inverse of html-escape.",
+  "summary": "Decode HTML entities to characters",
+  "tags": [
+    "html",
+    "escape",
+    "decode",
+    "text",
+    "single-action"
+  ],
+  "steps": [
+    { "action": "html_decode", "description": "Decode HTML entities to characters" }
+  ]
+}

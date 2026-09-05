@@ -1,0 +1,380 @@
+{
+  "name": "SQL Server procs to PostgreSQL",
+  "description": "Convert a SQL Server SSMS 'Generate Scripts' stored procedure (T-SQL) to PostgreSQL PL/pgSQL (the procs, not tables, object type). Rewrites the CREATE PROCEDURE wrapper (strips [brackets] and dbo., turns the un-parenthesized @param list into a parenthesized Postgres signature, drops the @ sigil on parameters and their body uses, converts '@p TYPE = default' to 'TYPE DEFAULT default', maps T-SQL param/column types via the shared DDL type maps, and wraps the body BEGIN...END as 'LANGUAGE plpgsql AS $$ ... END; $$;'), drops SET NOCOUNT, and translates the simple, regex-tractable body pieces (GETDATE()->NOW(), ISNULL->COALESCE, newid()->gen_random_uuid(), PRINT expr -> RAISE NOTICE '%%', expr). Everything procedural that cannot be safely converted is COMMENTED OUT and stamped with -- TODO(mog) so the result still COMPILES: T-SQL cursors, DECLARE @tbl TABLE table variables, #temp tables, BEGIN TRY/CATCH, MERGE, dynamic EXEC/sp_executesql, and @@system variables. Assumes the common SSMS shape 'CREATE PROCEDURE name @params AS BEGIN ... END'; a proc with no BEGIN/END body, parameters already in parentheses, or logic beyond the flagged set needs hand review. NOTE: string concatenation with + is left as-is (it parses in Postgres but resolves at runtime; Postgres uses ||). Not a T-SQL parser. Set schema_prefix (or --define schema_prefix=...) to control schema qualification.",
+  "summary": "Convert a real SSMS-scripted SQL Server stored procedure to PostgreSQL PL/pgSQL",
+  "tags": [
+    "sql",
+    "mssql",
+    "postgres",
+    "convert",
+    "migration"
+  ],
+  "constants": {
+    "schema_prefix": ""
+  },
+  "steps": [
+    {
+      "section": "Normalize And Strip Noise",
+      "description": "Normalize to LF first so every later CRLF-sensitive regex is reliable. Output stays LF (standard for SQL scripts; psql reads it fine).",
+      "action": "eol_lf"
+    },
+    {
+      "description": "Strip SQL Server server/session/DROP scaffolding first (object banners, SET ANSI_NULLS/QUOTED_IDENTIFIER, CREATE/DROP DATABASE, ALTER DATABASE, the DROP phase, extended properties). Runs on the raw SSMS text while GO batches are intact. Shared with the tables converter.",
+      "action": "run_mog",
+      "options": {
+        "file": "mssql-strip-server-noise.mog"
+      }
+    },
+    {
+      "section": "Rewrite Quoting And Schema",
+      "description": "Strip T-SQL square-bracket quoting: opening bracket.",
+      "action": "replace",
+      "options": {
+        "find": "[",
+        "replace_with": ""
+      }
+    },
+    {
+      "description": "Strip T-SQL square-bracket quoting: closing bracket.",
+      "action": "replace",
+      "options": {
+        "find": "]",
+        "replace_with": ""
+      }
+    },
+    {
+      "description": "Schema qualifier: rewrite the SQL Server 'dbo.' prefix. Default schema_prefix is empty, so objects become unqualified and resolve via search_path (public). Set schema_prefix to 'public.' to force qualification.",
+      "action": "replace",
+      "options": {
+        "find": "dbo.",
+        "replace_with": "{{schema_prefix}}",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "USE <db> + its GO -> a documenting comment (Postgres has no USE; you connect to a database instead).",
+      "action": "replace_regex",
+      "options": {
+        "find": "USE (\\w+)\\nGO\\n",
+        "replace_with": "-- Database: ${1}\n",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Rewrite Procedure Header Keyword",
+      "description": "CREATE/ALTER PROC[EDURE] -> CREATE OR REPLACE PROCEDURE (idempotent redeploy, the Postgres idiom).",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\b(?:CREATE|ALTER)\\s+PROC(?:EDURE)?\\b",
+        "replace_with": "CREATE OR REPLACE PROCEDURE"
+      }
+    },
+    {
+      "section": "Flag Untranslatable Procedural Constructs",
+      "description": "T-SQL cursor declaration has no portable PL/pgSQL one-liner: comment the line out and flag it (rewrite as a FOR loop or a refcursor by hand).",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)^(\\s*)(DECLARE\\s+@?\\w+\\s+CURSOR\\b.*)$",
+        "replace_with": "${1}-- TODO(mog): T-SQL cursor not portable to PL/pgSQL; rewrite as a FOR loop or refcursor: ${2}"
+      }
+    },
+    {
+      "description": "Table variable (DECLARE @t TABLE (...)) has no PL/pgSQL equivalent: flag the opening line (rewrite as a TEMP TABLE or an array).",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)^(\\s*)(DECLARE\\s+@?\\w+\\s+TABLE\\b.*)$",
+        "replace_with": "${1}-- TODO(mog): T-SQL table variable not portable; use a CREATE TEMP TABLE or an array: ${2}"
+      }
+    },
+    {
+      "description": "Temp tables (#name) are session objects with different semantics: flag any statement line that references one.",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)^(\\s*)((?:CREATE|INSERT|SELECT|UPDATE|DELETE|DROP)\\b[^\\n]*#\\w+[^\\n]*)$",
+        "replace_with": "${1}-- TODO(mog): T-SQL #temp table; use a Postgres TEMP TABLE and review scope: ${2}"
+      }
+    },
+    {
+      "description": "Structured error handling (BEGIN TRY / END TRY / BEGIN CATCH / END CATCH) maps to a PL/pgSQL BEGIN ... EXCEPTION block: flag each marker line for a manual rewrite.",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)^(\\s*)((?:BEGIN|END)\\s+(?:TRY|CATCH))[ \\t]*;?[ \\t]*$",
+        "replace_with": "${1}-- TODO(mog): TRY/CATCH -> PL/pgSQL BEGIN ... EXCEPTION WHEN OTHERS THEN ... END; rewrite by hand: ${2}"
+      }
+    },
+    {
+      "description": "MERGE, dynamic EXEC(...) / EXECUTE(...) / sp_executesql, and @@system variables have no safe regex translation: flag the line.",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)^(\\s*)((?:MERGE\\b|EXEC(?:UTE)?\\s*\\(|EXEC(?:UTE)?\\s+sp_executesql\\b)[^\\n]*|[^\\n]*@@\\w+[^\\n]*)$",
+        "replace_with": "${1}-- TODO(mog): T-SQL MERGE / dynamic EXEC / @@variable not auto-converted; rewrite by hand: ${2}"
+      }
+    },
+    {
+      "section": "Rewrite Parameters",
+      "description": "Parameter default: '@p TYPE = default' -> '@p TYPE DEFAULT default'. Anchored to a line beginning with @name so body assignments (SET x = y, WHERE a = b) are never touched. Runs before the @ sigil is stripped.",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)^(\\s*@\\w+\\s+[A-Za-z0-9_]+(?:\\s*\\([^)]*\\))?)\\s*=\\s*([^,\\n]+?)([ \\t]*,?)[ \\t]*$",
+        "replace_with": "${1} DEFAULT ${2}${3}"
+      }
+    },
+    {
+      "description": "Drop the @ sigil on parameters and every body reference (Postgres uses bare names). Leaves @@ system variables (already flagged above) and commented lines readable.",
+      "action": "replace_regex",
+      "options": {
+        "find": "@(\\w+)",
+        "replace_with": "${1}"
+      }
+    },
+    {
+      "section": "Wrap Signature And Body",
+      "description": "Open the Postgres parameter list: put a '(' right after the procedure name (SSMS scripts the T-SQL list without parentheses).",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?m)^(CREATE OR REPLACE PROCEDURE [A-Za-z0-9_.\"{}]+)\\n",
+        "replace_with": "${1}(\n"
+      }
+    },
+    {
+      "description": "Close the parameter list and open the PL/pgSQL body: the 'AS' before the body BEGIN becomes ') LANGUAGE plpgsql AS $$'. Matches the SSMS 'AS\\nBEGIN' shape (a proc with no BEGIN/END body needs manual wrapping).",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)\\n\\s*AS\\s*\\nBEGIN\\b",
+        "replace_with": "\n)\nLANGUAGE plpgsql\nAS $$$$\nBEGIN"
+      }
+    },
+    {
+      "section": "Rewrite Types",
+      "description": "Type map: nvarchar(max) -> text (run before varchar(max), which it contains).",
+      "action": "replace",
+      "options": {
+        "find": "nvarchar(max)",
+        "replace_with": "text",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: varchar(max) -> text.",
+      "action": "replace",
+      "options": {
+        "find": "varchar(max)",
+        "replace_with": "text",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: nvarchar -> varchar (Postgres varchar is already Unicode).",
+      "action": "replace",
+      "options": {
+        "find": "nvarchar",
+        "replace_with": "varchar",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: nchar -> char.",
+      "action": "replace",
+      "options": {
+        "find": "nchar",
+        "replace_with": "char",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: ntext -> text.",
+      "action": "replace",
+      "options": {
+        "find": "ntext",
+        "replace_with": "text",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: datetimeoffset(n)/bare -> timestamptz (run before datetime).",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bdatetimeoffset(\\(\\d+\\))?",
+        "replace_with": "timestamptz"
+      }
+    },
+    {
+      "description": "Type map: datetime2(n)/bare -> timestamp (run before datetime).",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bdatetime2(\\(\\d+\\))?",
+        "replace_with": "timestamp"
+      }
+    },
+    {
+      "description": "Type map: smalldatetime -> timestamp (run before datetime; it contains 'datetime').",
+      "action": "replace",
+      "options": {
+        "find": "smalldatetime",
+        "replace_with": "timestamp",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: datetime -> timestamp (whole word).",
+      "action": "replace",
+      "options": {
+        "find": "datetime",
+        "replace_with": "timestamp",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: smallmoney -> numeric(10,4) (run before money).",
+      "action": "replace",
+      "options": {
+        "find": "smallmoney",
+        "replace_with": "numeric(10,4)",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: money -> numeric(19,4).",
+      "action": "replace",
+      "options": {
+        "find": "money",
+        "replace_with": "numeric(19,4)",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: tinyint -> smallint.",
+      "action": "replace",
+      "options": {
+        "find": "tinyint",
+        "replace_with": "smallint",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: bit -> boolean (whole word).",
+      "action": "replace",
+      "options": {
+        "find": "bit",
+        "replace_with": "boolean",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: uniqueidentifier -> uuid.",
+      "action": "replace",
+      "options": {
+        "find": "uniqueidentifier",
+        "replace_with": "uuid",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: float -> double precision.",
+      "action": "replace",
+      "options": {
+        "find": "float",
+        "replace_with": "double precision",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Rewrite Body Functions",
+      "description": "Drop SET NOCOUNT ON/OFF (SSMS body preamble; no Postgres equivalent).",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)^\\s*SET NOCOUNT (?:ON|OFF)\\s*;?\\s*\\n",
+        "replace_with": ""
+      }
+    },
+    {
+      "description": "Function map: GETDATE() -> NOW().",
+      "action": "replace",
+      "options": {
+        "find": "getdate()",
+        "replace_with": "NOW()",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: GETUTCDATE() -> (now() at time zone 'utc').",
+      "action": "replace",
+      "options": {
+        "find": "getutcdate()",
+        "replace_with": "(now() at time zone 'utc')",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: SYSDATETIME() -> NOW() (run before any bare 'datetime' concerns; whole token).",
+      "action": "replace",
+      "options": {
+        "find": "sysdatetime()",
+        "replace_with": "NOW()",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: NEWID()/NEWSEQUENTIALID() -> gen_random_uuid().",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bnew(?:sequential)?id\\(\\)",
+        "replace_with": "gen_random_uuid()"
+      }
+    },
+    {
+      "description": "Function map: ISNULL( -> COALESCE( (Postgres has no ISNULL scalar).",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bISNULL\\(",
+        "replace_with": "COALESCE("
+      }
+    },
+    {
+      "description": "PRINT expr -> RAISE NOTICE '%', expr (PL/pgSQL logging). String concatenation with + inside expr is left as-is (parses in Postgres; use || for real text concat).",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)^([ \\t]*)PRINT\\s+(.+?)[ \\t]*;?[ \\t]*$",
+        "replace_with": "${1}RAISE NOTICE '%', ${2};"
+      }
+    },
+    {
+      "section": "Close The Body",
+      "description": "Terminal 'END' + its trailing GO batch -> 'END;' plus the '$$;' that closes the dollar-quoted body and the CREATE statement. ($$$$ emits a literal $$.)",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)\\nEND\\s*\\n+GO\\s*\\n?\\s*$",
+        "replace_with": "\nEND;\n$$$$;\n"
+      }
+    },
+    {
+      "description": "Any remaining standalone GO batch separator -> statement terminator (defensive; a single-proc script has only the terminal GO handled above).",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?mi)\\nGO\\n",
+        "replace_with": ";\n"
+      }
+    },
+    {
+      "section": "Finalize And Format",
+      "description": "Canonical whitespace finalize via the shared fragment (tidy_chars de-spaces before ';').",
+      "action": "run_mog",
+      "options": {
+        "file": "sql-finalize-whitespace.mog",
+        "with": {
+          "tidy_chars": ";"
+        }
+      }
+    }
+  ],
+  "dependencies": [
+    "mssql-strip-server-noise",
+    "sql-finalize-whitespace"
+  ]
+}

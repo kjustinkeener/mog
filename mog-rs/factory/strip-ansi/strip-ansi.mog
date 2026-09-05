@@ -1,0 +1,18 @@
+{
+  "name": "Strip ANSI",
+  "description": "Remove ANSI/VT escape sequences (SGR color codes, cursor moves, OSC titles) from captured terminal or log output. grep only matches lines; this rewrites them.",
+  "summary": "Remove ANSI/VT escape and color codes from terminal output",
+  "tags": ["terminal", "color", "log", "strip"],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Strip CSI sequences (SGR colors, cursor moves, clears)",
+      "options": { "find": "\\x1b\\[[0-9;?]*[ -/]*[@-~]", "replace_with": "" }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Strip OSC sequences (window/title), terminated by BEL or ST",
+      "options": { "find": "\\x1b\\][^\\x07\\x1b]*(?:\\x07|\\x1b\\\\)", "replace_with": "" }
+    }
+  ]
+}

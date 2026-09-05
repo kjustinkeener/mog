@@ -1,0 +1,11 @@
+Contact: alice@example.com for access
+Server 10.0.12.34 refused connection
+AWS key AKIAIOSFODNN7EXAMPLE in config
+export API_KEY=sk_live_abc123DEF456
+password: hunter2
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.abc-DEF_123
+token = eyJ0eXAiOiJKV1QifQ.payloadpart.sigpart
+GET /api key=sk_live_9f8a7b6c5d4e3f2a done
+publishable pk_live_51H8xYzAbCdEf appears here
+version 1.2.3.4 build
+just a normal line with no secrets

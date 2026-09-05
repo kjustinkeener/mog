@@ -1,0 +1,25 @@
+{
+  "name": "camelCase to snake_case",
+  "description": "Convert camelCase / PascalCase identifiers to snake_case: insert an underscore at each lower-to-upper boundary, then lowercase. Best on a list or column of identifiers, since it lowercases all letters. Runs of capitals (acronyms like HTTP) are kept together (getHTTP -> get_http, not get_h_t_t_p).",
+  "summary": "Convert camelCase identifiers to snake_case",
+  "tags": [
+    "case",
+    "identifier",
+    "codemod",
+    "convert"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Insert _ at each lowercase/digit -> uppercase boundary",
+      "options": {
+        "find": "([a-z0-9])([A-Z])",
+        "replace_with": "${1}_${2}"
+      }
+    },
+    {
+      "action": "to_lower",
+      "description": "Lowercase the result"
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "name": "Snowflake GET_DDL to Trino",
+  "summary": "Convert a Snowflake GET_DDL table export to Trino DDL",
+  "description": "Convert Snowflake GET_DDL('TABLE', ...) output to Trino DDL. Strips the Snowflake-only renderings (cluster by, comments, terminator), drops autoincrement and PRIMARY KEY (Trino has neither; flagged), rewrites the create verb, and maps types (NUMBER(38,0)->BIGINT, NUMBER(p,s)->DECIMAL(p,s), VARIANT->JSON, TIMESTAMP_NTZ->TIMESTAMP, TIMESTAMP_TZ/LTZ->TIMESTAMP WITH TIME ZONE). Not a semantic transpiler; leaves TODO(mog) markers where a construct needs manual review.",
+  "tags": [
+    "sql",
+    "snowflake",
+    "trino",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-snowflake-getddl-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip export noise",
+      "action": "run_mog",
+      "options": {
+        "file": "strip-snowflake-getddl-noise.mog"
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop autoincrement (Trino has no identity columns).",
+      "options": {
+        "find": "(?i) autoincrement start \\d+ increment \\d+",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Constraints",
+      "action": "replace_regex",
+      "description": "Drop the PRIMARY KEY constraint (Trino CREATE TABLE has no constraints; flagged).",
+      "options": {
+        "find": "(?is),\\s*constraint \\w+ primary key \\([^)]*\\)",
+        "replace_with": "\n\t-- TODO(mog): dropped PRIMARY KEY (Trino has no table constraints)"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "NUMBER(38,0) -> BIGINT.",
+      "options": {
+        "find": "\\bNUMBER\\(38,\\s*0\\)",
+        "replace_with": "BIGINT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "NUMBER(p,s) -> DECIMAL(p,s).",
+      "options": {
+        "find": "\\bNUMBER\\(",
+        "replace_with": "DECIMAL("
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Bare NUMBER -> BIGINT.",
+      "options": {
+        "find": "\\bNUMBER\\b",
+        "replace_with": "BIGINT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "VARIANT -> JSON.",
+      "options": {
+        "find": "\\bVARIANT\\b",
+        "replace_with": "JSON"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "TIMESTAMP_NTZ(n) -> TIMESTAMP.",
+      "options": {
+        "find": "\\bTIMESTAMP_NTZ(\\(\\d+\\))?",
+        "replace_with": "TIMESTAMP"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "TIMESTAMP_TZ / TIMESTAMP_LTZ -> TIMESTAMP WITH TIME ZONE.",
+      "options": {
+        "find": "\\bTIMESTAMP_(?:LTZ|TZ)(\\(\\d+\\))?",
+        "replace_with": "TIMESTAMP WITH TIME ZONE"
+      }
+    },
+    {
+      "section": "Statement",
+      "action": "replace",
+      "description": "Normalize the create verb for Trino.",
+      "options": {
+        "find": "create or replace TABLE ",
+        "replace_with": "CREATE TABLE "
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "Sort lines alphabetically",
+  "description": "Sort the lines in ascending (A-Z) order. Case-sensitive by default. Useful for ordering a list of names, imports, tags, or requirements.",
+  "summary": "Sort lines alphabetically (A-Z)",
+  "tags": ["line", "sort", "single-action"],
+  "steps": [ { "action": "sort_lines", "description": "Sort lines A-Z" } ]
+}

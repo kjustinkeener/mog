@@ -1,0 +1,16 @@
+{
+  "name": "Minify JSON",
+  "description": "Parse the whole input as one JSON value and re-serialize it compactly, with no insignificant whitespace. Valid by construction (it round-trips through a real JSON parser, so it also validates the input). Key order is preserved. The inverse of format-json.",
+  "summary": "Minify JSON to compact one-line output",
+  "tags": [
+    "json",
+    "minify",
+    "scan"
+  ],
+  "steps": [
+    {
+      "action": "json_minify",
+      "description": "Re-serialize compactly"
+    }
+  ]
+}

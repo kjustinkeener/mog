@@ -1,0 +1,16 @@
+{
+  "name": "Align columns on a delimiter",
+  "description": "Pad the cells of a delimited block so every column lines up (like column -t / Tabularize). Splits each line on the separator, trims cells, and pads each column to its widest value. Defaults to a comma; change the separator on the step for tabs or another delimiter. Great for making CSV or config blocks human-readable.",
+  "summary": "Pad delimited cells so columns line up",
+  "tags": [
+    "indent",
+    "column",
+    "format",
+    "table",
+    "whitespace",
+    "single-action"
+  ],
+  "steps": [
+    { "action": "align_columns", "description": "Pad each column to its widest cell", "options": { "separator": "," } }
+  ]
+}

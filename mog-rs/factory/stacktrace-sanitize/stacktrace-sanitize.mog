@@ -1,0 +1,30 @@
+{
+  "name": "Sanitize stack trace",
+  "description": "Normalize the volatile parts of a stack trace so two traces diff cleanly: hex addresses -> 0xADDR, and file :line:col -> :LINE:COL.",
+  "summary": "Normalize stack trace addresses and line numbers for clean diffs",
+  "tags": [
+    "cleanup",
+    "log",
+    "diff",
+    "redact",
+    "observability"
+  ],
+  "steps": [
+    {
+      "description": "Redact hex memory addresses.",
+      "action": "replace_regex",
+      "options": {
+        "find": "0x[0-9a-fA-F]{4,}",
+        "replace_with": "0xADDR"
+      }
+    },
+    {
+      "description": "Normalize :line:col positions.",
+      "action": "replace_regex",
+      "options": {
+        "find": ":(\\d+):(\\d+)",
+        "replace_with": ":LINE:COL"
+      }
+    }
+  ]
+}

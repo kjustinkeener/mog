@@ -1,0 +1,16 @@
+{
+  "name": "Join lines with commas",
+  "description": "Collapse a list (one item per line) into a single comma-and-space separated line. Blank lines are dropped first. Handy for turning a column into an inline list. Pair with quote-lines for a quoted list.",
+  "summary": "Join lines into a comma-separated list",
+  "tags": [
+    "text",
+    "join",
+    "list",
+    "csv",
+    "format"
+  ],
+  "steps": [
+    { "action": "remove_empty_lines", "description": "Drop blank lines" },
+    { "action": "join_lines", "description": "Join with a comma and space", "options": { "separator": ", " } }
+  ]
+}

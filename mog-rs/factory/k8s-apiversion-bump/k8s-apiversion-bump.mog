@@ -1,0 +1,39 @@
+{
+  "name": "Bump deprecated Kubernetes apiVersions",
+  "description": "Rewrite the common removed/deprecated Kubernetes apiVersion values to their current stable ones (extensions/v1beta1 and apps/v1beta1|v1beta2 -> apps/v1, networking/rbac/batch v1beta1 -> v1). Any remaining v1beta1 / v1alpha1 apiVersion is flagged with a review marker rather than guessed, since those may need a schema change. Check the result against your cluster version.",
+  "summary": "Bump deprecated Kubernetes apiVersions to stable",
+  "tags": [
+    "k8s",
+    "yaml",
+    "config",
+    "migration",
+    "codemod"
+  ],
+  "steps": [
+    {
+      "section": "Bump known apiVersions",
+      "action": "replace_map",
+      "description": "Rewrite deprecated apiVersions to current stable ones",
+      "options": {
+        "map": {
+          "extensions/v1beta1": "apps/v1",
+          "apps/v1beta1": "apps/v1",
+          "apps/v1beta2": "apps/v1",
+          "networking.k8s.io/v1beta1": "networking.k8s.io/v1",
+          "rbac.authorization.k8s.io/v1beta1": "rbac.authorization.k8s.io/v1",
+          "batch/v1beta1": "batch/v1"
+        }
+      }
+    },
+    {
+      "section": "Flag the rest",
+      "action": "flag_matching",
+      "description": "Flag any remaining beta/alpha apiVersion for manual review",
+      "options": {
+        "pattern": "apiVersion:.*(v1beta1|v1alpha1)",
+        "message": "deprecated apiVersion, review manually",
+        "comment": "#"
+      }
+    }
+  ]
+}

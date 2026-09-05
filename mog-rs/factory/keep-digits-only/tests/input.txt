@@ -1,0 +1,3 @@
+(555) 123-4567
+ID: abc-123-xyz
+Total 42 items

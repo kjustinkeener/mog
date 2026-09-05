@@ -1,0 +1,191 @@
+{
+  "name": "Oracle GET_DDL to Snowflake",
+  "summary": "Convert an Oracle DBMS_METADATA.GET_DDL export to Snowflake DDL",
+  "description": "Convert an Oracle DBMS_METADATA.GET_DDL table export (storage suppressed) to Snowflake DDL. Strips the GET_DDL boilerplate, rewrites an Oracle GENERATED ALWAYS AS IDENTITY column into Snowflake IDENTITY START n INCREMENT n, converts a virtual column (GENERATED ALWAYS AS (expr) VIRTUAL) into a Snowflake computed column (type AS (expr)), maps SYSDATE/SYSTIMESTAMP to CURRENT_TIMESTAMP(), and maps types: VARCHAR2(n)->VARCHAR(n), CLOB->VARCHAR, RAW(n)->BINARY, BLOB->BINARY, TIMESTAMP(n) WITH LOCAL TIME ZONE->TIMESTAMP_LTZ, TIMESTAMP(n) WITH TIME ZONE->TIMESTAMP_TZ, TIMESTAMP(n)->TIMESTAMP_NTZ(n), DATE->TIMESTAMP_NTZ (Oracle DATE carries a time component). NUMBER(p,s) kept as-is; PRIMARY KEY/UNIQUE/CHECK/DEFAULT/NOT NULL preserved. Non-portable or semantically-shifted features (zoneless DATE, LOB downcasts, virtual column, parsed-but-unenforced CHECK) are annotated with -- TODO(mog) lines. Execution-validated against a real Snowflake engine (fakesnow).",
+  "tags": [
+    "sql",
+    "oracle",
+    "snowflake",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-oracle-getddl-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip export noise",
+      "description": "Remove Oracle GET_DDL boilerplate (leading whitespace, \"SCHEMA\". qualifier, double-quote identifier quoting, ENABLE, CONSTRAINT USING INDEX clause, TIMESTAMP (n) spacing). Runs first; keeps the CREATE TABLE body.",
+      "action": "run_mog",
+      "options": {
+        "file": "strip-oracle-getddl-noise.mog"
+      }
+    },
+    {
+      "section": "Flag non-portable",
+      "description": "Flag Oracle DATE columns: Oracle DATE stores date+time, so it is mapped below to a zoneless Snowflake timestamp rather than a date-only column. Flagged before the type map so the marker text is not itself rewritten.",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "\\bDATE\\b",
+        "message": "oracle date+time column mapped to a zoneless snowflake timestamp; confirm timezone handling",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag non-portable",
+      "description": "Flag Oracle LOB columns (CLOB/BLOB) which are downcast to bounded Snowflake types below; large-object streaming/locator semantics do not carry over.",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "\\bCLOB\\b|\\bBLOB\\b",
+        "message": "oracle lob downcast to a bounded snowflake type; large-object semantics differ",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag non-portable",
+      "description": "Flag the Oracle virtual column (GENERATED ALWAYS AS (expr) VIRTUAL) before it is rewritten to a Snowflake computed column; the expression must be deterministic and use only supported functions.",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "\\bVIRTUAL\\b",
+        "message": "oracle virtual column rewritten as a snowflake computed column; verify the expression is deterministic and supported",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag non-portable",
+      "description": "Flag CHECK constraints: Snowflake parses CHECK constraints for compatibility but does not enforce them, so the invariant must be enforced elsewhere (ETL / dbt tests).",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "\\bCHECK\\s*\\(",
+        "message": "snowflake parses but does not enforce check constraints; enforce this invariant in etl",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Identity",
+      "description": "Rewrite an Oracle GENERATED ALWAYS AS IDENTITY column (with its MINVALUE/MAXVALUE/INCREMENT BY/START WITH/CACHE/NOORDER storage attributes) into a Snowflake IDENTITY START n INCREMENT n clause, preserving the seed and step.",
+      "action": "replace_regex",
+      "options": {
+        "find": "GENERATED ALWAYS AS IDENTITY[A-Z0-9 ]*?INCREMENT BY (\\d+) START WITH (\\d+)[A-Z0-9 ]*?(?=NOT NULL|,)",
+        "replace_with": "IDENTITY START ${2} INCREMENT ${1} "
+      }
+    },
+    {
+      "section": "Virtual columns",
+      "description": "Rewrite an Oracle virtual column 'GENERATED ALWAYS AS (expr) VIRTUAL' to the Snowflake computed-column form 'AS (expr)'. Snowflake has no VIRTUAL keyword; the column type is kept.",
+      "action": "replace_regex",
+      "options": {
+        "find": "GENERATED ALWAYS AS (\\([^)]*\\)) VIRTUAL",
+        "replace_with": "AS ${1}"
+      }
+    },
+    {
+      "section": "Functions",
+      "description": "SYSDATE -> CURRENT_TIMESTAMP() (used in DEFAULTs). Runs before the DATE type map (word-boundary keeps it clear of SYSDATE anyway).",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bSYSDATE\\b",
+        "replace_with": "CURRENT_TIMESTAMP()"
+      }
+    },
+    {
+      "section": "Functions",
+      "description": "SYSTIMESTAMP -> CURRENT_TIMESTAMP().",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bSYSTIMESTAMP\\b",
+        "replace_with": "CURRENT_TIMESTAMP()"
+      }
+    },
+    {
+      "section": "Types",
+      "description": "VARCHAR2(n) -> VARCHAR(n).",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bVARCHAR2\\b",
+        "replace_with": "VARCHAR"
+      }
+    },
+    {
+      "section": "Types",
+      "description": "CLOB -> VARCHAR (Snowflake max VARCHAR; no CLOB type).",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bCLOB\\b",
+        "replace_with": "VARCHAR"
+      }
+    },
+    {
+      "section": "Types",
+      "description": "RAW(n) -> BINARY (drop the byte length; Snowflake BINARY defaults to the max).",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bRAW\\(\\d+\\)",
+        "replace_with": "BINARY"
+      }
+    },
+    {
+      "section": "Types",
+      "description": "BLOB -> BINARY.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bBLOB\\b",
+        "replace_with": "BINARY"
+      }
+    },
+    {
+      "section": "Types",
+      "description": "TIMESTAMP(n) WITH LOCAL TIME ZONE -> TIMESTAMP_LTZ (drop precision; mapped before the WITH TIME ZONE and plain variants).",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bTIMESTAMP\\(\\d+\\) WITH LOCAL TIME ZONE",
+        "replace_with": "TIMESTAMP_LTZ"
+      }
+    },
+    {
+      "section": "Types",
+      "description": "TIMESTAMP(n) WITH TIME ZONE -> TIMESTAMP_TZ (drop precision).",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bTIMESTAMP\\(\\d+\\) WITH TIME ZONE",
+        "replace_with": "TIMESTAMP_TZ"
+      }
+    },
+    {
+      "section": "Types",
+      "description": "Plain TIMESTAMP(n) -> TIMESTAMP_NTZ(n), keeping the fractional-seconds precision.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bTIMESTAMP\\((\\d+)\\)",
+        "replace_with": "TIMESTAMP_NTZ(${1})"
+      }
+    },
+    {
+      "section": "Types",
+      "description": "DATE -> TIMESTAMP_NTZ (Oracle DATE carries a time-of-day; a Snowflake DATE would truncate it). See the TODO(mog) flagged above.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bDATE\\b",
+        "replace_with": "TIMESTAMP_NTZ"
+      }
+    },
+    {
+      "section": "Finalize",
+      "description": "Tidy the layout the USING INDEX strip leaves behind: fold a lone ',' that lands on its own line back onto the preceding constraint's ')'.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\)\\n\\s*,",
+        "replace_with": "),"
+      }
+    }
+  ]
+}

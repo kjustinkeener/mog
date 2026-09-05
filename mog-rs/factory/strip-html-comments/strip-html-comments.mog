@@ -1,0 +1,22 @@
+{
+  "name": "Strip HTML comments",
+  "description": "Remove HTML/Markdown comments (<!-- ... -->), including ones that span multiple lines. Useful for cleaning authoring notes out of HTML or Markdown before publishing. The comment markers and everything between them are deleted; surrounding text is left as-is. Assumes LF text.",
+  "summary": "Remove HTML and Markdown comments, including multi-line",
+  "tags": [
+    "html",
+    "markdown",
+    "comment",
+    "strip",
+    "cleanup"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Delete <!-- ... --> comment spans (dotall, non-greedy)",
+      "options": {
+        "find": "(?s)<!--.*?-->",
+        "replace_with": ""
+      }
+    }
+  ]
+}

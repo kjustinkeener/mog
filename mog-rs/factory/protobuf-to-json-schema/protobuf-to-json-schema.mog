@@ -1,0 +1,84 @@
+{
+  "name": "Protobuf message to JSON Schema",
+  "description": "Convert a single Protobuf (proto2/proto3) message into a draft-07 JSON Schema object. Maps scalar field types (int*/uint*/sint*/fixed*/sfixed*->integer, float/double->number, bool->boolean, string/bytes->string), treats a 'repeated' field as a JSON array with 'items', and ignores the 'optional' label and field number. Not a protobuf parser: assumes one field per line and does NOT handle nested/embedded messages, map<>, oneof, enum, imports, packages, options, reserved, or comments.",
+  "summary": "Convert a Protobuf message to JSON Schema",
+  "tags": [
+    "convert",
+    "schema",
+    "json"
+  ],
+  "steps": [
+    {
+      "section": "Normalize",
+      "description": "Normalize line endings to LF so the per-line field regexes are reliable.",
+      "action": "eol_lf"
+    },
+    {
+      "section": "Fields to properties",
+      "description": "Repeated field -> a JSON array property with an 'items' scalar. Runs before the scalar rule so 'repeated' is not misread as a type.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*repeated\\s+([A-Za-z0-9_]+)\\s+([A-Za-z0-9_]+)\\s*=\\s*\\d+\\s*;\\s*$",
+        "replace_with": "    \"$2\": { \"type\": \"array\", \"items\": { \"type\": \"@$1@\" } },"
+      }
+    },
+    {
+      "description": "Singular scalar field (optional label allowed and dropped) -> a JSON Schema property with a tagged @T@ type.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\s*(?:optional\\s+)?([A-Za-z0-9_]+)\\s+([A-Za-z0-9_]+)\\s*=\\s*\\d+\\s*;\\s*$",
+        "replace_with": "    \"$2\": { \"type\": \"@$1@\" },"
+      }
+    },
+    {
+      "section": "Type map",
+      "description": "Map the tagged Protobuf scalar types to JSON Schema types (longest key wins).",
+      "action": "replace_map",
+      "options": {
+        "map": {
+          "@double@": "number",
+          "@float@": "number",
+          "@int32@": "integer",
+          "@int64@": "integer",
+          "@uint32@": "integer",
+          "@uint64@": "integer",
+          "@sint32@": "integer",
+          "@sint64@": "integer",
+          "@fixed32@": "integer",
+          "@fixed64@": "integer",
+          "@sfixed32@": "integer",
+          "@sfixed64@": "integer",
+          "@bool@": "boolean",
+          "@string@": "string",
+          "@bytes@": "string"
+        }
+      }
+    },
+    {
+      "section": "Reshape header",
+      "description": "message <Name> { -> the JSON Schema object header and open the properties object.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^message\\s+([A-Za-z0-9_]+)\\s*\\{\\s*$",
+        "replace_with": "{\n  \"type\": \"object\",\n  \"title\": \"$1\",\n  \"properties\": {"
+      }
+    },
+    {
+      "description": "The message closing brace -> close the properties object and the schema object.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^\\}\\s*$",
+        "replace_with": "  }\n}"
+      }
+    },
+    {
+      "section": "Finalize JSON",
+      "description": "Drop the trailing comma after the last property so the output is valid JSON.",
+      "action": "replace_regex",
+      "options": {
+        "find": ",(\\n\\s*\\})",
+        "replace_with": "$1"
+      }
+    }
+  ]
+}

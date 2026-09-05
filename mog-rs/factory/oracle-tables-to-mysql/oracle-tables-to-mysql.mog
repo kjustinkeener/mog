@@ -1,0 +1,88 @@
+{
+  "name": "Oracle GET_DDL to MySQL",
+  "summary": "Convert an Oracle DBMS_METADATA.GET_DDL export to MySQL DDL",
+  "description": "Convert an Oracle DBMS_METADATA.GET_DDL export (storage suppressed) to MySQL DDL. Strips the GET_DDL boilerplate and maps types: NUMBER(1,0)->TINYINT(1), NUMBER(p,0)->BIGINT, NUMBER(p,s)->DECIMAL(p,s), VARCHAR2->VARCHAR, CLOB->LONGTEXT, DATE->DATETIME, TIMESTAMP(n)->DATETIME(n). Execution-validated against a real MySQL engine.",
+  "tags": [
+    "sql",
+    "oracle",
+    "mysql",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-oracle-getddl-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "options": {
+        "file": "strip-oracle-getddl-noise.mog"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bNUMBER\\(1,\\s*0\\)",
+        "replace_with": "TINYINT(1)"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bNUMBER\\(\\d+,\\s*0\\)",
+        "replace_with": "BIGINT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bNUMBER\\((\\d+,\\s*\\d+)\\)",
+        "replace_with": "DECIMAL($1)"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bNUMBER\\b",
+        "replace_with": "DECIMAL"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bVARCHAR2\\b",
+        "replace_with": "VARCHAR"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bCLOB\\b",
+        "replace_with": "LONGTEXT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bTIMESTAMP\\((\\d+)\\)",
+        "replace_with": "DATETIME($1)"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bDATE\\b",
+        "replace_with": "DATETIME"
+      }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Snowflake query to DuckDB",
+  "summary": "Rewrite Snowflake SELECT function calls for DuckDB",
+  "description": "Rewrite the common Snowflake scalar-function differences DuckDB does not share, for simple (non-nested-argument) call shapes. Handles DATEADD(part, n, expr) -> (expr + INTERVAL n part), DATEDIFF(part, a, b) -> date_diff('part', a, b), and NVL -> COALESCE; the :: cast passes through (DuckDB supports it). Any DATEADD/DATEDIFF whose arguments contain nested calls or commas is not rewritten (regex cannot balance parentheses) and is flagged with TODO(mog) for manual review. Not a semantic transpiler.",
+  "tags": ["sql", "snowflake", "duckdb", "query", "convert", "migration"],
+  "steps": [
+    { "section": "Date functions", "action": "replace_regex", "description": "DATEADD(part, n, col) -> (col + INTERVAL n part). Simple args only.",
+      "options": { "find": "(?i)DATEADD\\(\\s*(\\w+)\\s*,\\s*(-?\\d+)\\s*,\\s*(\\w+)\\s*\\)", "replace_with": "($3 + INTERVAL $2 $1)" } },
+    { "section": "Date functions", "action": "replace_regex", "description": "DATEDIFF(part, a, b) -> date_diff('part', a, b) (DuckDB needs the part quoted).",
+      "options": { "find": "(?i)DATEDIFF\\(\\s*(\\w+)\\s*,", "replace_with": "date_diff('$1'," } },
+    { "section": "Null functions", "action": "replace_regex", "description": "NVL -> COALESCE.",
+      "options": { "find": "(?i)\\bNVL\\(", "replace_with": "COALESCE(" } },
+    { "section": "Review", "action": "flag_matching", "description": "Flag any DATEADD/DATEDIFF left unconverted (nested arguments; regex cannot balance parens).",
+      "options": { "pattern": "(?i)DATE(?:ADD|DIFF)\\(", "message": "complex DATEADD/DATEDIFF (nested arguments) not auto-converted; rewrite by hand", "comment": "--", "tag": "TODO", "position": "inline" } }
+  ]
+}

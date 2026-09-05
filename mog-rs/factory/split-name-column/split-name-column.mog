@@ -1,0 +1,116 @@
+{
+  "name": "Split a full-name column",
+  "description": "Split the last column of a CSV, a full name, into four columns: first, middle, last, suffix. Both the First Last order and the quoted Last, First order are read, a leading title (Mr Mrs Ms Miss Dr Prof) is dropped, a generational suffix (Jr Sr II III IV) is moved to its own column, and a surname that starts with a particle (van, von, de, della and friends) is kept whole in the last column. A three-word name puts the middle word in the middle column; a longer one puts everything between the first and last words there. A name that cannot be separated confidently (a single word) is kept in the first column and flagged for review rather than guessed at. The header cell is assumed to be full_name; change the first and last steps for a different header.",
+  "summary": "Split a full-name column into first/middle/last/suffix",
+  "tags": [
+    "csv",
+    "names",
+    "split",
+    "table",
+    "data",
+    "cleanup"
+  ],
+  "steps": [
+    {
+      "action": "replace",
+      "description": "Park the header out of the way",
+      "options": {
+        "find": "full_name",
+        "replace_with": "@@HDR@@"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Quoted Last, First order becomes First Last",
+      "options": {
+        "find": "(?m),\"([^\",\\n]+),\\s*([^\"\\n]+)\"$",
+        "replace_with": ",${2} ${1}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Drop a leading title",
+      "options": {
+        "find": "(?m),(?:Mr|Mrs|Ms|Miss|Dr|Prof)\\.?\\s+(?=[^,\\n]*$)",
+        "replace_with": ",",
+        "ignore_case": true
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Split off a generational suffix",
+      "options": {
+        "find": "(?m),([^,\\n@]+?) +(Jr|Sr|II|III|IV)\\.?$",
+        "replace_with": ",${1}@@F@@${2}",
+        "ignore_case": true
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Mark the names that carry no suffix",
+      "options": {
+        "find": "(?m),([^,\\n@]+)$",
+        "replace_with": ",${1}@@F@@"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "A surname starting with a particle stays whole",
+      "options": {
+        "find": "(?m),([^ ,\\n@]+) +((?:van|von|der|den|ter|ten|de|del|della|di|da|dos|du|la|le|st)\\b[^,\\n@]*)@@F@@",
+        "replace_with": ",${1}@@F@@@@F@@${2}@@F@@",
+        "ignore_case": true
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Three or more words become first middle last",
+      "options": {
+        "find": "(?m),([^ ,\\n@]+) +([^,\\n@]+) +([^ ,\\n@]+)@@F@@",
+        "replace_with": ",${1}@@F@@${2}@@F@@${3}@@F@@"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Two words become first and last",
+      "options": {
+        "find": "(?m),([^ ,\\n@]+) +([^ ,\\n@]+)@@F@@",
+        "replace_with": ",${1}@@F@@@@F@@${2}@@F@@"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "Flag the names that could not be separated",
+      "options": {
+        "pattern": ",[^ ,\\n@]+@@F@@[^,\\n@]*$",
+        "message": "one word only so the parts could not be separated; kept whole for review",
+        "comment": "#",
+        "tag": "FIXME"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Pad an unsplit name out to four columns",
+      "options": {
+        "find": ",([^ ,\\n@]+)@@F@@(?![^\\n@]*@)",
+        "replace_with": ",${1}@@F@@@@F@@@@F@@"
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Markers become column separators",
+      "options": {
+        "find": "@@F@@",
+        "replace_with": ","
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Restore the header as four column names",
+      "options": {
+        "find": "@@HDR@@",
+        "replace_with": "first,middle,last,suffix"
+      }
+    }
+  ]
+}

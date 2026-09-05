@@ -1,0 +1,2 @@
+Authorization: Bearer [JWT]
+plain header on this line

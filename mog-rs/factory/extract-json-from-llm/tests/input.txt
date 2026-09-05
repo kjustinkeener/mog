@@ -1,0 +1,7 @@
+Sure! Here is the record you asked for:
+
+```json
+{"name": "Ada Lovelace", "role": "engineer", "active": true}
+```
+
+Let me know if you want anything changed.

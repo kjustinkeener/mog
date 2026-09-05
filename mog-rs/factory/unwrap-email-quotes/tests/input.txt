@@ -1,0 +1,7 @@
+> This is a fairly long quoted line from the
+> original message that was hard-wrapped and
+> should collapse back to a single quoted line.
+
+Thanks for the note. Here is my reply, which was
+also wrapped across a few lines and should join
+back into one paragraph.

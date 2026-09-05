@@ -1,0 +1,59 @@
+{
+  "name": "Strip Databricks SHOW CREATE TABLE noise",
+  "summary": "Remove Delta/Spark export boilerplate, flag lost physical clauses",
+  "description": "Strip the tool-specific boilerplate that Databricks 'SHOW CREATE TABLE' adds around a table definition, so a downstream dialect converter sees a clean CREATE TABLE. Removes the USING <format> directive and the whole TBLPROPERTIES(delta.*) block outright (engine internals), and turns the LOCATION / PARTITIONED BY / CLUSTER BY physical clauses into TODO(mog) comments (they carry intent but have no portable target). Target-agnostic: pair it with a per-target type/function converter. Assumes LF; run it first.",
+  "tags": [
+    "sql",
+    "databricks",
+    "spark",
+    "strip",
+    "migration",
+    "fragment"
+  ],
+  "steps": [
+    {
+      "action": "eol_lf",
+      "description": "Normalize to LF so the block/line anchors below are reliable."
+    },
+    {
+      "action": "replace_regex",
+      "description": "Drop the entire TBLPROPERTIES(delta.*) block (Delta engine internals).",
+      "options": {
+        "find": "(?s)\\n?TBLPROPERTIES \\(.*?\\)",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Drop the USING <format> storage directive (no target equivalent).",
+      "options": {
+        "find": "(?m)^USING \\w+\\n?",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Turn the physical LOCATION clause into a TODO (Databricks-specific path).",
+      "options": {
+        "find": "(?m)^LOCATION '([^']*)'",
+        "replace_with": "-- TODO(mog): dropped source LOCATION '$1' (set target storage / external stage manually)"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Turn PARTITIONED BY into a TODO (Hive-style partitioning has no portable target).",
+      "options": {
+        "find": "(?m)^PARTITIONED BY \\(([^)]*)\\)",
+        "replace_with": "-- TODO(mog): dropped Databricks PARTITIONED BY ($1) (set target partitioning / clustering manually)"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Turn liquid CLUSTER BY into a TODO (set the target's clustering manually).",
+      "options": {
+        "find": "(?m)^CLUSTER BY \\(([^)]*)\\)",
+        "replace_with": "-- TODO(mog): dropped Databricks CLUSTER BY ($1) (set target clustering manually)"
+      }
+    }
+  ]
+}

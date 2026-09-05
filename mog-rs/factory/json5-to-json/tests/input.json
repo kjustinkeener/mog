@@ -1,0 +1,11 @@
+{
+  // the name
+  "name": "demo",
+  "items": [
+    1,
+    2,
+    3,
+  ],
+  /* trailing */
+  "port": 8080,
+}

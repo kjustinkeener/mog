@@ -1,0 +1,5 @@
+The engine ― written in Rust ― is fast. # FIXME(mog): dash needs a call: comma, colon, parentheses, or a new sentence
+― an opening dash line # NOTE(mog): mechanical dash: dash-cleanup rewrites this
+dangling thought ― # NOTE(mog): mechanical dash: dash-cleanup rewrites this
+range 3–4 stays tight. # NOTE(mog): range dash: dash-cleanup makes this a tight hyphen
+no dashes here

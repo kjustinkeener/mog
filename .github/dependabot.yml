@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Rust dependencies for the engine/CLI crate.
+  - package-ecosystem: "cargo"
+    directory: "/mog-rs"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      # Batch routine version bumps into one PR to keep review light.
+      cargo-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Keep the GitHub Actions used by CI and release up to date.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5

@@ -1,0 +1,29 @@
+{
+  "name": "Normalize log level names",
+  "description": "Collapse the many spellings of a log level to one canonical form (WARNING -> WARN, ERR -> ERROR, INFORMATION -> INFO, CRITICAL/FATAL -> CRIT). Case-insensitive, whole-word. Useful before diffing or grouping logs from tools that disagree on level names.",
+  "summary": "Normalize log level names to canonical forms",
+  "tags": [
+    "log",
+    "indent",
+    "normalize",
+    "observability",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "replace_map",
+      "description": "Map level variants to a canonical form",
+      "options": {
+        "ignore_case": true,
+        "whole_word": true,
+        "map": {
+          "WARNING": "WARN",
+          "ERR": "ERROR",
+          "INFORMATION": "INFO",
+          "CRITICAL": "CRIT",
+          "FATAL": "CRIT"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:01,500 # WARN(mog): this cue reached back before the start of the file and was pulled to zero
+Hello there, this one starts too early.
+
+2
+00:00:56,500 --> 00:00:59,750
+This cue crosses the minute mark.
+
+3
+00:00:58,500 --> 00:01:01,400
+And this one lands a minute earlier.
+
+4
+00:59:57,500 --> 00:59:59,500
+An hour in, so the hour rolls back too.

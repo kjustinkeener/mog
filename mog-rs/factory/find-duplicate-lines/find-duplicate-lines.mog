@@ -1,0 +1,17 @@
+{
+  "name": "Keep only duplicated lines",
+  "summary": "Show the lines that occur more than once",
+  "description": "Keep only the lines that occur more than once in the input (one copy of each), dropping the unique lines. The inverse of a de-dupe: use it to audit a list for repeats.",
+  "tags": [
+    "line",
+    "dedupe",
+    "audit",
+    "filter"
+  ],
+  "steps": [
+    {
+      "action": "keep_duplicate_lines",
+      "description": "Keep only lines that occur more than once"
+    }
+  ]
+}

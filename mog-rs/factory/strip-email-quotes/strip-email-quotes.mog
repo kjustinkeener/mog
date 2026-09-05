@@ -1,0 +1,22 @@
+{
+  "name": "Strip email quote markers",
+  "description": "Remove the leading > (and >>, >>>) quote-level markers that email clients add to quoted replies, leaving the underlying text. Handles one or more markers with optional spaces at the start of a line; lines with no marker are untouched.",
+  "summary": "Remove leading > quote markers from email replies",
+  "tags": [
+    "email",
+    "quote",
+    "strip",
+    "cleanup",
+    "text"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex_multiline",
+      "description": "Remove leading > quote markers",
+      "options": {
+        "find": "^(?:>\\s?)+",
+        "replace_with": ""
+      }
+    }
+  ]
+}

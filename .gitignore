@@ -1,0 +1,42 @@
+# Rust build output (mog-rs has its own /target ignore too)
+target/
+
+# Node / front-end (the Tauri + Svelte studio)
+node_modules/
+dist/
+.svelte-kit/
+
+# IDE / editor
+.vs/
+.idea/
+*.suo
+*.user
+
+# OS cruft
+Thumbs.db
+.DS_Store
+
+# Generated dashboard preview (regenerated from the template + sample report)
+mog-rs/templates/*.sample.html
+
+# Internal development / strategy / brainstorm docs -- NOT for the public repo.
+# Only end-user docs belong on GitHub. See docs/direction/ for the rationale.
+docs/direction/
+docs/npp-feature-ideas.md
+docs/studio-spec.md
+docs/mssql-torture-findings.md
+
+# Brand / logo working files -- kept on the Drive, not in the public repo.
+# (mog-rs/assets/mog.ico is intentionally tracked: build.rs embeds it in the exe.)
+brand/
+
+# lab bench scratch (SQL lab harness output, not product)
+lab/_bench*
+lab/bench_*.py
+
+# Python bytecode (from codegen golden validation runs)
+__pycache__/
+*.pyc
+
+# Owner rule: PowerShell scripts live outside the repo (see ../../private/tools/).
+*.ps1

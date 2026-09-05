@@ -1,0 +1,20 @@
+{
+  "name": "Hosts blocklist to domain list",
+  "description": "Extract the bare domains from /etc/hosts blocklist entries by removing the leading 0.0.0.0 (or 127.0.0.1) and its whitespace, leaving one domain per line. Comment and blank lines pass through. The inverse of domains-to-hosts-block.",
+  "summary": "Extract domains from a hosts blocklist",
+  "tags": [
+    "network",
+    "blocklist",
+    "convert"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex_multiline",
+      "description": "Strip a leading 0.0.0.0 / 127.0.0.1 and its whitespace",
+      "options": {
+        "find": "^(?:0\\.0\\.0\\.0|127\\.0\\.0\\.1)\\s+",
+        "replace_with": ""
+      }
+    }
+  ]
+}

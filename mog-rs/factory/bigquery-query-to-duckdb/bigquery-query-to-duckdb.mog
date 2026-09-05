@@ -1,0 +1,20 @@
+{
+  "name": "BigQuery query to DuckDB",
+  "summary": "Rewrite BigQuery SELECT function calls for DuckDB",
+  "description": "Convert common BigQuery scalar-function differences to DuckDB for simple (non-nested-argument) call shapes. Handles DATE_ADD(expr, INTERVAL n part) -> (expr + INTERVAL n part), DATE_DIFF(end, start, part) -> date_diff('part', start, end) (BigQuery's operand order is reversed), SAFE_CAST -> TRY_CAST, IFNULL -> COALESCE, and the INT64/FLOAT64/STRING type names inside casts. DATE_ADD/DATE_DIFF with nested-call arguments is flagged, not rewritten. Not a semantic transpiler.",
+  "tags": ["sql", "bigquery", "duckdb", "query", "convert", "migration"],
+  "steps": [
+    { "section": "Date functions", "action": "replace_regex", "description": "DATE_ADD(expr, INTERVAL n part) -> (expr + INTERVAL n part). Simple args only.",
+      "options": { "find": "(?i)DATE_ADD\\(\\s*(\\w+)\\s*,\\s*INTERVAL\\s+(-?\\d+)\\s+(\\w+)\\s*\\)", "replace_with": "($1 + INTERVAL $2 $3)" } },
+    { "section": "Date functions", "action": "replace_regex", "description": "DATE_DIFF(end, start, part) -> date_diff('part', start, end). Note reversed operands.",
+      "options": { "find": "(?i)DATE_DIFF\\(\\s*(\\w+)\\s*,\\s*(\\w+)\\s*,\\s*(\\w+)\\s*\\)", "replace_with": "date_diff('$3', $2, $1)" } },
+    { "section": "Casts", "action": "replace", "description": "SAFE_CAST -> TRY_CAST.",
+      "options": { "find": "SAFE_CAST(", "replace_with": "TRY_CAST(" } },
+    { "section": "Null functions", "action": "replace_regex", "description": "IFNULL -> COALESCE.",
+      "options": { "find": "(?i)\\bIFNULL\\(", "replace_with": "COALESCE(" } },
+    { "section": "Types", "action": "replace_map", "description": "GoogleSQL type names inside casts -> DuckDB.",
+      "options": { "whole_word": true, "map": { "INT64": "BIGINT", "FLOAT64": "DOUBLE", "STRING": "VARCHAR", "BOOL": "BOOLEAN", "BYTES": "BLOB" } } },
+    { "section": "Review", "action": "flag_matching", "description": "Flag any DATE_ADD/DATE_DIFF left unconverted (nested arguments). Case-sensitive: the converted form is lowercase date_diff.",
+      "options": { "pattern": "DATE_(?:ADD|DIFF)\\(", "message": "complex DATE_ADD/DATE_DIFF (nested arguments) not auto-converted; rewrite by hand", "comment": "--", "tag": "TODO", "position": "inline" } }
+  ]
+}

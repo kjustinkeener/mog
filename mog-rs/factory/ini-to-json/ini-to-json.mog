@@ -1,0 +1,15 @@
+{
+  "name": "INI to JSON",
+  "description": "Convert an INI file to JSON. [section] headers become nested objects and key=value lines get type-inferred values. Best for the common flat/one-level INI shape.",
+  "summary": "Convert INI to JSON",
+  "tags": [
+    "ini",
+    "json",
+    "config",
+    "convert"
+  ],
+  "steps": [
+    { "action": "ini_to_toml", "description": "Parse INI into TOML" },
+    { "action": "toml_to_json", "description": "Serialize as JSON" }
+  ]
+}

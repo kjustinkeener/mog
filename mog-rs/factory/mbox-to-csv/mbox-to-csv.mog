@@ -1,0 +1,159 @@
+{
+  "name": "Mbox to CSV",
+  "description": "Convert an RFC 4155 mbox mailbox into a CSV index of its messages: one row per message with date,from,to,subject,message_id and a header row. Message bodies are dropped, folded headers are unfolded first so long subjects stay intact, header names are matched case-insensitively, and every field is RFC 4180 quoted so commas and quotes inside a subject are safe. A missing header yields an empty cell. RFC 2047 encoded words (=?UTF-8?B?...) are left exactly as they appear; this recipe does not decode them. Messages are split on the From_ separator line, so a body line that begins with an unescaped \"From \" at column 0 would be read as a new message.",
+  "summary": "Index an mbox mailbox as one CSV row per message",
+  "tags": [
+    "mbox",
+    "email",
+    "csv",
+    "convert",
+    "extract"
+  ],
+  "steps": [
+    {
+      "action": "eol_lf",
+      "description": "Normalize line endings so the header and body rules see plain LF"
+    },
+    {
+      "action": "trim_whitespace_right",
+      "description": "Drop trailing whitespace so header values do not carry it into the CSV"
+    },
+    {
+      "action": "replace_regex",
+      "description": "Mark each From_ separator line so messages can be told apart",
+      "options": {
+        "find": "(?m)^From \\S+[^\\n]*$",
+        "replace_with": "@@MOGMSG@@"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Drop each message body: everything from the first blank line to the next message",
+      "options": {
+        "find": "(?s)\\n\\n.*?(?=\\n@@MOGMSG@@|\\z)",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Unfold folded headers: a continuation line joins the header above it",
+      "options": {
+        "find": "\\n[ \\t]+",
+        "replace_with": " "
+      }
+    },
+    {
+      "action": "keep_lines_matching",
+      "description": "Keep only the five headers of interest, plus the message markers",
+      "options": {
+        "pattern": "^(@@MOGMSG@@|(?i:date|from|to|subject|message-id):)"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Fold each message's headers onto a single line",
+      "options": {
+        "find": "\\n(?!@@MOGMSG@@)",
+        "replace_with": "\u001f"
+      }
+    },
+    {
+      "action": "suffix_lines",
+      "description": "Append empty defaults so a message missing a header still gets an empty cell",
+      "options": {
+        "text": "\u001fDate:\u001fFrom:\u001fTo:\u001fSubject:\u001fMessage-ID:"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Pull the date header into the output row (empty when the message has none)",
+      "options": {
+        "find": "(?m)^(@@MOGMSG@@[^\\x1f\\n]*)(?=[^\\n]*?\\x1f(?i:date):[ \\t]*([^\\x1f\\n]*))",
+        "replace_with": "${1}\u001e${2}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Pull the from header into the output row (empty when the message has none)",
+      "options": {
+        "find": "(?m)^(@@MOGMSG@@[^\\x1f\\n]*)(?=[^\\n]*?\\x1f(?i:from):[ \\t]*([^\\x1f\\n]*))",
+        "replace_with": "${1}\u001e${2}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Pull the to header into the output row (empty when the message has none)",
+      "options": {
+        "find": "(?m)^(@@MOGMSG@@[^\\x1f\\n]*)(?=[^\\n]*?\\x1f(?i:to):[ \\t]*([^\\x1f\\n]*))",
+        "replace_with": "${1}\u001e${2}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Pull the subject header into the output row (empty when the message has none)",
+      "options": {
+        "find": "(?m)^(@@MOGMSG@@[^\\x1f\\n]*)(?=[^\\n]*?\\x1f(?i:subject):[ \\t]*([^\\x1f\\n]*))",
+        "replace_with": "${1}\u001e${2}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Pull the message-id header into the output row (empty when the message has none)",
+      "options": {
+        "find": "(?m)^(@@MOGMSG@@[^\\x1f\\n]*)(?=[^\\n]*?\\x1f(?i:message-id):[ \\t]*([^\\x1f\\n]*))",
+        "replace_with": "${1}\u001e${2}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Discard the raw header text now that the five values are extracted",
+      "options": {
+        "find": "\\x1f[^\\n]*",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Remove the message marker, leaving just the extracted fields",
+      "options": {
+        "find": "@@MOGMSG@@\u001e",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "remove_empty_lines",
+      "description": "Drop any blank remnant so no empty row reaches the CSV"
+    },
+    {
+      "action": "replace",
+      "description": "Double every embedded quote, as RFC 4180 requires",
+      "options": {
+        "find": "\"",
+        "replace_with": "\"\""
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Turn the field separator into a quoted CSV comma",
+      "options": {
+        "find": "\u001e",
+        "replace_with": "\",\""
+      }
+    },
+    {
+      "action": "wrap_lines",
+      "description": "Quote the first and last field of every row",
+      "options": {
+        "prefix": "\"",
+        "suffix": "\""
+      }
+    },
+    {
+      "action": "prepend",
+      "description": "Add the CSV header row",
+      "options": {
+        "text": "date,from,to,subject,message_id\n"
+      }
+    }
+  ]
+}

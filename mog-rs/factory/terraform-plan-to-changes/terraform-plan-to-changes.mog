@@ -1,0 +1,115 @@
+{
+  "name": "Terraform plan to change table",
+  "description": "Turn the JSON output of `terraform show -json <planfile>` into a CSV change table with columns action,address,type,name,provider: one row per entry in the top-level resource_changes array. INPUT CONTRACT: the JSON document produced by `terraform show -json` (run `terraform plan -out=tf.plan` then `terraform show -json tf.plan > plan.json`). It does NOT read the human-readable `terraform plan` console text, which has no stable format. The change.actions array is collapsed to one word: [\"create\"] -> create, [\"delete\"] -> delete, [\"update\"] -> update, [\"no-op\"] -> no-op, and either ordering of [\"delete\",\"create\"] / [\"create\",\"delete\"] -> replace. Rows are ordered so the destructive changes surface first: replace, delete, update, create, no-op, any other action last, and then by address within each group. provider is the full provider_name string, e.g. registry.terraform.io/hashicorp/aws.",
+  "summary": "Turn a terraform show -json plan into a CSV change table, riskiest first",
+  "tags": [
+    "convert",
+    "terraform",
+    "json",
+    "csv",
+    "infra"
+  ],
+  "steps": [
+    {
+      "section": "Read the plan",
+      "description": "Collapse the pretty-printed plan document to a single line so the JSON readers below see one record.",
+      "action": "json_minify"
+    },
+    {
+      "description": "Emit one compact JSON object per entry of the top-level resource_changes array; everything else in the plan document is dropped.",
+      "action": "json_extract",
+      "options": {
+        "path": "resource_changes[*]",
+        "raw": true
+      }
+    },
+    {
+      "description": "Read the fields of interest out of each resource change into a tab-separated row. change.actions is an array, so its members are collected with a + between them, giving create, delete, update, no-op or delete+create.",
+      "action": "json_extract",
+      "options": {
+        "template": "${change.actions[*]}\t${address}\t${type}\t${name}\t${provider_name}",
+        "separator": "+"
+      }
+    },
+    {
+      "section": "Classify the action",
+      "description": "Either ordering of a destroy-and-recreate pair is a replace, and it sorts first as the riskiest change.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^(?:delete\\+create|create\\+delete)\t",
+        "replace_with": "1\treplace\t"
+      }
+    },
+    {
+      "description": "A plain destroy sorts second.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^delete\t",
+        "replace_with": "2\tdelete\t"
+      }
+    },
+    {
+      "description": "An in-place change sorts third.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^update\t",
+        "replace_with": "3\tupdate\t"
+      }
+    },
+    {
+      "description": "A new resource sorts fourth.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^create\t",
+        "replace_with": "4\tcreate\t"
+      }
+    },
+    {
+      "description": "An unchanged resource sorts fifth.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^no-op\t",
+        "replace_with": "5\tno-op\t"
+      }
+    },
+    {
+      "description": "Anything else Terraform may emit (a read, or a future action word) keeps its own label and sorts last, so no row is ever silently dropped.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^([a-z][a-z+-]*)\t",
+        "replace_with": "6\t$1\t"
+      }
+    },
+    {
+      "section": "Order and format",
+      "description": "Sort on the whole line: the leading rank orders the groups riskiest first, and the address (the next field) breaks ties inside a group.",
+      "action": "sort_lines",
+      "options": {
+        "order": "asc"
+      }
+    },
+    {
+      "description": "Drop the sort rank now that the rows are in order.",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^[1-6]\t",
+        "replace_with": ""
+      }
+    },
+    {
+      "description": "Re-join the tab-separated rows as CSV, quoting any field that contains a comma, a quote or a newline (RFC 4180).",
+      "action": "change_delimiter",
+      "options": {
+        "from": "\t",
+        "to": ","
+      }
+    },
+    {
+      "description": "Add the CSV header row.",
+      "action": "prepend",
+      "options": {
+        "text": "action,address,type,name,provider\n"
+      }
+    }
+  ]
+}

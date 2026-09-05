@@ -1,0 +1,20 @@
+{
+  "name": "Reset Markdown task list checkboxes",
+  "description": "Uncheck every completed task in a Markdown task list, turning - [x] (or - [X], * [x]) back into - [ ]. Handy for reusing a checklist template for a new run. Indentation, the bullet character, and the task text are preserved; unchecked and non-task lines are left alone.",
+  "summary": "Reset Markdown task list checkboxes to unchecked",
+  "tags": [
+    "markdown",
+    "cleanup",
+    "docs"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex_multiline",
+      "description": "Turn a checked box into an empty one",
+      "options": {
+        "find": "^(\\s*[-*] )\\[[xX]\\]",
+        "replace_with": "$1[ ]"
+      }
+    }
+  ]
+}

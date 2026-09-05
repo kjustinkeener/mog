@@ -1,0 +1,15 @@
+{
+  "name": "JSON to INI",
+  "description": "Convert a JSON object to INI. Top-level scalars come first, then each nested object as an [section]. Best for the flat/one-level shape; deeply nested structures do not map cleanly to INI.",
+  "summary": "Convert a JSON object to INI config",
+  "tags": [
+    "json",
+    "ini",
+    "config",
+    "convert"
+  ],
+  "steps": [
+    { "action": "json_to_toml", "description": "Serialize JSON as TOML" },
+    { "action": "toml_to_ini", "description": "Convert the TOML to INI" }
+  ]
+}
