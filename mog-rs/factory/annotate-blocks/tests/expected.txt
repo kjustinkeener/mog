@@ -1,0 +1,8 @@
+    -- BEGIN alpha
+    first line
+    second line
+    -- END
+outside the block
+    -- BEGIN beta
+    only line
+    -- END

@@ -1,0 +1,18 @@
+{
+  "name": "Decode JSON string escapes",
+  "summary": "Turn \\n \\t \\uXXXX etc. into the real characters",
+  "description": "Decode JSON string escape sequences ( \\n \\t \\r \\\" \\\\ \\uXXXX ) in the input into the characters they represent. Useful for un-wrapping a value that was logged or embedded as an escaped JSON string so it becomes readable again.",
+  "tags": [
+    "json",
+    "decode",
+    "escape",
+    "string",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "json_unescape",
+      "description": "Decode JSON string escapes"
+    }
+  ]
+}

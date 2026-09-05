@@ -1,0 +1,17 @@
+{
+  "name": "Markdown table to JSON",
+  "description": "Convert a GitHub-flavored Markdown table into a JSON array of objects, one object per row keyed by the header cells. The --- separator row is dropped and escaped pipes are decoded.",
+  "summary": "Convert a Markdown table to a JSON array of objects",
+  "tags": [
+    "markdown",
+    "table",
+    "json",
+    "convert",
+    "data",
+    "docs"
+  ],
+  "steps": [
+    { "action": "markdown_table_to_csv", "description": "Parse the Markdown table into CSV" },
+    { "action": "csv_to_json", "description": "Turn the rows into a JSON array of objects", "options": { "array": true } }
+  ]
+}

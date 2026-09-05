@@ -1,0 +1,16 @@
+{
+  "name": "Bump copyright year",
+  "description": "Update the year in copyright lines to the current year ({{@year}}). Matches 'Copyright YYYY' and 'Copyright (c) YYYY-YYYY' (updating the last year). Pin a specific year with --pin-now.",
+  "summary": "Update copyright lines to the current year",
+  "tags": ["codemod", "docs", "date", "config"],
+  "steps": [
+    {
+      "description": "Replace the trailing year after Copyright with the current year.",
+      "action": "replace_regex",
+      "options": {
+        "find": "(Copyright(?:\\s*\\(c\\))?\\s+(?:\\d{4}-)?)\\d{4}",
+        "replace_with": "${1}{{@year}}"
+      }
+    }
+  ]
+}

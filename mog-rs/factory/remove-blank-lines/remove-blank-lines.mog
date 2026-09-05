@@ -1,0 +1,7 @@
+{
+  "name": "Remove blank lines",
+  "description": "Delete every empty line, closing the gaps. Non-blank lines keep their order. To collapse runs of blanks to a single blank instead, use squeeze-blank-lines.",
+  "summary": "Delete every blank line, closing the gaps",
+  "tags": ["line", "whitespace", "cleanup", "single-action"],
+  "steps": [ { "action": "remove_empty_lines", "description": "Drop empty lines" } ]
+}

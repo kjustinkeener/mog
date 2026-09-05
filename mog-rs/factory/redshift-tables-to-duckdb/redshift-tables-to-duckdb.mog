@@ -1,0 +1,31 @@
+{
+  "name": "Redshift DDL to DuckDB",
+  "summary": "Convert a Redshift v_generate_tbl_ddl export to DuckDB DDL",
+  "description": "Convert Redshift v_generate_tbl_ddl (or SHOW TABLE) output to DuckDB DDL: strips the --DROP/--WARNING comments and the ALTER TABLE ... owner to trailer, removes ENCODE compression and the DISTSTYLE/DISTKEY/SORTKEY physical clauses (flagged), unquotes identifiers and drops the public. qualifier, and maps TIMESTAMP WITHOUT/WITH TIME ZONE to TIMESTAMP/TIMESTAMPTZ. BIGINT/VARCHAR/NUMERIC/CHAR pass through to DuckDB as-is. Dropped physical clauses are flagged inline as TODO(mog). Validated by executing the result in a real DuckDB engine.",
+  "tags": ["sql", "redshift", "duckdb", "warehouse", "convert", "migration"],
+  "steps": [
+    { "action": "eol_lf", "description": "Normalize to LF." },
+    { "section": "Strip noise", "action": "replace_regex", "description": "Drop --DROP / --WARNING comment lines.",
+      "options": { "find": "(?m)^--(?:DROP TABLE|WARNING).*$", "replace_with": "" } },
+    { "section": "Strip noise", "action": "replace_regex", "description": "Drop the ALTER TABLE ... owner to trailer.",
+      "options": { "find": "(?mi)^ALTER TABLE .* owner to .*$", "replace_with": "" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Remove per-column ENCODE compression.",
+      "options": { "find": "(?i) ENCODE \\w+", "replace_with": "" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop DISTSTYLE (flagged).",
+      "options": { "find": "(?mi)^DISTSTYLE \\w+.*$", "replace_with": "-- TODO(mog): dropped Redshift DISTSTYLE (no DuckDB equivalent)" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop DISTKEY (flagged).",
+      "options": { "find": "(?mi)^\\s*DISTKEY\\s*\\([^)]*\\).*$", "replace_with": "-- TODO(mog): dropped Redshift DISTKEY" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop the (multi-line) SORTKEY (flagged).",
+      "options": { "find": "(?is)\\s*SORTKEY\\s*\\(.*?\\)", "replace_with": "\n-- TODO(mog): dropped Redshift SORTKEY" } },
+    { "section": "Types", "action": "replace_regex", "description": "TIMESTAMP WITHOUT TIME ZONE -> TIMESTAMP.",
+      "options": { "find": "(?i)\\bTIMESTAMP WITHOUT TIME ZONE\\b", "replace_with": "TIMESTAMP" } },
+    { "section": "Types", "action": "replace_regex", "description": "TIMESTAMP WITH TIME ZONE -> TIMESTAMPTZ.",
+      "options": { "find": "(?i)\\bTIMESTAMP WITH TIME ZONE\\b", "replace_with": "TIMESTAMPTZ" } },
+    { "section": "Identifiers", "action": "replace", "description": "Drop the public. schema qualifier.",
+      "options": { "find": "\"public\".", "replace_with": "" } },
+    { "section": "Identifiers", "action": "replace", "description": "Unquote the everything-quoted Redshift identifiers.",
+      "options": { "find": "\"", "replace_with": "" } },
+    { "section": "Finalize", "action": "replace_regex", "description": "Collapse blank lines left behind.",
+      "options": { "find": "\\n[ \\t]*(?:\\n[ \\t]*)+", "replace_with": "\n\n" } }
+  ]
+}

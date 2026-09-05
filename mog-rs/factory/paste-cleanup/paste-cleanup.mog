@@ -1,0 +1,34 @@
+{
+  "name": "Paste Cleanup",
+  "description": "Normalize 'smart' typography from copied text to plain ASCII: curly double and single quotes to straight \" and ', en dash to -, em dash to --, ellipsis to ..., non-breaking space to a normal space, and zero-width characters (ZWSP, ZWNJ, ZWJ, and a mid-text BOM) removed.",
+  "summary": "Convert smart typography to plain ASCII",
+  "tags": [
+    "text",
+    "cleanup",
+    "unicode",
+    "paste",
+    "format"
+  ],
+  "steps": [
+    {
+      "action": "replace_map",
+      "description": "Map smart typography to ASCII equivalents in a single pass",
+      "options": {
+        "map": {
+          "\u201c": "\"",
+          "\u201d": "\"",
+          "\u2018": "'",
+          "\u2019": "'",
+          "\u2013": "-",
+          "\u2014": "--",
+          "\u2026": "...",
+          "\u00a0": " ",
+          "\u200b": "",
+          "\u200c": "",
+          "\u200d": "",
+          "\ufeff": ""
+        }
+      }
+    }
+  ]
+}

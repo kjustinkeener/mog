@@ -1,0 +1,5 @@
+// database settings
+host = localhost
+port = 8080
+  // indented note about the port
+url = "http://example.com"

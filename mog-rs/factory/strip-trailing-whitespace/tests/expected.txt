@@ -1,0 +1,6 @@
+no trailing here
+trailing spaces
+trailing tab
+internal  spaces  kept
+
+after blank

@@ -1,0 +1,39 @@
+From alice@example.com Mon Sep  1 09:14:02 2025
+Date: Mon, 1 Sep 2025 09:14:02 +0000
+From: Alice Baker <alice@example.com>
+To: bob@example.com
+Subject: Quarterly planning notes and the follow-up items
+ we agreed to review before the next steering meeting
+Message-ID: <20250901091402.1001@example.com>
+Content-Type: text/plain; charset=us-ascii
+
+Hi Bob,
+
+Here is the excerpt you asked about:
+
+>From the archive we can see the old thread started here.
+
+Thanks,
+Alice
+
+From bob@example.com Tue Sep  2 14:30:11 2025
+Date: Tue, 2 Sep 2025 14:30:11 +0000
+From: Bob Chen <bob@example.com>
+To: alice@example.com, carol@example.com, dave@example.com
+Subject: Re: budget, staffing, and the "must have" list
+Message-ID: <20250902143011.1002@example.com>
+X-Mailer: SomeMailer 4.2
+
+Alice,
+
+Attached is the "must have" list, sorted by cost.
+
+Bob
+
+From carol@example.com Wed Sep  3 07:05:44 2025
+Date: Wed, 3 Sep 2025 07:05:44 +0000
+From: Carol Diaz <carol@example.com>
+To: team@example.com
+Subject: Server maintenance window
+
+Maintenance runs 02:00-04:00 UTC. No action needed.

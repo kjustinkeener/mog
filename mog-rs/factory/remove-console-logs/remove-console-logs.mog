@@ -1,0 +1,19 @@
+{
+  "name": "Remove console.log lines",
+  "description": "Delete whole lines that are a console.log / console.debug / console.info / console.warn / console.error call, to strip debug output from JavaScript or TypeScript. Only lines whose content is such a call are removed; a multi-line console call, or one buried mid-line, is not handled.",
+  "summary": "Delete console.log debug lines from JS or TS",
+  "tags": [
+    "javascript",
+    "typescript",
+    "terminal",
+    "observability",
+    "cleanup"
+  ],
+  "steps": [
+    {
+      "action": "remove_lines_matching",
+      "description": "Drop lines that are a console.* call",
+      "options": { "pattern": "^\\s*console\\.(log|debug|info|warn|error)\\s*\\(" }
+    }
+  ]
+}

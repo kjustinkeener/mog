@@ -1,0 +1,58 @@
+{
+  "name": "XML to CSV",
+  "description": "Turn flat, repeated XML record elements into CSV -- the read counterpart to CSV to XML records. The XML is parsed for real (xml_to_json), the repeated-record array is lifted out, and each record becomes a row: the header is the union of the records' child element names in first-seen order, a field missing from a record is an empty cell, and entity references (&amp; &lt; &quot;) are decoded. Output is RFC 4180 CSV, so values holding commas or quotes are quoted. SCOPE, plainly: this handles the flat shape only -- a root element wrapping two or more identical record elements whose children are leaf text fields, e.g. <orders><order><id>1</id>...</order>...</orders>. Deeply nested or attribute-heavy XML is NOT in scope: a nested child collapses into one cell of compact JSON and an attribute arrives as an @name column rather than a plain field. Those cells are FLAGGED for review rather than silently dropped, so you can see exactly which records did not fit. A document with only one record element has no array to lift and is rejected by the assert step. For nested XML, run XML to JSON instead and reshape from there.",
+  "summary": "Convert flat repeated XML records to CSV",
+  "tags": [
+    "xml",
+    "csv",
+    "convert",
+    "data"
+  ],
+  "steps": [
+    {
+      "section": "Lift the record array",
+      "action": "xml_to_json",
+      "description": "Parse the XML document into JSON (repeated tags become an array)."
+    },
+    {
+      "action": "json_minify",
+      "description": "Re-serialize it on a single line."
+    },
+    {
+      "action": "assert",
+      "description": "Refuse a document with no repeated record element.",
+      "options": {
+        "matches": "\\[",
+        "message": "no repeated record element found: XML to CSV needs a root wrapping two or more identical record elements"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Drop the root wrapper ahead of the record array.",
+      "options": {
+        "find": "^[^\\[]*",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "extract_json",
+      "description": "Take the balanced record array and discard the trailing wrapper."
+    },
+    {
+      "section": "Emit the CSV table",
+      "action": "json_to_csv",
+      "description": "Flatten the records to CSV: header is the union of field names, missing fields are blank."
+    },
+    {
+      "action": "flag_matching",
+      "description": "Flag rows whose record did not fit the flat shape.",
+      "options": {
+        "pattern": "\"\\{|\"\\[",
+        "message": "record holds a nested element that was folded into one cell as compact JSON; reshape it or use XML to JSON",
+        "comment": "#",
+        "tag": "WARN",
+        "position": "before"
+      }
+    }
+  ]
+}

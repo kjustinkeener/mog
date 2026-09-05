@@ -1,0 +1,22 @@
+{
+  "name": "TSV to Markdown table",
+  "description": "Render a tab-separated table (first line = header) as a GitHub-flavored Markdown table. A pipe inside a cell is escaped; ragged rows are padded to the header width. Handy for pasting spreadsheet data straight into a Markdown doc or PR.",
+  "summary": "Convert TSV to a Markdown table",
+  "tags": [
+    "tsv",
+    "markdown",
+    "table",
+    "convert",
+    "docs",
+    "data"
+  ],
+  "steps": [
+    {
+      "action": "csv_to_markdown",
+      "description": "Read the input as tab-delimited and emit a Markdown table",
+      "options": {
+        "delimiter": "\t"
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "URL percent-encode",
+  "description": "Percent-encode the text for safe use in a URL: the RFC 3986 unreserved set (letters, digits, - _ . ~) is left as-is and everything else becomes %XX. Useful for building query strings or encoding a value by hand. The inverse of url-decode.",
+  "summary": "Percent-encode text for safe use in a URL",
+  "tags": [
+    "url",
+    "encode",
+    "escape",
+    "single-action"
+  ],
+  "steps": [
+    { "action": "url_encode", "description": "Percent-encode the whole text" }
+  ]
+}

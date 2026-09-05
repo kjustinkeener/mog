@@ -1,0 +1,18 @@
+{
+  "name": "Strip JSONC comments to plain JSON",
+  "description": "Remove // line comments and /* block */ comments from JSONC (JSON-with-comments, as used by tsconfig.json / VS Code settings) so it parses as strict JSON. Line comments are only stripped when the // is at the start of a line or preceded by whitespace, so a URL like http://example.com is left intact; trailing commas are NOT handled (see remove-trailing-commas). Mechanical: a // or /* inside a string value could still be affected.",
+  "summary": "Convert JSONC to plain JSON by removing comments",
+  "tags": [
+    "json",
+    "comment",
+    "strip",
+    "cleanup"
+  ],
+  "steps": [
+    { "action": "replace_regex", "description": "Remove /* block */ comments", "options": { "find": "(?s)/\\*.*?\\*/", "replace_with": "" } },
+    { "action": "replace_regex_multiline", "description": "Remove full-line // comments", "options": { "find": "^\\s*//.*$", "replace_with": "" } },
+    { "action": "replace_regex", "description": "Remove inline // comments (after whitespace, so URLs survive)", "options": { "find": "[ \\t]+//[^\\n]*", "replace_with": "" } },
+    { "action": "trim_whitespace_right", "description": "Clean trailing whitespace left by removed comments" },
+    { "action": "remove_empty_lines", "description": "Drop the now-empty comment lines" }
+  ]
+}

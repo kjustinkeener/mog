@@ -1,0 +1,44 @@
+{
+  "name": "Paste cleanup: Excel / Sheets",
+  "description": "Tidy a table pasted from Excel or Google Sheets. Normalizes line endings to LF, trims the whitespace padding around each tab-separated cell, and drops fully-empty rows (blank or only tabs, including the trailing empty row a sheet paste leaves). Cells stay tab-separated. Drops every fully-empty row, not only trailing ones, so an intentional blank separator row would go too.",
+  "summary": "Clean up a table pasted from Excel or Sheets",
+  "tags": [
+    "paste",
+    "cleanup",
+    "csv",
+    "tsv",
+    "table"
+  ],
+  "steps": [
+    {
+      "section": "Normalize line endings",
+      "action": "eol_lf",
+      "description": "Convert CRLF/CR to LF, stripping stray carriage returns."
+    },
+    {
+      "section": "Trim each cell",
+      "action": "replace_regex_multiline",
+      "description": "Remove spaces padding either side of a tab delimiter.",
+      "options": {
+        "find": " *\t *",
+        "replace_with": "\t"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Trim leading and trailing spaces on each row (first and last cell).",
+      "options": {
+        "find": "^ +| +$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Drop fully-empty rows",
+      "action": "remove_lines_matching",
+      "description": "Remove rows that are blank or only tabs.",
+      "options": {
+        "pattern": "^\t*$"
+      }
+    }
+  ]
+}

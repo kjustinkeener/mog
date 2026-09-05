@@ -1,0 +1,50 @@
+{
+  "name": "Trino to Snowflake",
+  "summary": "Convert a Trino table definition to Snowflake DDL",
+  "description": "Convert Trino table DDL to Snowflake: JSON->VARIANT, TIMESTAMP->TIMESTAMP_NTZ, TIMESTAMP WITH TIME ZONE->TIMESTAMP_TZ, and CREATE TABLE->CREATE OR REPLACE TABLE; BIGINT/VARCHAR/DECIMAL pass through.",
+  "tags": [
+    "sql",
+    "trino",
+    "snowflake",
+    "convert",
+    "migration"
+  ],
+  "steps": [
+    {
+      "section": "Types",
+      "action": "eol_lf"
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bTIMESTAMP WITH TIME ZONE\\b",
+        "replace_with": "TIMESTAMP_TZ"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bTIMESTAMP\\b(?!_)",
+        "replace_with": "TIMESTAMP_NTZ"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)\\bJSON\\b",
+        "replace_with": "VARIANT"
+      }
+    },
+    {
+      "section": "Statement",
+      "action": "replace_regex",
+      "options": {
+        "find": "(?i)^CREATE TABLE ",
+        "replace_with": "CREATE OR REPLACE TABLE "
+      }
+    }
+  ]
+}

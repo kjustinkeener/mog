@@ -1,0 +1,22 @@
+{
+  "name": "CSV to SQL UPDATE statements",
+  "description": "Generate one SQL UPDATE per CSV row (header row required) using a per-row template: the demo sets name by id on a users table. Edit the template on the step for your table, columns, and WHERE key. Values are placed as written -- SQL-escape them first (escape-sql) if they can contain quotes.",
+  "summary": "Convert CSV rows to SQL UPDATE statements",
+  "tags": [
+    "csv",
+    "sql",
+    "replace",
+    "codegen",
+    "data"
+  ],
+  "steps": [
+    {
+      "action": "row_to_template",
+      "description": "One UPDATE per row",
+      "options": {
+        "has_header": true,
+        "template": "UPDATE users SET name = '${name}' WHERE id = ${id};"
+      }
+    }
+  ]
+}

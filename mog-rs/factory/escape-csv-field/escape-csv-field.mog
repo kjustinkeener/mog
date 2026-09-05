@@ -1,0 +1,19 @@
+{
+  "name": "Escape each line as a CSV field",
+  "summary": "Quote each line as one RFC-4180 CSV field",
+  "description": "Quote each line as a single RFC-4180 CSV field: a value containing a comma, quote, or newline is wrapped in double quotes with embedded quotes doubled. Use before pasting free text into a CSV column so delimiters do not break the row.",
+  "tags": [
+    "escape",
+    "csv",
+    "encode",
+    "quote",
+    "data",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "escape_csv",
+      "description": "Quote each line as a CSV field"
+    }
+  ]
+}

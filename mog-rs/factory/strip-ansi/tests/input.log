@@ -1,0 +1,7 @@
+plain, no codes
+[31merror:[0m disk full
+[1;38;5;208mwarn[0m 256-color
+[38;2;0;128;255mtruecolor[0m rgb
+title:]0;window title after OSC
+array[0] = x[1] literal brackets stay
+[2K[1Gcursor stuff gone

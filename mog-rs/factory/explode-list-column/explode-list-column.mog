@@ -1,0 +1,23 @@
+{
+  "name": "Explode a list-valued column",
+  "summary": "Split a semicolon list in one field into rows",
+  "description": "Split a field whose value is an inner list (semicolon-separated here) into multiple rows, one per value, repeating the other columns. Turns 'id, a;b;c' into three rows. A CSV normalize-to-long transform.",
+  "tags": [
+    "data",
+    "csv",
+    "fragment",
+    "column",
+    "normalize"
+  ],
+  "steps": [
+    {
+      "action": "explode_field",
+      "description": "Explode field 2's ';' list into rows",
+      "options": {
+        "field": 2,
+        "delimiter": ",",
+        "separator": ";"
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  // top-level comment
+  "name": "demo", // inline comment
+  "url": "http://example.com/path",
+  /* a block
+     comment */
+  "port": 8080
+}

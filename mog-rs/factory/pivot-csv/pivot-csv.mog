@@ -1,0 +1,9 @@
+{
+  "name": "Pivot a long CSV to wide form",
+  "description": "Reshape a long (id, key, value) CSV into a wide table: distinct values of the key column become columns, the value column fills the cells, and rows group by the id columns. Set 'key_column' and 'value_column' (1-based). A guardrail refuses more than 'max_columns' distinct keys (default 1000); set max_columns to 0 to lift the cap. 'aggregate' (first/last/error) resolves a repeated group+key.",
+  "summary": "Pivot a long CSV into a wide table",
+  "tags": ["csv", "reshape", "data"],
+  "steps": [
+    { "action": "pivot", "description": "Long (id, key, value) rows to a wide table", "options": { "key_column": "2", "value_column": "3", "id_columns": "1" } }
+  ]
+}

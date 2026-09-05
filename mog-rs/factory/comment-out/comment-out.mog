@@ -1,0 +1,10 @@
+{
+  "name": "Comment Out",
+  "description": "Prefix every line with a comment marker (default '# '; override with -D marker='// '). Comments out a pasted block. Language-agnostic: set the marker to match (# shell/python/yaml, // c/js, -- sql/lua, ; ini).",
+  "summary": "Comment out every line with a marker",
+  "tags": ["comment", "prefix", "fragment"],
+  "constants": { "marker": "# " },
+  "steps": [
+    { "action": "prefix_lines", "description": "Prefix each line with the comment marker", "options": { "text": "{{marker}}" } }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "name": "Paste cleanup: PDF copy",
+  "description": "Repair common line-break artifacts of text copied from a PDF. Removes lone page-number lines (a bare number, or 'Page 12'), re-joins words hyphenated across a line break (exam-\\nple -> example), and reflows lines wrapped mid-sentence (a line ending in a lowercase letter or comma followed by a line starting lowercase is joined with a space). Not a layout parser: it does not detect or strip repeated running headers/footers, and an aggressive reflow can join two lines meant to stay apart.",
+  "summary": "Repair line-break artifacts from PDF-copied text",
+  "tags": [
+    "paste",
+    "cleanup",
+    "convert",
+    "format",
+    "text"
+  ],
+  "steps": [
+    {
+      "section": "Drop page-number lines",
+      "action": "remove_lines_matching",
+      "description": "Remove lines that are only a page number (optionally 'Page N').",
+      "options": {
+        "pattern": "^\\s*(Page\\s+)?\\d+\\s*$"
+      }
+    },
+    {
+      "section": "Re-join hyphenated words",
+      "action": "replace_regex",
+      "description": "Join a word split as prefix-<break>suffix across a line break.",
+      "options": {
+        "find": "([A-Za-z])-\\r?\\n([a-z])",
+        "replace_with": "$1$2"
+      }
+    },
+    {
+      "section": "Reflow wrapped sentences",
+      "action": "replace_regex",
+      "description": "Join a line ending in a lowercase letter or comma to a next line starting lowercase, with a space.",
+      "options": {
+        "find": "([a-z,])\\r?\\n([a-z])",
+        "replace_with": "$1 $2"
+      }
+    },
+    {
+      "section": "Tidy blank runs",
+      "action": "squeeze_blank_lines",
+      "description": "Collapse the blank runs left where page-number lines were removed to a single blank line."
+    }
+  ]
+}

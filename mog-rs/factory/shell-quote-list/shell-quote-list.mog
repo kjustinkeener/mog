@@ -1,0 +1,9 @@
+{
+  "name": "Shell-quote a list of arguments",
+  "description": "Single-quote each line so it is safe to paste as one POSIX-shell word, even with spaces, quotes, or shell metacharacters. Embedded single quotes are handled with the standard close-quote/escaped-quote/reopen idiom. Hand-quoting shell arguments is easy to get dangerously wrong; this is exact.",
+  "summary": "Single-quote each line as a safe shell argument",
+  "tags": ["shell", "escape", "quote", "security"],
+  "steps": [
+    { "action": "escape_shell", "description": "Wrap each line as one safe shell word" }
+  ]
+}

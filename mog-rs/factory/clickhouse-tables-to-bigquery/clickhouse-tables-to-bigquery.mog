@@ -1,0 +1,329 @@
+{
+  "name": "ClickHouse SHOW CREATE TABLE to BigQuery",
+  "summary": "Convert a ClickHouse table export to BigQuery DDL",
+  "tags": [
+    "sql",
+    "clickhouse",
+    "bigquery",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "description": "Convert the output of ClickHouse 'SHOW CREATE TABLE' to runnable BigQuery DDL. (1) Rewrites CREATE TABLE to CREATE OR REPLACE TABLE, keeping the ClickHouse database qualifier as the BigQuery dataset, (2) strips the engine/physical clauses (ENGINE, SETTINGS, CODEC) and flags the ones carrying intent (PARTITION BY, PRIMARY KEY, ORDER BY, SAMPLE BY, TTL) as TODO(mog), suggesting BigQuery CLUSTER BY for an ORDER BY, (3) models nullability: bare columns become NOT NULL placed ahead of any DEFAULT, Nullable(T) unwraps to nullable T, LowCardinality(T) unwraps to T, and ARRAY columns lose the constraint BigQuery rejects, (4) maps scalar types (every integer width to INT64 except UInt64 to NUMERIC(20, 0) and the 128/256-bit widths to BIGNUMERIC, Float to FLOAT64, Decimal to NUMERIC, String/FixedString/UUID/IP to STRING, Date to DATE, DateTime/DateTime64 to DATETIME or TIMESTAMP when zone-aware), and (5) preserves Array(T) as a typed ARRAY<T> while collapsing Map/Tuple/Nested to JSON and Enum to STRING, flagging each. Not a semantic transpiler. Assumes one table's SHOW CREATE TABLE output.",
+  "steps": [
+    {
+      "section": "Normalize",
+      "action": "eol_lf",
+      "description": "Normalize to LF so every anchored regex below is reliable; SQL scripts stay LF."
+    },
+    {
+      "section": "Statement",
+      "action": "replace",
+      "description": "BigQuery export idiom: CREATE TABLE -> CREATE OR REPLACE TABLE (idempotent reload).",
+      "options": {
+        "find": "CREATE TABLE ",
+        "replace_with": "CREATE OR REPLACE TABLE "
+      }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "BigQuery does support partitioning, but only on a DATE/TIMESTAMP/DATETIME column or an integer range, and the ClickHouse expression syntax does not carry over. Flag it with the BigQuery shape to write by hand.",
+      "options": {
+        "find": "(?m)^PARTITION BY (.+)$",
+        "replace_with": "-- TODO(mog): dropped ClickHouse PARTITION BY ${1}; BigQuery partitions on a DATE/TIMESTAMP column or an integer range, e.g. PARTITION BY DATE_TRUNC(order_date, MONTH)"
+      }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "ClickHouse PRIMARY KEY is a sparse sort index, not a uniqueness constraint, and BigQuery does not enforce one either. Flag it.",
+      "options": {
+        "find": "(?m)^PRIMARY KEY (.+)$",
+        "replace_with": "-- TODO(mog): dropped ClickHouse PRIMARY KEY ${1} (a sparse sort index, not an enforced constraint; BigQuery does not enforce keys)"
+      }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "ORDER BY is the ClickHouse sort key. BigQuery CLUSTER BY is the closest analog (up to four columns), so suggest it.",
+      "options": {
+        "find": "(?m)^ORDER BY (.+)$",
+        "replace_with": "-- TODO(mog): dropped ClickHouse ORDER BY ${1}; consider BigQuery CLUSTER BY ${1} (max four columns)"
+      }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "SAMPLE BY (sampling expression) has no BigQuery equivalent. Flag it.",
+      "options": {
+        "find": "(?m)^SAMPLE BY (.+)$",
+        "replace_with": "-- TODO(mog): dropped ClickHouse SAMPLE BY ${1} (no BigQuery equivalent; use TABLESAMPLE SYSTEM at query time)"
+      }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "Table-level TTL (data expiry) maps to a BigQuery partition-expiration option rather than a DDL clause. Flag it.",
+      "options": {
+        "find": "(?m)^TTL (.+)$",
+        "replace_with": "-- TODO(mog): dropped ClickHouse TTL ${1} (model retention with OPTIONS(partition_expiration_days=...) on a partitioned table)"
+      }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "SETTINGS is pure engine tuning (index_granularity, etc.). Flag-and-drop as internals.",
+      "options": {
+        "find": "(?m)^SETTINGS (.+)$",
+        "replace_with": "-- TODO(mog): dropped ClickHouse SETTINGS ${1} (engine internals; no BigQuery equivalent)"
+      }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "Drop the ENGINE = <engine>(...) line entirely (MergeTree family / Log / etc. are storage internals BigQuery has no counterpart for).",
+      "options": {
+        "find": "(?m)^ENGINE = .+\\n?",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Strip engine and physical clauses",
+      "action": "replace_regex",
+      "description": "Drop per-column CODEC(...) compression hints (ClickHouse storage internals). Safe no-op when absent.",
+      "options": {
+        "find": "\\s+CODEC\\([^()]*\\)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Model ClickHouse nullability: append NOT NULL to every column-definition line while the backtick markers still identify them. Nullable and ARRAY columns get it removed below.",
+      "options": {
+        "find": "(?m)^(    `\\w+`.*?)(,?)$",
+        "replace_with": "${1} NOT NULL${2}"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Undo NOT NULL on Nullable(...) columns: Nullable means the column is nullable, which is the BigQuery default.",
+      "options": {
+        "find": "(?m)^(    `\\w+`.*Nullable.*?) NOT NULL(,?)$",
+        "replace_with": "${1}${2}"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "BigQuery column order is `type [NOT NULL] [DEFAULT ...]`, so move NOT NULL ahead of a DEFAULT clause the previous step appended past.",
+      "options": {
+        "find": "(?m)^(    `\\w+`.*?) (DEFAULT .+?) NOT NULL(,?)$",
+        "replace_with": "${1} NOT NULL ${2}${3}"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Unwrap Nullable(T) -> T (handles one nested-parens level, e.g. Nullable(Decimal(18, 2))). BigQuery columns are nullable unless marked NOT NULL.",
+      "options": {
+        "find": "Nullable\\(([^()]*(?:\\([^()]*\\))?[^()]*)\\)",
+        "replace_with": "${1}"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "flag_matching",
+      "description": "Flag Enum columns before they are mapped away: BigQuery has no enum type, so the allowed-value constraint is lost.",
+      "options": {
+        "pattern": "\\bEnum(?:8|16)\\(",
+        "message": "ClickHouse enum mapped to STRING; the allowed-value set is not enforced in BigQuery",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Unwrap LowCardinality(T) -> T (a ClickHouse storage optimization with no BigQuery analog).",
+      "options": {
+        "find": "LowCardinality\\(([^()]*)\\)",
+        "replace_with": "${1}"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Map(K, V) -> BigQuery JSON. BigQuery has no map type; the faithful alternative is ARRAY<STRUCT<k, v>>, which needs a hand-written shape.",
+      "options": {
+        "find": "\\bMap\\([^()]*\\)",
+        "replace_with": "JSON"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Tuple(...) -> BigQuery JSON (positional structure flattened; a STRUCT<...> equivalent needs named fields).",
+      "options": {
+        "find": "\\bTuple\\([^()]*\\)",
+        "replace_with": "JSON"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Nested(...) -> BigQuery JSON (nested repeated structure flattened).",
+      "options": {
+        "find": "\\bNested\\([^()]*\\)",
+        "replace_with": "JSON"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Enum8(...) / Enum16(...) -> STRING (already flagged above).",
+      "options": {
+        "find": "\\bEnum(?:8|16)\\([^)]*\\)",
+        "replace_with": "STRING"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "FixedString(n) -> STRING. BigQuery STRING takes no length parameter, so the fixed width is not enforced.",
+      "options": {
+        "find": "\\bFixedString\\(\\d+\\)",
+        "replace_with": "STRING"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Array(T) -> ARRAY<T>. BigQuery arrays are typed, so the element type is preserved and mapped by the scalar step below.",
+      "options": {
+        "find": "\\bArray\\(([^()]*)\\)",
+        "replace_with": "ARRAY<${1}>"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "DateTime64(n, 'tz') -> TIMESTAMP (absolute instant). Precision is dropped; BigQuery TIMESTAMP is microsecond. Run before the bare DateTime64.",
+      "options": {
+        "find": "\\bDateTime64\\(\\s*\\d+\\s*,\\s*'[^']*'\\s*\\)",
+        "replace_with": "TIMESTAMP"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "DateTime64(n) -> DATETIME (wall-clock, no zone). Precision dropped.",
+      "options": {
+        "find": "\\bDateTime64\\([^)]*\\)",
+        "replace_with": "DATETIME"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "DateTime('tz') -> TIMESTAMP. Run before the bare DateTime.",
+      "options": {
+        "find": "\\bDateTime\\(\\s*'[^']*'\\s*\\)",
+        "replace_with": "TIMESTAMP"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace",
+      "description": "bare DateTime -> DATETIME (whole word, so it never bites a DateTime64 already mapped or an identifier).",
+      "options": {
+        "find": "DateTime",
+        "replace_with": "DATETIME",
+        "whole_word": true
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace",
+      "description": "Date -> DATE (whole word). Runs after every DateTime* map so it never truncates one.",
+      "options": {
+        "find": "Date",
+        "replace_with": "DATE",
+        "whole_word": true
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Decimal(p, s) -> NUMERIC(p, s) (BigQuery's fixed-point type, good to 38 digits; ClickHouse keeps the same precision/scale).",
+      "options": {
+        "find": "\\bDecimal\\(",
+        "replace_with": "NUMERIC("
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_map",
+      "description": "Map ClickHouse scalar types to BigQuery. BigQuery has a single 64-bit integer type, so every signed width and every unsigned width that fits collapses to INT64; UInt64 overflows it and becomes NUMERIC(20, 0), and the 128/256-bit widths become BIGNUMERIC. Float32/64 both become FLOAT64. String/UUID/IP types become STRING (BigQuery has no length-parameterized string and no UUID or IP type).",
+      "options": {
+        "whole_word": true,
+        "map": {
+          "Int8": "INT64",
+          "Int16": "INT64",
+          "Int32": "INT64",
+          "Int64": "INT64",
+          "Int128": "BIGNUMERIC",
+          "Int256": "BIGNUMERIC",
+          "UInt8": "INT64",
+          "UInt16": "INT64",
+          "UInt32": "INT64",
+          "UInt64": "NUMERIC(20, 0)",
+          "UInt128": "BIGNUMERIC",
+          "UInt256": "BIGNUMERIC",
+          "Float32": "FLOAT64",
+          "Float64": "FLOAT64",
+          "Bool": "BOOL",
+          "Boolean": "BOOL",
+          "String": "STRING",
+          "UUID": "STRING",
+          "IPv4": "STRING",
+          "IPv6": "STRING"
+        }
+      }
+    },
+    {
+      "section": "Flag composites",
+      "action": "replace_regex",
+      "description": "BigQuery rejects NOT NULL on an ARRAY column (an array is never NULL, only empty), so drop the constraint the nullability step added.",
+      "options": {
+        "find": "(?m)^(    `\\w+` ARRAY<[^<>]*>) NOT NULL(,?)$",
+        "replace_with": "${1}${2}"
+      }
+    },
+    {
+      "section": "Flag composites",
+      "action": "flag_matching",
+      "description": "Flag JSON columns: a ClickHouse Map/Tuple/Nested was flattened into semi-structured JSON.",
+      "options": {
+        "pattern": "\\bJSON\\b",
+        "message": "ClickHouse Map/Tuple/Nested flattened into BigQuery JSON; consider ARRAY<STRUCT<...>> if you need typed field access",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Finalize",
+      "action": "trim_whitespace_right",
+      "description": "Remove any trailing whitespace left on a line."
+    },
+    {
+      "section": "Finalize",
+      "action": "squeeze_blank_lines",
+      "description": "Collapse runs of blank lines to a single blank line."
+    }
+  ]
+}

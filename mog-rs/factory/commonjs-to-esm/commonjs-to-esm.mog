@@ -1,0 +1,45 @@
+{
+  "name": "CommonJS to ESM",
+  "description": "Rewrite common CommonJS module syntax to ES modules: require destructuring and default imports, module.exports, and exports.NAME. Regex-based; unusual cases are left for manual review.",
+  "summary": "Convert CommonJS require/exports to ESM",
+  "tags": [
+    "codemod",
+    "javascript",
+    "imports",
+    "config"
+  ],
+  "steps": [
+    {
+      "description": "const { a } = require('x')  ->  import { a } from 'x'",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^const\\s+(\\{[^}]*\\})\\s*=\\s*require\\(([\"'][^\"']+[\"'])\\);?",
+        "replace_with": "import $1 from $2;"
+      }
+    },
+    {
+      "description": "const x = require('x')  ->  import x from 'x'",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^const\\s+(\\w+)\\s*=\\s*require\\(([\"'][^\"']+[\"'])\\);?",
+        "replace_with": "import $1 from $2;"
+      }
+    },
+    {
+      "description": "module.exports = X  ->  export default X",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^module\\.exports\\s*=\\s*",
+        "replace_with": "export default "
+      }
+    },
+    {
+      "description": "exports.NAME =  ->  export const NAME =",
+      "action": "replace_regex_multiline",
+      "options": {
+        "find": "^exports\\.(\\w+)\\s*=\\s*",
+        "replace_with": "export const $1 = "
+      }
+    }
+  ]
+}

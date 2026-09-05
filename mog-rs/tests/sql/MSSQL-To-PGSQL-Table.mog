@@ -1,0 +1,280 @@
+{
+  "name": "MSSQL to PostgreSQL table DDL",
+  "description": "Convert a SQL Server (SSMS-scripted) table-DDL dump into PostgreSQL DDL. Line/regex based, not a full SQL parser: see docs/mssql-to-pgsql.md for what it does and does not handle. Set the schema_prefix constant (or --define schema_prefix=...) to control schema qualification.",
+  "constants": {
+    "schema_prefix": ""
+  },
+  "steps": [
+    {
+      "description": "Normalize to LF first so every later CRLF-sensitive regex is reliable. Output stays LF (standard for SQL scripts; psql reads it fine).",
+      "action": "eol_lf"
+    },
+    {
+      "description": "Strip SQL Server server/session/DROP scaffolding first (object banners, SET options, CREATE/DROP DATABASE, ALTER DATABASE settings, the DROP phase, constraint re-enables, extended properties). Runs on the raw SSMS text while GO batches are intact. Reusable across object-kind converters.",
+      "action": "run_mog",
+      "options": { "file": "mssql-strip-server-noise.mog" }
+    },
+    {
+      "description": "Strip T-SQL square-bracket quoting: opening bracket.",
+      "action": "replace",
+      "options": { "find": "[", "replace_with": "" }
+    },
+    {
+      "description": "Strip T-SQL square-bracket quoting: closing bracket.",
+      "action": "replace",
+      "options": { "find": "]", "replace_with": "" }
+    },
+    {
+      "description": "Schema qualifier: rewrite the SQL Server 'dbo.' prefix. Default schema_prefix is empty, so objects become unqualified and resolve via search_path (public) -- the idiomatic Postgres result. Set schema_prefix to 'public.' or keep 'dbo.' as needed.",
+      "action": "replace",
+      "options": { "find": "dbo.", "replace_with": "{{schema_prefix}}", "ignore_case": true }
+    },
+    {
+      "description": "USE <db> + its GO -> a documenting comment (Postgres has no USE; you connect to a database instead).",
+      "action": "replace_regex",
+      "options": { "find": "USE (\\w+)\\nGO\\n", "replace_with": "-- Database: ${1}\n\n", "ignore_case": true }
+    },
+    {
+      "description": "Function map: getdate() -> CURRENT_TIMESTAMP.",
+      "action": "replace",
+      "options": { "find": "getdate()", "replace_with": "CURRENT_TIMESTAMP", "ignore_case": true }
+    },
+    {
+      "description": "Function map: getutcdate() -> now() in UTC.",
+      "action": "replace",
+      "options": { "find": "getutcdate()", "replace_with": "(now() at time zone 'utc')", "ignore_case": true }
+    },
+    {
+      "description": "Function map: newid() -> gen_random_uuid() (Postgres 13+ builtin).",
+      "action": "replace",
+      "options": { "find": "newid()", "replace_with": "gen_random_uuid()", "ignore_case": true }
+    },
+    {
+      "description": "Function map: newsequentialid() -> gen_random_uuid() (no sequential-GUID equivalent in Postgres).",
+      "action": "replace",
+      "options": { "find": "newsequentialid()", "replace_with": "gen_random_uuid()", "ignore_case": true }
+    },
+    {
+      "description": "Sequence default: NEXT VALUE FOR seq -> nextval('seq'). Runs before the DEFAULT-constraint rewrite so the captured value is already Postgres. NOTE: nextval quotes the name case-sensitively; see docs re: identifier case.",
+      "action": "replace_regex",
+      "options": { "find": "NEXT VALUE FOR ([A-Za-z0-9_.]+)", "replace_with": "nextval('${1}')", "ignore_case": true }
+    },
+    {
+      "description": "Function map: sysdatetimeoffset() -> now() (timestamptz). Must run before the 'datetime' type map, which would otherwise corrupt the name.",
+      "action": "replace",
+      "options": { "find": "sysdatetimeoffset()", "replace_with": "now()", "ignore_case": true }
+    },
+    {
+      "description": "Function map: sysutcdatetime() -> now() in UTC.",
+      "action": "replace",
+      "options": { "find": "sysutcdatetime()", "replace_with": "(now() at time zone 'utc')", "ignore_case": true }
+    },
+    {
+      "description": "Function map: sysdatetime() -> CURRENT_TIMESTAMP.",
+      "action": "replace",
+      "options": { "find": "sysdatetime()", "replace_with": "CURRENT_TIMESTAMP", "ignore_case": true }
+    },
+    {
+      "description": "Type map: datetimeoffset(n) -> timestamptz, dropping the precision (Postgres caps fractional seconds at 6; SSMS often scripts 7). Run before 'datetime'.",
+      "action": "replace_regex",
+      "options": { "find": "datetimeoffset\\(\\d+\\)", "replace_with": "timestamptz", "ignore_case": true }
+    },
+    {
+      "description": "Type map: bare datetimeoffset -> timestamptz.",
+      "action": "replace",
+      "options": { "find": "datetimeoffset", "replace_with": "timestamptz", "whole_word": true, "ignore_case": true }
+    },
+    {
+      "description": "Type map: datetime2(n) -> timestamp, dropping the precision (see datetimeoffset note). Run before 'datetime'.",
+      "action": "replace_regex",
+      "options": { "find": "datetime2\\(\\d+\\)", "replace_with": "timestamp", "ignore_case": true }
+    },
+    {
+      "description": "Type map: bare datetime2 -> timestamp.",
+      "action": "replace",
+      "options": { "find": "datetime2", "replace_with": "timestamp", "whole_word": true, "ignore_case": true }
+    },
+    {
+      "description": "Type map: smalldatetime -> timestamp (run before datetime; it contains 'datetime').",
+      "action": "replace",
+      "options": { "find": "smalldatetime", "replace_with": "timestamp", "ignore_case": true }
+    },
+    {
+      "description": "Type map: datetime -> timestamp (whole word, so it never bites into an identifier or a sys*datetime* function that slipped through).",
+      "action": "replace",
+      "options": { "find": "datetime", "replace_with": "timestamp", "whole_word": true, "ignore_case": true }
+    },
+    {
+      "description": "Type map: tinyint -> smallint (Postgres has no 1-byte integer).",
+      "action": "replace",
+      "options": { "find": "tinyint", "replace_with": "smallint", "ignore_case": true }
+    },
+    {
+      "description": "Type map: uniqueidentifier -> uuid.",
+      "action": "replace",
+      "options": { "find": "uniqueidentifier", "replace_with": "uuid", "ignore_case": true }
+    },
+    {
+      "description": "Type map: bit -> boolean (whole word). NOTE: 0/1 column DEFAULTs on these columns must be changed to false/true by hand; see docs.",
+      "action": "replace",
+      "options": { "find": "bit", "replace_with": "boolean", "whole_word": true, "ignore_case": true }
+    },
+    {
+      "description": "Type map: nvarchar(max) -> text (run before varchar(max), which it contains).",
+      "action": "replace",
+      "options": { "find": "nvarchar(max)", "replace_with": "text", "ignore_case": true }
+    },
+    {
+      "description": "Type map: varchar(max) -> text.",
+      "action": "replace",
+      "options": { "find": "varchar(max)", "replace_with": "text", "ignore_case": true }
+    },
+    {
+      "description": "Type map: nvarchar -> varchar (Postgres varchar is already Unicode; no separate national type).",
+      "action": "replace",
+      "options": { "find": "nvarchar", "replace_with": "varchar", "ignore_case": true }
+    },
+    {
+      "description": "Type map: nchar -> char.",
+      "action": "replace",
+      "options": { "find": "nchar", "replace_with": "char", "whole_word": true, "ignore_case": true }
+    },
+    {
+      "description": "Type map: ntext -> text (bare 'text' is already valid Postgres).",
+      "action": "replace",
+      "options": { "find": "ntext", "replace_with": "text", "whole_word": true, "ignore_case": true }
+    },
+    {
+      "description": "Type map: smallmoney -> numeric(10,4) (run before money).",
+      "action": "replace",
+      "options": { "find": "smallmoney", "replace_with": "numeric(10,4)", "ignore_case": true }
+    },
+    {
+      "description": "Type map: money -> numeric(19,4).",
+      "action": "replace",
+      "options": { "find": "money", "replace_with": "numeric(19,4)", "whole_word": true, "ignore_case": true }
+    },
+    {
+      "description": "Type map: float -> double precision.",
+      "action": "replace",
+      "options": { "find": "float", "replace_with": "double precision", "whole_word": true, "ignore_case": true }
+    },
+    {
+      "description": "Type map: varbinary(max) -> bytea (run before varbinary / binary).",
+      "action": "replace",
+      "options": { "find": "varbinary(max)", "replace_with": "bytea", "ignore_case": true }
+    },
+    {
+      "description": "Type map: varbinary(n) / bare varbinary -> bytea (Postgres bytea is unsized).",
+      "action": "replace_regex",
+      "options": { "find": "\\bvarbinary(\\(\\d+\\))?", "replace_with": "bytea", "ignore_case": true }
+    },
+    {
+      "description": "Type map: binary(n) / bare binary -> bytea.",
+      "action": "replace_regex",
+      "options": { "find": "\\bbinary(\\(\\d+\\))?", "replace_with": "bytea", "ignore_case": true }
+    },
+    {
+      "description": "Type map: image -> bytea.",
+      "action": "replace",
+      "options": { "find": "image", "replace_with": "bytea", "whole_word": true, "ignore_case": true }
+    },
+    {
+      "description": "Identity: IDENTITY(1,1) -> GENERATED BY DEFAULT AS IDENTITY (the common case, kept clean).",
+      "action": "replace",
+      "options": { "find": "IDENTITY(1,1)", "replace_with": "GENERATED BY DEFAULT AS IDENTITY", "ignore_case": true }
+    },
+    {
+      "description": "Identity with a non-(1,1) seed/step: IDENTITY(seed,step) -> GENERATED BY DEFAULT AS IDENTITY (START WITH seed INCREMENT BY step).",
+      "action": "replace_regex",
+      "options": { "find": "IDENTITY\\((\\d+),\\s*(\\d+)\\)", "replace_with": "GENERATED BY DEFAULT AS IDENTITY (START WITH ${1} INCREMENT BY ${2})", "ignore_case": true }
+    },
+    {
+      "description": "Drop ROWGUIDCOL column marker (no Postgres equivalent). squeeze_spaces (below) tidies the gap it leaves.",
+      "action": "replace",
+      "options": { "find": "ROWGUIDCOL", "replace_with": "", "whole_word": true, "ignore_case": true }
+    },
+    {
+      "description": "Drop SPARSE column marker (Postgres has no sparse columns).",
+      "action": "replace",
+      "options": { "find": "SPARSE", "replace_with": "", "whole_word": true, "ignore_case": true }
+    },
+    {
+      "description": "Drop NOT FOR REPLICATION (identity/constraint modifier; no Postgres equivalent).",
+      "action": "replace",
+      "options": { "find": "NOT FOR REPLICATION", "replace_with": "", "whole_word": true, "ignore_case": true }
+    },
+    {
+      "description": "Drop any index/constraint storage-option clause: WITH (PAD_INDEX = ...). One regex covers PK/UNIQUE constraints and standalone CREATE INDEX, which carry different option lists (FILLFACTOR, DATA_COMPRESSION, ...). A trailing ON PRIMARY is removed by a later step.",
+      "action": "replace_regex",
+      "options": { "find": "WITH \\(PAD_INDEX[^)]*\\)", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Drop filegroup placement 'ON PRIMARY TEXTIMAGE_ON PRIMARY'.",
+      "action": "replace",
+      "options": { "find": "ON PRIMARY TEXTIMAGE_ON PRIMARY", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Drop remaining ' ON PRIMARY' filegroup placement.",
+      "action": "replace",
+      "options": { "find": " ON PRIMARY", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Drop ' ASC' from key column lists (Postgres default; invalid inside these inline PK/UNIQUE column lists).",
+      "action": "replace",
+      "options": { "find": " ASC", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Drop ' NONCLUSTERED' (no Postgres equivalent).",
+      "action": "replace",
+      "options": { "find": " NONCLUSTERED", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Drop ' CLUSTERED' (Postgres has no clustered-index syntax on constraints).",
+      "action": "replace",
+      "options": { "find": " CLUSTERED", "replace_with": "", "ignore_case": true }
+    },
+    {
+      "description": "Constraint ALTER: '  WITH CHECK ADD  ' -> ' ADD ' (Postgres has no WITH CHECK ADD).",
+      "action": "replace_regex",
+      "options": { "find": " +WITH CHECK ADD +", "replace_with": " ADD ", "ignore_case": true }
+    },
+    {
+      "description": "Rewrite DEFAULT constraints to Postgres ALTER COLUMN ... SET DEFAULT (no trailing ; -- the GO pass adds it).",
+      "action": "replace_regex",
+      "options": { "find": "ALTER TABLE ([a-zA-Z0-9_.]+) ADD  CONSTRAINT DF_[a-zA-Z0-9_]+  DEFAULT \\((.+)\\) FOR ([a-zA-Z0-9_]+)", "replace_with": "alter table ${1} alter column ${3} set default ${2}" }
+    },
+    {
+      "description": "Turn each GO batch separator into a statement terminator, plus a blank line between statements.",
+      "action": "replace_regex",
+      "options": { "find": "\\nGO\\n", "replace_with": ";\n\n", "ignore_case": true }
+    },
+    {
+      "description": "Canonical Postgres spacing: 'FOREIGN KEY(' -> 'FOREIGN KEY ('.",
+      "action": "replace",
+      "options": { "find": "FOREIGN KEY(", "replace_with": "FOREIGN KEY (", "ignore_case": true }
+    },
+    {
+      "description": "Canonical Postgres spacing for covering indexes: 'INCLUDE(' -> 'INCLUDE ('.",
+      "action": "replace",
+      "options": { "find": "INCLUDE(", "replace_with": "INCLUDE (", "ignore_case": true }
+    },
+    {
+      "description": "Collapse the double spaces left by removing column markers (keeps indentation).",
+      "action": "squeeze_spaces"
+    },
+    {
+      "description": "Tidy any space left before a semicolon.",
+      "action": "replace_regex",
+      "options": { "find": " +;", "replace_with": ";" }
+    },
+    {
+      "description": "Remove trailing whitespace on every line.",
+      "action": "trim_whitespace_right"
+    },
+    {
+      "description": "Collapse runs of blank lines to a single blank line.",
+      "action": "squeeze_blank_lines"
+    }
+  ]
+}

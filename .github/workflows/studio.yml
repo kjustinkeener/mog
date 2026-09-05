@@ -1,0 +1,47 @@
+name: studio
+
+on:
+  push:
+    branches: [main]
+    paths: ["studio/**", ".github/workflows/studio.yml"]
+  pull_request:
+    paths: ["studio/**", ".github/workflows/studio.yml"]
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    name: check
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: studio/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: studio/src-tauri
+      # The regex tester is a wasm module generated into src/wasm/regex, which is
+      # gitignored. The frontend imports it, so it must be built before the
+      # Svelte typecheck can resolve that import.
+      - uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: latest
+      - run: npm ci
+      - run: npm run build:wasm
+      - run: npm run check
+      - run: npm run build
+      # The Rust side is checked without building the installer bundle: a real
+      # bundle needs a dist engine staged into src-tauri/binaries/, which is a
+      # release step rather than a CI one (see studio/README.md).
+      - run: cargo fmt --check
+        working-directory: studio/src-tauri
+      - run: cargo clippy --all-targets -- -D warnings
+        working-directory: studio/src-tauri

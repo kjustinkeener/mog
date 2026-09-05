@@ -1,0 +1,18 @@
+{
+  "name": "Invert letter case",
+  "summary": "Swap the case of every letter",
+  "description": "Swap the case of every letter: uppercase becomes lowercase and vice versa. A mechanical, reversible transform (running it twice restores the original).",
+  "tags": [
+    "case",
+    "text",
+    "replace",
+    "comment",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "invert_case",
+      "description": "Swap the case of every letter"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+CREATE TABLE CUSTOMERS (
+	ID BIGINT NOT NULL,
+	NAME VARCHAR(200),
+	EMAIL VARCHAR(255),
+	BALANCE DECIMAL(18,2),
+	ATTRS JSON,
+	CREATED_AT TIMESTAMP,
+	UPDATED_AT TIMESTAMP WITH TIME ZONE,
+	REGION VARCHAR(50)
+	-- TODO(mog): dropped PRIMARY KEY (Trino has no table constraints)
+)
+-- TODO(mog): dropped Snowflake CLUSTER BY (REGION) (set target clustering/partitioning manually)

@@ -1,0 +1,58 @@
+{
+  "name": "DuckDB to BigQuery (DDL/SQL)",
+  "description": "Rewrite DuckDB SQL toward BigQuery: :: casts to CAST(...), double-quoted identifiers to backticks, and type keywords (VARCHAR/TEXT/CHAR->STRING, BIGINT/INT/SMALLINT/HUGEINT->INT64, DOUBLE/REAL->FLOAT64, DECIMAL->NUMERIC, BOOLEAN->BOOL, BLOB->BYTES, TIMESTAMPTZ->TIMESTAMP, TIMESTAMP->DATETIME, UUID->STRING). The inverse of bigquery-tables-to-duckdb. Minimal-diff and regex-based, not a semantic transpiler. Assumes LF text.",
+  "summary": "Convert DuckDB SQL to BigQuery",
+  "tags": [
+    "sql",
+    "duckdb",
+    "bigquery",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "sql-colon-cast-to-cast",
+    "sql-requote-quote-to-backtick"
+  ],
+  "steps": [
+    {
+      "section": "Casts",
+      "description": "Rewrite expr::TYPE to CAST(expr AS TYPE) (BigQuery has no ::). Run before requoting.",
+      "action": "run_mog",
+      "options": { "file": "sql-colon-cast-to-cast.mog" }
+    },
+    {
+      "section": "Identifiers",
+      "description": "DuckDB \"id\" identifiers to BigQuery `id` backticks.",
+      "action": "run_mog",
+      "options": { "file": "sql-requote-quote-to-backtick.mog" }
+    },
+    {
+      "section": "Types",
+      "description": "Map DuckDB type keywords to BigQuery (whole-word, case-insensitive; longest match wins).",
+      "action": "replace_map",
+      "options": {
+        "ignore_case": true,
+        "whole_word": true,
+        "map": {
+          "VARCHAR": "STRING",
+          "TEXT": "STRING",
+          "CHAR": "STRING",
+          "BIGINT": "INT64",
+          "SMALLINT": "INT64",
+          "HUGEINT": "INT64",
+          "INTEGER": "INT64",
+          "INT": "INT64",
+          "DOUBLE": "FLOAT64",
+          "REAL": "FLOAT64",
+          "DECIMAL": "NUMERIC",
+          "BOOLEAN": "BOOL",
+          "BLOB": "BYTES",
+          "TIMESTAMPTZ": "TIMESTAMP",
+          "TIMESTAMP": "DATETIME",
+          "UUID": "STRING"
+        }
+      }
+    }
+  ]
+}

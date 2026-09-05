@@ -1,0 +1,29 @@
+name: audit
+
+# Checks dependencies for known security advisories (RUSTSEC). Runs on changes to
+# the dependency set, on a weekly schedule to catch newly-published advisories,
+# and on demand.
+on:
+  push:
+    paths:
+      - "mog-rs/Cargo.toml"
+      - "mog-rs/Cargo.lock"
+      - ".github/workflows/audit.yml"
+  pull_request:
+    paths:
+      - "mog-rs/Cargo.toml"
+      - "mog-rs/Cargo.lock"
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  cargo-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      - name: Audit dependencies
+        working-directory: mog-rs
+        run: cargo audit

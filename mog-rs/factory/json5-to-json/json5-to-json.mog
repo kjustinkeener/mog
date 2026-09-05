@@ -1,0 +1,18 @@
+{
+  "name": "JSON5 to strict JSON",
+  "description": "Clean JSON5 / JSONC into strict JSON in one pass: strip // and /* block */ comments (URL-safe) and remove trailing commas before } or ]. Unquoted keys and single-quoted strings (other JSON5 features) are not converted.",
+  "summary": "Convert JSON5 or JSONC to strict JSON",
+  "tags": [
+    "json",
+    "cleanup",
+    "convert"
+  ],
+  "dependencies": [
+    "strip-jsonc-comments",
+    "remove-trailing-commas"
+  ],
+  "steps": [
+    { "action": "run_mog", "description": "Strip comments", "options": { "file": "strip-jsonc-comments.mog" } },
+    { "action": "run_mog", "description": "Remove trailing commas", "options": { "file": "remove-trailing-commas.mog" } }
+  ]
+}

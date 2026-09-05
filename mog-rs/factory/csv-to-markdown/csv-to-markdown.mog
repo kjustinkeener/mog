@@ -1,0 +1,9 @@
+{
+  "name": "CSV to Markdown table",
+  "description": "Render CSV (with a header row) as a GitHub-flavored Markdown table. Quote-aware; a pipe inside a cell is escaped; ragged rows are padded to the header width.",
+  "summary": "Convert CSV to a Markdown table",
+  "tags": ["convert", "csv", "markdown", "table"],
+  "steps": [
+    { "description": "Render the CSV as a Markdown table.", "action": "csv_to_markdown" }
+  ]
+}

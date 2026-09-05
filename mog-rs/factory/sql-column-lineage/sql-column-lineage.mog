@@ -1,0 +1,17 @@
+{
+  "name": "Trace SQL column lineage",
+  "description": "For a single SELECT statement, report where each output column comes from: one line per projected column, 'output <- source.column, ...', listing the upstream table columns it derives from. Aliases are honored (SELECT o.id AS oid -> 'oid <- orders.id'), an unnamed expression is labeled col1, col2, ... by position, and a constant or otherwise unresolved projection shows '(none)'. Parse-based (polyglot-sql), so it understands joins and table aliases rather than matching text. The whole input is treated as one query; give it one statement at a time. This does not change the SQL, it summarizes it, so use it to review or document a query, not to rewrite it.",
+  "summary": "Report each SELECT column's upstream source columns",
+  "tags": [
+    "sql",
+    "lineage",
+    "analyze",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "sql_lineage",
+      "description": "Emit 'output <- source.column' for each projected column"
+    }
+  ]
+}

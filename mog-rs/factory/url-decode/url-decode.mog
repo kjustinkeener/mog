@@ -1,0 +1,14 @@
+{
+  "name": "URL percent-decode",
+  "description": "Reverse percent-encoding, turning %XX sequences back into their characters (and + is left as-is; it is form-encoding, not RFC 3986). Errors if the result is not valid UTF-8. The inverse of url-encode.",
+  "summary": "Reverse URL percent-encoding",
+  "tags": [
+    "url",
+    "decode",
+    "escape",
+    "single-action"
+  ],
+  "steps": [
+    { "action": "url_decode", "description": "Decode percent-encoding" }
+  ]
+}

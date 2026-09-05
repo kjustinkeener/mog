@@ -1,0 +1,15 @@
+{
+  "name": "pg_dump (Postgres) to DuckDB",
+  "summary": "Convert pg_dump --schema-only output to DuckDB DDL",
+  "description": "Convert real 'pg_dump --schema-only' output to DuckDB DDL. DuckDB is highly Postgres-compatible, so after stripping the pg_dump plumbing the only rewrites needed are dropping the public. schema qualifier and the Postgres-only ALTER TABLE ONLY keyword; types (bigint, numeric, text, text[], timestamptz, now(), and the PK ALTER) pass through and execute in DuckDB as-is. Validated by executing the result in a real DuckDB engine.",
+  "tags": ["sql", "postgres", "duckdb", "convert", "migration"],
+  "dependencies": ["strip-pgdump-noise"],
+  "steps": [
+    { "section": "Strip export noise", "action": "run_mog",
+      "options": { "file": "strip-pgdump-noise.mog" } },
+    { "section": "Identifiers", "action": "replace", "description": "Drop the public. schema qualifier.",
+      "options": { "find": "public.", "replace_with": "" } },
+    { "section": "Statement", "action": "replace", "description": "Postgres ALTER TABLE ONLY -> ALTER TABLE (DuckDB has no ONLY).",
+      "options": { "find": "ALTER TABLE ONLY ", "replace_with": "ALTER TABLE " } }
+  ]
+}

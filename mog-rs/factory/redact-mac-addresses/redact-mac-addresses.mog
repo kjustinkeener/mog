@@ -1,0 +1,23 @@
+{
+  "name": "Redact MAC addresses",
+  "description": "Replace every MAC address (six colon-separated hex pairs, like 00:1A:2B:3C:4D:5E) with [MAC] so a network log can be shared without exposing hardware addresses. Case-insensitive. Hyphen-separated MACs are not matched.",
+  "summary": "Redact MAC addresses to [MAC]",
+  "tags": [
+    "redact",
+    "eol",
+    "network",
+    "privacy",
+    "security",
+    "log"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Replace colon-separated MAC addresses with a placeholder",
+      "options": {
+        "find": "\\b(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}\\b",
+        "replace_with": "[MAC]"
+      }
+    }
+  ]
+}

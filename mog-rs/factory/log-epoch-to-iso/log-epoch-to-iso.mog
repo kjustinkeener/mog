@@ -1,0 +1,23 @@
+{
+  "name": "Convert epoch timestamps to ISO dates",
+  "description": "Rewrite the Unix-epoch timestamp in a delimited log/CSV to a human-readable ISO datetime (UTC), leaving the other columns alone. Defaults to column 1 in seconds; set field for a different column, unit to millis for millisecond epochs, or format to date for just YYYY-MM-DD. Non-numeric values and empty cells pass through, so a header row or a stray line is safe. Deterministic and reversible with iso-to-epoch.",
+  "summary": "Convert epoch timestamps to ISO dates",
+  "tags": [
+    "data",
+    "time",
+    "log",
+    "csv",
+    "date"
+  ],
+  "steps": [
+    {
+      "action": "epoch_to_iso",
+      "description": "Column 1 epoch seconds -> ISO datetime (UTC)",
+      "options": {
+        "field": 1,
+        "unit": "seconds",
+        "format": "datetime"
+      }
+    }
+  ]
+}

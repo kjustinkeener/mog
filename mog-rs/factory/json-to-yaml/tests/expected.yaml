@@ -1,0 +1,5 @@
+name: App
+port: 8080
+tags:
+- a
+- b

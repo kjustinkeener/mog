@@ -1,0 +1,31 @@
+{
+  "name": "SQL finalize whitespace",
+  "description": "Canonical whitespace finalize for a generated SQL script: collapse the double spaces left by dropped markers, tidy stray spaces before punctuation (set tidy_chars to ';' or ',;'), strip trailing whitespace, and collapse runs of blank lines. Composable fragment: run last (via run_mog) from any converter that targets PostgreSQL. Assumes LF text.",
+  "summary": "Tidy whitespace in a generated SQL script",
+  "tags": ["fragment", "sql", "postgres", "format", "whitespace"],
+  "constants": {
+    "tidy_chars": ",;"
+  },
+  "steps": [
+    {
+      "description": "Collapse the double spaces left by removing column/type markers (keeps indentation).",
+      "action": "squeeze_spaces"
+    },
+    {
+      "description": "Tidy any space left before punctuation (tidy_chars selects which characters).",
+      "action": "replace_regex",
+      "options": {
+        "find": " +([{{tidy_chars}}])",
+        "replace_with": "${1}"
+      }
+    },
+    {
+      "description": "Remove trailing whitespace on every line.",
+      "action": "trim_whitespace_right"
+    },
+    {
+      "description": "Collapse runs of blank lines to a single blank line.",
+      "action": "squeeze_blank_lines"
+    }
+  ]
+}

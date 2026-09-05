@@ -1,0 +1,9 @@
+{
+  "name": "HTML Escape",
+  "description": "Escape HTML special characters (& < > and quotes) so text or code can be embedded safely in HTML or Markdown. Runs over the whole input.",
+  "summary": "Escape HTML special characters",
+  "tags": ["html", "escape", "encode", "markdown", "redact"],
+  "steps": [
+    { "action": "html_encode", "description": "Escape HTML special characters" }
+  ]
+}

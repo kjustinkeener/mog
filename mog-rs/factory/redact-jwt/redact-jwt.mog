@@ -1,0 +1,21 @@
+{
+  "name": "Redact JWT tokens",
+  "description": "Replace JSON Web Tokens (the eyJ... header.payload.signature shape, three dot-separated base64url segments) with [JWT] so an auth log or pasted request can be shared without leaking a bearer token.",
+  "summary": "Redact JWT tokens to [JWT]",
+  "tags": [
+    "redact",
+    "secrets",
+    "security",
+    "privacy"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Replace JWTs with a placeholder",
+      "options": {
+        "find": "eyJ[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+",
+        "replace_with": "[JWT]"
+      }
+    }
+  ]
+}

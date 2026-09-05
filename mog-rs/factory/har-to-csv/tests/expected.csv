@@ -1,0 +1,7 @@
+method,url,status,mime_type,transfer_size,time_ms
+GET,https://shop.example.com/catalog,200,text/html,18422,512.774
+GET,https://cdn.example.com/app.js?v=4.2.1,200,application/javascript,91055,143.201
+GET,"https://api.example.com/v1/search?q=shoes,boots&sort=price,asc&page=2",200,application/json,3120,88.5
+POST,https://api.example.com/v1/cart/items,201,application/json,410,210.049
+GET,https://cdn.example.com/img/hero.png,304,image/png,118,12.003
+GET,https://tracker.example.net/px?id=99&t=1755162723,404,text/plain,260,61.44

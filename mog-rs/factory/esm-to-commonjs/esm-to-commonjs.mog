@@ -1,0 +1,28 @@
+{
+  "name": "ES modules to CommonJS",
+  "description": "Rewrite ES module syntax to CommonJS: 'import X from \"m\"' and 'import { a, b } from \"m\"' become const ... = require(\"m\"), and 'export default X' becomes module.exports = X. The inverse of commonjs-to-esm. Does not handle namespace imports (* as), renamed exports, dynamic import(), or import side-effects.",
+  "summary": "Convert ES module syntax to CommonJS",
+  "tags": [
+    "javascript",
+    "imports",
+    "codemod",
+    "convert"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex_multiline",
+      "description": "Default import -> const require",
+      "options": { "find": "^import\\s+(\\w+)\\s+from\\s+['\"]([^'\"]+)['\"];?", "replace_with": "const $1 = require('$2');" }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Named import -> const destructure require",
+      "options": { "find": "^import\\s+(\\{[^}]+\\})\\s+from\\s+['\"]([^'\"]+)['\"];?", "replace_with": "const $1 = require('$2');" }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Default export -> module.exports",
+      "options": { "find": "^export\\s+default\\s+(.+?);?$", "replace_with": "module.exports = $1;" }
+    }
+  ]
+}

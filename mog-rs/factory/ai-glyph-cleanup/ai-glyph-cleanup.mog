@@ -1,0 +1,156 @@
+{
+  "name": "AI Glyph Cleanup",
+  "description": "Strip the Unicode glyphs that mark machine-generated or word-processor text and leave plain ASCII: every dash variant (as dash-cleanup), curly quotes, ellipsis, non-breaking and zero-width characters (as paste-cleanup), narrow and ideographic spaces, word joiners, direction marks, line and paragraph separators, decorative bullet glyphs at the start of a line, arrows, math and fraction symbols, trademark marks, ligatures, and decorative status emoji. Use it before committing or publishing text that came from a chat model, a PDF, or a word processor.",
+  "summary": "Strip machine-text glyphs down to plain ASCII",
+  "tags": [
+    "text",
+    "cleanup",
+    "unicode",
+    "prose",
+    "ascii"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "En dash inside a word or number is a range: make it a tight hyphen",
+      "options": {
+        "find": "([0-9A-Za-z])\u2013([0-9A-Za-z])",
+        "replace_with": "$1-$2"
+      }
+    },
+    {
+      "action": "replace_map",
+      "description": "Fold the remaining dash variants onto forms emdash-cleanup handles",
+      "options": {
+        "map": {
+          "\u2e3a": "\u2014",
+          "\u2e3b": "\u2014",
+          "\u2013": "\u2014",
+          "\u2012": "-",
+          "\u2011": "-",
+          "\u2212": "-",
+          "\u00ad": ""
+        }
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Line-opening dash becomes a plain hyphen bullet",
+      "options": {
+        "find": "(?m)^[ \t]*[\u2014\u2015]+[ \t]*",
+        "replace_with": "- "
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Trailing dash at end of line is dropped with its leading space",
+      "options": {
+        "find": "(?m)[ \t]*[\u2014\u2015]+[ \t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Mid-line dash becomes a spaced hyphen",
+      "options": {
+        "find": "[ \t]*[\u2014\u2015]+[ \t]*",
+        "replace_with": " - "
+      }
+    },
+    {
+      "action": "replace_map",
+      "description": "Map smart typography to ASCII equivalents in a single pass",
+      "options": {
+        "map": {
+          "\u201c": "\"",
+          "\u201d": "\"",
+          "\u2018": "'",
+          "\u2019": "'",
+          "\u2013": "-",
+          "\u2014": "--",
+          "\u2026": "...",
+          "\u00a0": " ",
+          "\u200b": "",
+          "\u200c": "",
+          "\u200d": "",
+          "\ufeff": ""
+        }
+      }
+    },
+    {
+      "action": "replace_map",
+      "description": "Exotic spaces to a normal space; invisible formatting characters removed",
+      "options": {
+        "map": {
+          "\u202f": " ",
+          "\u2009": " ",
+          "\u2007": " ",
+          "\u2008": " ",
+          "\u205f": " ",
+          "\u3000": " ",
+          "\u2060": "",
+          "\ufe0f": "",
+          "\ufe0e": "",
+          "\u200e": "",
+          "\u200f": "",
+          "\u2028": "\n",
+          "\u2029": "\n"
+        }
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Decorative bullet glyphs at the start of a line become a plain hyphen bullet",
+      "options": {
+        "find": "(?m)^([ \t]*)[\u2022\u2023\u25aa\u25ab\u25cf\u25e6\u00b7][ \t]*",
+        "replace_with": "$1- "
+      }
+    },
+    {
+      "action": "replace_map",
+      "description": "Arrows to ASCII",
+      "options": {
+        "map": {
+          "\u2192": "->",
+          "\u2190": "<-",
+          "\u2194": "<->",
+          "\u21d2": "=>",
+          "\u21d0": "<=",
+          "\u21d4": "<=>"
+        }
+      }
+    },
+    {
+      "action": "replace_map",
+      "description": "Math, fraction, and symbol glyphs to ASCII",
+      "options": {
+        "map": {
+          "\u2264": "<=",
+          "\u2265": ">=",
+          "\u2260": "!=",
+          "\u2248": "~=",
+          "\u00d7": "x",
+          "\u00f7": "/",
+          "\u00bd": "1/2",
+          "\u00bc": "1/4",
+          "\u00be": "3/4",
+          "\u00b2": "^2",
+          "\u00b3": "^3",
+          "\u2122": "(TM)",
+          "\u00a9": "(C)",
+          "\u00ae": "(R)",
+          "\ufb01": "fi",
+          "\ufb02": "fl"
+        }
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Decorative status emoji and the space after them are removed",
+      "options": {
+        "find": "[\u2705\u274c\u26a0\u2714\u2716\u2728\ud83d\ude80\ud83c\udf89\ud83d\udd25\ud83d\udca1\ud83d\udccc\ud83e\udde0\ud83d\udc4d\ud83d\udd0d\ud83d\udd27\ud83d\udcdd][ \t]*",
+        "replace_with": ""
+      }
+    }
+  ]
+}

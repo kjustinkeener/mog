@@ -1,0 +1,9 @@
+{
+  "name": ".properties to JSON",
+  "description": "Parse a Java .properties file (key=value or key:value, #/! comments) into a flat JSON object of string values. Dotted keys are kept flat.",
+  "summary": "Convert Java .properties to flat JSON",
+  "tags": ["convert", "config", "java", "json"],
+  "steps": [
+    { "description": "Parse the .properties into a JSON object.", "action": "properties_to_json" }
+  ]
+}

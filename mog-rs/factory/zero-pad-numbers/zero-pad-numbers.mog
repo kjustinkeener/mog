@@ -1,0 +1,9 @@
+{
+  "name": "Zero-pad numbers",
+  "description": "Left-pad every run of digits to a fixed width with leading zeros so numeric IDs and filenames sort correctly (item-7 becomes item-0007). Width is set by the 'width' option (4 here). Runs already at or above the width are left unchanged. Only digit runs are touched; a leading sign stays outside the padding.",
+  "summary": "Left-pad numbers with leading zeros to a fixed width",
+  "tags": ["numbers", "whitespace", "sort", "identifier", "single-action"],
+  "steps": [
+    { "action": "pad_numbers", "options": { "width": 4 } }
+  ]
+}

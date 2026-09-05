@@ -1,0 +1,61 @@
+{
+  "name": "Dash Cleanup",
+  "description": "Normalize the whole Unicode dash family to ASCII: em dash and horizontal bar (via emdash-cleanup) plus two-em and three-em dashes become a spaced hyphen, an en dash between word characters becomes a tight hyphen so ranges like 3-4 stay tight, a standalone or spaced en dash becomes a spaced hyphen, figure dash, non-breaking hyphen and the minus sign become a plain hyphen, and soft hyphens are removed. Use it on prose, docs, and commit messages that came from a word processor or a chat model.",
+  "summary": "Normalize every Unicode dash to ASCII hyphens",
+  "tags": [
+    "text",
+    "cleanup",
+    "unicode",
+    "prose",
+    "punctuation"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "En dash inside a word or number is a range: make it a tight hyphen",
+      "options": {
+        "find": "([0-9A-Za-z])\u2013([0-9A-Za-z])",
+        "replace_with": "$1-$2"
+      }
+    },
+    {
+      "action": "replace_map",
+      "description": "Fold the remaining dash variants onto forms emdash-cleanup handles",
+      "options": {
+        "map": {
+          "\u2e3a": "\u2014",
+          "\u2e3b": "\u2014",
+          "\u2013": "\u2014",
+          "\u2012": "-",
+          "\u2011": "-",
+          "\u2212": "-",
+          "\u00ad": ""
+        }
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Line-opening dash becomes a plain hyphen bullet",
+      "options": {
+        "find": "(?m)^[ \t]*[\u2014\u2015]+[ \t]*",
+        "replace_with": "- "
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Trailing dash at end of line is dropped with its leading space",
+      "options": {
+        "find": "(?m)[ \t]*[\u2014\u2015]+[ \t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Mid-line dash becomes a spaced hyphen",
+      "options": {
+        "find": "[ \t]*[\u2014\u2015]+[ \t]*",
+        "replace_with": " - "
+      }
+    }
+  ]
+}

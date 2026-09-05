@@ -1,0 +1,54 @@
+{
+  "name": "WebVTT to SRT subtitles",
+  "description": "Convert WebVTT (.vtt) captions to SubRip (.srt): drop the WEBVTT header and any leading blank lines, change the timestamp decimal separator from a dot to a comma (00:00:01.000 -> 00:00:01,000), and add the sequential cue-index line that SRT requires. The inverse of srt-to-vtt. Cue settings/positioning and NOTE/STYLE blocks are not handled.",
+  "summary": "Convert WebVTT captions to SubRip (SRT)",
+  "tags": [
+    "subtitles",
+    "convert",
+    "interchange"
+  ],
+  "steps": [
+    {
+      "section": "Header",
+      "action": "remove_lines_matching",
+      "description": "Drop the WEBVTT header line",
+      "options": {
+        "pattern": "^WEBVTT.*$"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Drop the leading blank line(s) left by the header",
+      "options": {
+        "find": "\\A\\n+",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Timestamps",
+      "action": "replace_regex",
+      "description": "Timestamps: dot decimal -> comma decimal",
+      "options": {
+        "find": "(\\d{2}:\\d{2}:\\d{2})\\.(\\d{3})",
+        "replace_with": "$1,$2"
+      }
+    },
+    {
+      "section": "Cue numbers",
+      "action": "insert_before_matching",
+      "description": "Mark each timing line so it can be numbered",
+      "options": {
+        "pattern": "-->",
+        "text": "@@SEQ@@"
+      }
+    },
+    {
+      "action": "stamp_sequence",
+      "description": "Turn the markers into 1, 2, 3, ... cue indices",
+      "options": {
+        "find": "@@SEQ@@",
+        "start": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+myVarName
+getHTTPResponse
+userID
+parseJSONData

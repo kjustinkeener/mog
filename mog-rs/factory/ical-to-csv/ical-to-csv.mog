@@ -1,0 +1,39 @@
+{
+  "name": "iCalendar events to CSV",
+  "description": "Flatten the VEVENTs of an iCalendar (.ics) file into a CSV table, one row per event. Drops the VCALENDAR wrapper (BEGIN:VCALENDAR / VERSION / PRODID / BEGIN:VEVENT / END:VCALENDAR), treats each END:VEVENT as a record boundary, then pivots the remaining FIELD:value lines (SUMMARY, DTSTART, DTEND, LOCATION, ...) into columns. Fields with parameters (e.g. DTSTART;TZID=...) keep the parameter in the column name, so best on plain calendars.",
+  "summary": "Convert iCalendar events to CSV",
+  "tags": [
+    "date",
+    "csv",
+    "convert",
+    "interchange"
+  ],
+  "steps": [
+    {
+      "section": "Unwrap",
+      "action": "remove_lines_matching",
+      "description": "Drop the calendar wrapper and per-event BEGIN lines",
+      "options": {
+        "pattern": "^(BEGIN:VCALENDAR|VERSION:.*|PRODID:.*|CALSCALE:.*|BEGIN:VEVENT|END:VCALENDAR)$"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Turn each END:VEVENT into a blank line (a record boundary)",
+      "options": {
+        "find": "^END:VEVENT$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Tabulate",
+      "action": "records_to_columns",
+      "description": "Pivot FIELD:value stanzas into a CSV table",
+      "options": {
+        "separator": ":",
+        "delimiter": ",",
+        "header": true
+      }
+    }
+  ]
+}

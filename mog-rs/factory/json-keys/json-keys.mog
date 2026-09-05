@@ -1,0 +1,18 @@
+{
+  "name": "List JSON object keys",
+  "description": "Emit the top-level keys of each JSON object (one JSONL object per line), comma-joined. Handy for eyeballing the schema/shape of a JSON or JSONL file. For a single JSON object, put it on one line.",
+  "summary": "List the top-level keys of JSON objects",
+  "tags": [
+    "json",
+    "jsonl",
+    "schema",
+    "scan"
+  ],
+  "steps": [
+    {
+      "action": "json_keys",
+      "description": "Emit each object's keys, comma-joined",
+      "options": { "separator": "," }
+    }
+  ]
+}

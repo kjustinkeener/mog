@@ -1,0 +1,7 @@
+red
+green
+blue
+one
+two
+three
+solo

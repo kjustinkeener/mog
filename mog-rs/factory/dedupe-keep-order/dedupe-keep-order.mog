@@ -1,0 +1,9 @@
+{
+  "name": "Dedupe Keep Order",
+  "description": "Remove duplicate lines while preserving the original order (keep the first occurrence of each; case-sensitive). For files where line order is load-bearing and sort-dedupe would be wrong -- e.g. .gitignore, ordered config, a changelog.",
+  "summary": "Remove duplicate lines, keep original order",
+  "tags": ["dedupe", "sort", "best-effort", "list", "config"],
+  "steps": [
+    { "action": "remove_duplicate_lines", "description": "Keep the first occurrence, drop later duplicates" }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "name": "Tidy List",
+  "description": "Clean up a messy list: trim, drop blanks, de-duplicate, sort, Title Case.",
+  "summary": "Trim, dedupe, sort, and Title Case a messy list",
+  "tags": ["text", "cleanup", "sort", "dedupe", "list"],
+  "steps": [
+    {
+      "action": "trim_whitespace",
+      "description": "Trim spaces around each line"
+    },
+    {
+      "action": "remove_empty_lines",
+      "description": "Drop blank lines",
+      "options": { "include_whitespace": true }
+    },
+    {
+      "action": "remove_duplicate_lines",
+      "description": "De-duplicate (case-insensitive)",
+      "options": { "ignore_case": true }
+    },
+    {
+      "action": "sort_lines",
+      "description": "Sort A to Z (case-insensitive)",
+      "options": { "ignore_case": true }
+    },
+    {
+      "action": "to_proper",
+      "description": "Title Case each word"
+    }
+  ]
+}

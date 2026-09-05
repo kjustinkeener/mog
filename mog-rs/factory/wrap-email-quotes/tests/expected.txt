@@ -1,0 +1,7 @@
+> This is a fairly long quoted line from the
+> original message that should be reflowed. A
+> short quoted follow-up that joins onto it.
+
+Thanks for the note. Here is my reply, which is
+also long enough that it needs wrapping across a
+few lines at the chosen width.

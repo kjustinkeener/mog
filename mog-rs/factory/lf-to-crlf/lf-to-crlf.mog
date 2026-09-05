@@ -1,0 +1,16 @@
+{
+  "name": "Convert line endings to CRLF",
+  "summary": "Normalize all line endings to Windows CRLF",
+  "description": "Convert every line ending to CRLF (Windows). The mirror of crlf-to-lf. Useful when a file must use DOS line endings (some Windows tools, certain network protocols).",
+  "tags": [
+    "eol",
+    "normalize",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "eol_crlf",
+      "description": "Convert line endings to CRLF"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Strip Markdown",
+  "description": "Reduce Markdown to plain text: drop code-fence lines, unwrap links and images to their text, and remove header, blockquote, and list markers, horizontal rules, and bold/italic/inline-code/strikethrough emphasis. Underscore emphasis is left as-is so snake_case is not corrupted. Not a Markdown parser.",
+  "summary": "Reduce Markdown to plain text",
+  "tags": ["markdown", "text", "cleanup", "strip", "plaintext"],
+  "steps": [
+    { "description": "Strip the Markdown syntax.", "action": "strip_markdown" }
+  ]
+}

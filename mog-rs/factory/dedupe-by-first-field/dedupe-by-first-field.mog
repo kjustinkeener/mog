@@ -1,0 +1,9 @@
+{
+  "name": "Dedupe rows by first column",
+  "description": "Remove duplicate lines by the first comma-separated field, keeping the first occurrence of each key. Works on non-adjacent duplicates, unlike a consecutive-only dedupe. Set the key with 'key_field' (1-based) and 'key_delimiter', or use 'key_regex' instead. Does not treat a header row specially.",
+  "summary": "Remove duplicate rows by first column key",
+  "tags": ["dedupe", "csv", "column", "json", "single-action"],
+  "steps": [
+    { "action": "dedupe_by", "options": { "key_field": 1, "key_delimiter": "," } }
+  ]
+}

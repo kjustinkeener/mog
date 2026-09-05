@@ -1,0 +1,21 @@
+# Example GitLab CI job: fail the pipeline if a tracked text transform would
+# change a file (the `prettier --check` pattern, for arbitrary text). Copy the
+# job into your .gitlab-ci.yml, or `include:` this file.
+#
+# Point `image:` at a registry copy of the mog image (build it from the repo's
+# Dockerfile and push once), or install the mog binary in a `before_script`.
+#
+# NOTE: authored but NOT yet run in a live GitLab pipeline; validate before use.
+
+mog-check:
+  image: registry.example.com/mog:latest
+  script:
+    # Check the whole repo against a committed recipe; nonzero exit fails the job.
+    - mog -m recipes/fix.mog --check .
+
+# Changed-files-only variant (faster on large repos):
+mog-check-changed:
+  image: registry.example.com/mog:latest
+  script:
+    - git fetch origin "$CI_DEFAULT_BRANCH"
+    - git diff --name-only "origin/$CI_DEFAULT_BRANCH...HEAD" | mog -m recipes/fix.mog --check --files-from -

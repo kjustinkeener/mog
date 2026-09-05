@@ -1,0 +1,17 @@
+{
+  "name": "Escape regex metacharacters",
+  "summary": "Escape a line so it matches literally in a regex",
+  "description": "Escape every regex metacharacter on each line so the text matches itself literally when used as a pattern. Use when you have a fixed string (a path, a version, an IP) that you need to embed safely into a larger regex.",
+  "tags": [
+    "escape",
+    "regex",
+    "encode",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "escape_regex",
+      "description": "Escape regex metacharacters"
+    }
+  ]
+}

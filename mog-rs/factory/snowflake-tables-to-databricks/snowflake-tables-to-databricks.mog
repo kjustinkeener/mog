@@ -1,0 +1,97 @@
+{
+  "name": "Snowflake GET_DDL to Databricks/Spark",
+  "summary": "Convert a Snowflake GET_DDL table export to Databricks/Spark DDL",
+  "description": "Convert Snowflake GET_DDL('TABLE', ...) output to Databricks/Spark DDL. Strips the Snowflake-only renderings (cluster by, comments, terminator), rewrites autoincrement and the create verb, and maps types (NUMBER(38,0)->BIGINT, NUMBER(p,s)->DECIMAL(p,s), VARIANT->STRING, TIMESTAMP_NTZ->TIMESTAMP_NTZ, TIMESTAMP_TZ/LTZ->TIMESTAMP). Not a semantic transpiler; leaves TODO(mog) markers where a construct needs manual review.",
+  "tags": [
+    "sql",
+    "snowflake",
+    "databricks",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-snowflake-getddl-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip export noise",
+      "action": "run_mog",
+      "options": {
+        "file": "strip-snowflake-getddl-noise.mog"
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Snowflake autoincrement -> Databricks/Spark identity.",
+      "options": {
+        "find": "(?i)autoincrement start \\d+ increment \\d+",
+        "replace_with": "GENERATED ALWAYS AS IDENTITY"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "NUMBER(38,0) -> BIGINT.",
+      "options": {
+        "find": "\\bNUMBER\\(38,\\s*0\\)",
+        "replace_with": "BIGINT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "NUMBER(p,s) -> DECIMAL(p,s).",
+      "options": {
+        "find": "\\bNUMBER\\(",
+        "replace_with": "DECIMAL("
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Bare NUMBER -> BIGINT.",
+      "options": {
+        "find": "\\bNUMBER\\b",
+        "replace_with": "BIGINT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "VARIANT -> STRING.",
+      "options": {
+        "find": "\\bVARIANT\\b",
+        "replace_with": "STRING"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "TIMESTAMP_NTZ(n) -> TIMESTAMP_NTZ.",
+      "options": {
+        "find": "\\bTIMESTAMP_NTZ(\\(\\d+\\))?",
+        "replace_with": "TIMESTAMP_NTZ"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "TIMESTAMP_TZ / TIMESTAMP_LTZ -> TIMESTAMP.",
+      "options": {
+        "find": "\\bTIMESTAMP_(?:LTZ|TZ)(\\(\\d+\\))?",
+        "replace_with": "TIMESTAMP"
+      }
+    },
+    {
+      "section": "Statement",
+      "action": "replace",
+      "description": "Normalize the create verb for Databricks/Spark.",
+      "options": {
+        "find": "create or replace TABLE ",
+        "replace_with": "CREATE OR REPLACE TABLE "
+      }
+    }
+  ]
+}

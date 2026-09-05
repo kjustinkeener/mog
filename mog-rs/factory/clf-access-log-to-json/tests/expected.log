@@ -1,0 +1,2 @@
+{"ip":"127.0.0.1","timestamp":"10/Oct/2023:13:55:36 +0000","method":"GET","path":"/index.html","protocol":"HTTP/1.1","status":"200","size":"2326","referer":"","user_agent":""}
+{"ip":"10.0.0.5","timestamp":"10/Oct/2023:13:56:01 +0000","method":"POST","path":"/api/login","protocol":"HTTP/1.1","status":"401","size":"512","referer":"","user_agent":""}

@@ -1,0 +1,20 @@
+{
+  "name": "Add to every number",
+  "summary": "Increment each number by a constant",
+  "description": "Add a constant (default 1) to every number in scope, preserving the surrounding text. Useful for bumping ports, ids, or version components across a list. Formatting of each number is preserved.",
+  "tags": [
+    "text",
+    "numbers",
+    "math",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "increment_numbers",
+      "description": "Add 1 to each number",
+      "options": {
+        "by": 1
+      }
+    }
+  ]
+}

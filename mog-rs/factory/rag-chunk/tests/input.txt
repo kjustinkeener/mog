@@ -1,0 +1,1 @@
+Retrieval augmented generation splits a document into smaller pieces so an embedding model can index them and a retriever can find the most relevant passages at query time.

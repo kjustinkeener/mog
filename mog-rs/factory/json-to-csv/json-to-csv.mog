@@ -1,0 +1,12 @@
+{
+  "name": "JSON to CSV",
+  "description": "Convert a JSON array (or JSONL, one object per line) of flat objects to CSV. The header is the union of keys in first-seen order, missing keys are empty cells, and nested values become compact JSON. The read counterpart to CSV to JSON.",
+  "summary": "Convert JSON or JSONL to CSV",
+  "tags": ["convert", "json", "csv", "data"],
+  "steps": [
+    {
+      "description": "Flatten the JSON objects into CSV rows.",
+      "action": "json_to_csv"
+    }
+  ]
+}

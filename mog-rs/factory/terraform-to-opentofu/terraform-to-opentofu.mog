@@ -1,0 +1,14 @@
+{
+  "name": "Terraform HCL to OpenTofu",
+  "description": "Rewrite Terraform HCL config for OpenTofu. OpenTofu is a drop-in fork, so .tf config is nearly identical; this rewrites the one difference that matters in config text: explicit registry.terraform.io provider source addresses become registry.opentofu.org (short-form sources like hashicorp/aws resolve on both and are left alone). NOT handled: the terraform {} block is left as-is (OpenTofu reads it; converting to tofu {} would break Terraform compatibility), Terraform Cloud app.terraform.io references, and CLI/state/lockfile concerns.",
+  "summary": "Rewrite Terraform HCL provider host for OpenTofu",
+  "tags": [
+    "config",
+    "terraform",
+    "convert",
+    "single-action"
+  ],
+  "steps": [
+    { "section": "Provider registry host", "action": "replace", "description": "registry.terraform.io -> registry.opentofu.org", "options": { "find": "registry.terraform.io", "replace_with": "registry.opentofu.org" } }
+  ]
+}

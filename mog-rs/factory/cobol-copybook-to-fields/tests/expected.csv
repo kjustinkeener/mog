@@ -1,0 +1,8 @@
+level,name,pic,type
+05,CUST-ID,9(5),integer
+05,CUST-NAME,X(30),text
+05,CUST-BALANCE,S9(7)V99 COMP-3,decimal
+05,CUST-STATUS,A,text
+10,CUST-STREET,X(40),text
+10,CUST-ZIP,9(9),integer
+05,CUST-FLAGS,X(4),text

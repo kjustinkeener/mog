@@ -1,0 +1,16 @@
+{
+  "name": "Strip # comment lines",
+  "description": "Remove whole-line # comments from a shell script, config, YAML, or Dockerfile, then collapse the blank runs the removals leave behind. Only lines whose first non-whitespace is # are dropped; inline trailing comments and # inside values are left alone (removing those safely needs awareness of quoting).",
+  "summary": "Remove whole-line # comments and collapse blank runs",
+  "tags": [
+    "config",
+    "shell",
+    "comment",
+    "strip",
+    "cleanup"
+  ],
+  "steps": [
+    { "action": "remove_lines_matching", "description": "Drop full-line # comments", "options": { "pattern": "^\\s*#" } },
+    { "action": "squeeze_blank_lines", "description": "Collapse the blank runs left behind" }
+  ]
+}

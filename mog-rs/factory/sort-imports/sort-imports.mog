@@ -1,0 +1,9 @@
+{
+  "name": "Sort import lines",
+  "description": "Sort each run of consecutive import statements alphabetically, in place, leaving blank lines and code as anchors so grouped import sections stay separate. The default pattern recognizes import / from / #include / using / use / require / @import across common languages; override 'pattern' to target one language precisely, and set 'dedupe' to drop duplicate imports.",
+  "summary": "Alphabetize each run of import statements",
+  "tags": ["imports", "sort", "codemod", "cleanup", "python", "javascript"],
+  "steps": [
+    { "action": "sort_imports", "description": "Alphabetize each consecutive import block" }
+  ]
+}

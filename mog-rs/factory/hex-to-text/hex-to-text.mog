@@ -1,0 +1,17 @@
+{
+  "name": "Decode hex back to text",
+  "summary": "Unhexlify a hex string back to bytes/text",
+  "description": "Decode each line of hex digits back to text (two hex digits per byte). The inverse of text-to-hex. Errors on an odd length or a non-hex character.",
+  "tags": [
+    "decode",
+    "hex",
+    "encode",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "hex_decode",
+      "description": "Decode each hex line back to text"
+    }
+  ]
+}

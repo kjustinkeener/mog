@@ -1,0 +1,12 @@
+{
+  "name": "Sort and Dedupe",
+  "description": "Normalize an order-independent list: trim each line, drop blank lines, remove duplicate lines (case-sensitive, first occurrence wins), then sort A to Z. For requirements.txt, wordlists, CODEOWNERS, allow/deny lists. NOT for files where line order is significant (e.g. .gitignore negation order) -- use dedupe-keep-order there.",
+  "summary": "Sort a list and remove duplicate lines",
+  "tags": ["sort", "dedupe", "list", "config", "ml", "cleanup", "normalize"],
+  "steps": [
+    { "action": "trim_whitespace", "description": "Trim leading/trailing whitespace" },
+    { "action": "remove_empty_lines", "description": "Drop blank lines", "options": { "include_whitespace": true } },
+    { "action": "remove_duplicate_lines", "description": "Remove duplicate lines (case-sensitive)" },
+    { "action": "sort_lines", "description": "Sort A to Z (case-sensitive)" }
+  ]
+}

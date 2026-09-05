@@ -1,0 +1,284 @@
+{
+  "name": "SQL Server SSMS tables to Go structs",
+  "summary": "Generate Go structs (with db tags) from SSMS-scripted SQL Server tables",
+  "description": "Generate idiomatic Go type declarations from a SSMS 'Script Table as CREATE' export, one 'type <Table> struct' per table. Strips the SSMS plumbing, removes bracket quoting, drops USE/GO batch separators, ALTER TABLE and CREATE INDEX statements, then rewrites each CREATE TABLE into a struct with one exported field per column. Field names are PascalCased for export, and the EXACT database column name is preserved losslessly in a `db:\"...\"` struct tag (compatible with sqlx / pgx). SQL Server types map to Go types (tinyint->int16, smallint->int16, int->int32, bigint->int64, real->float32, float->float64, bit->bool, char/varchar/nchar/nvarchar/text->string, uniqueidentifier->string, date/time/datetime/datetime2/datetimeoffset/smalldatetime->time.Time, binary/varbinary/image->[]byte). decimal/numeric/money/smallmoney map to string (Go has no native decimal) and are flagged; sql_variant maps to any and is flagged. Nullable columns become pointer types (*T); nilable types (slices) stay as-is. Emits the struct declarations only -- add your own 'package' clause and imports (time), then run gofmt to align fields. The Go sibling of sqlserver-tables-to-typescript. Assumes LF.",
+  "tags": [
+    "sql",
+    "mssql",
+    "go",
+    "codegen",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "mssql-strip-server-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "description": "Strip SSMS server noise (SET ANSI_NULLS, object banners, ON [PRIMARY]).",
+      "options": { "file": "mssql-strip-server-noise.mog" }
+    },
+    {
+      "section": "Unquote",
+      "action": "replace",
+      "description": "Remove SQL Server opening bracket quotes.",
+      "options": { "find": "[", "replace_with": "" }
+    },
+    {
+      "section": "Unquote",
+      "action": "replace",
+      "description": "Remove SQL Server closing bracket quotes.",
+      "options": { "find": "]", "replace_with": "" }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop USE <db> batch header.",
+      "options": { "find": "(?im)^USE .*\\nGO\\n", "replace_with": "" }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop ALTER TABLE batches (constraints, defaults).",
+      "options": { "find": "(?ims)^ALTER TABLE\\b.*?\\nGO\\n", "replace_with": "" }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CREATE INDEX batches.",
+      "options": { "find": "(?ims)^CREATE (?:UNIQUE )?(?:CLUSTERED |NONCLUSTERED )?INDEX\\b.*?\\nGO\\n", "replace_with": "" }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop remaining GO batch separators.",
+      "options": { "find": "(?im)^GO$", "replace_with": "" }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Normalize the leading tab indent SSMS uses to 4 spaces.",
+      "options": { "find": "(?m)^\\t", "replace_with": "    " }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Collapse the blank lines the removals left behind.",
+      "options": { "find": "\\n[ \\t]*(?:\\n[ \\t]*)+", "replace_with": "\n\n" }
+    },
+    {
+      "section": "Struct shell",
+      "action": "replace_regex",
+      "description": "Rewrite each 'CREATE TABLE <schema>.<tbl>(' into a Go struct header + opening brace.",
+      "options": { "find": "(?m)^CREATE TABLE (?:\\w+\\.)?(\\w+)\\($", "replace_with": "type ${1} struct {" }
+    },
+    {
+      "section": "Struct shell",
+      "action": "replace_regex",
+      "description": "Rewrite each table-closing ') ON [PRIMARY]...' into a closing brace.",
+      "options": { "find": "(?m)^\\).*$", "replace_with": "}" }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop IDENTITY(seed,increment) markers.",
+      "options": { "find": "(?i) IDENTITY\\(\\d+,\\s*\\d+\\)", "replace_with": "" }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop trailing commas that separated columns.",
+      "options": { "find": "(?m),[ \\t]*$", "replace_with": "" }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Mark nullable columns (4-space indent, ending in bare NULL) with a sentinel.",
+      "options": { "find": "(?m)^(    \\w[^\\n]*?)(?<!NOT) NULL$", "replace_with": "${1}@@N@@" }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Remove the NOT NULL constraint marker from non-nullable columns.",
+      "options": { "find": "(?m) NOT NULL$", "replace_with": "" }
+    },
+    {
+      "section": "Flag precision types",
+      "action": "flag_matching",
+      "description": "Flag exact-precision / currency columns before they are mapped to string.",
+      "options": { "pattern": "(?i)\\b(?:decimal|numeric|money|smallmoney)\\b", "comment": "//", "tag": "TODO", "message": "exact-precision or currency column; mapped to a Go string (no native fixed-point) -- parse with a fixed-point library for math.", "position": "inline" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "date/time/datetime family -> time.Time (via sentinel).",
+      "options": { "find": "(?i)\\b(?:datetimeoffset|datetime2|smalldatetime|datetime|date|time)\\b(?:\\(\\d+\\))?", "replace_with": "@@GODT@@" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "char/varchar/nchar/nvarchar/text -> string.",
+      "options": { "find": "(?i)\\b(?:nvarchar|varchar|nchar|char|ntext|text)\\b(?:\\(\\s*(?:\\d+|max)\\s*\\))?", "replace_with": "string" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "uniqueidentifier -> string.",
+      "options": { "find": "(?i)\\buniqueidentifier\\b", "replace_with": "string" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "decimal/numeric -> string (flagged below).",
+      "options": { "find": "(?i)\\b(?:decimal|numeric)\\b(?:\\(\\s*\\d+\\s*(?:,\\s*\\d+\\s*)?\\))?", "replace_with": "string" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "money/smallmoney -> string (flagged below).",
+      "options": { "find": "(?i)\\b(?:smallmoney|money)\\b", "replace_with": "string" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "real -> float32.",
+      "options": { "find": "(?i)\\breal\\b", "replace_with": "float32" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "float -> float64.",
+      "options": { "find": "(?i)\\bfloat\\b(?:\\(\\d+\\))?", "replace_with": "float64" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bigint -> int64.",
+      "options": { "find": "(?i)\\bbigint\\b", "replace_with": "int64" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "smallint / tinyint -> int16.",
+      "options": { "find": "(?i)\\b(?:smallint|tinyint)\\b", "replace_with": "int16" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "int -> int32.",
+      "options": { "find": "(?i)\\bint\\b", "replace_with": "int32" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bit -> bool.",
+      "options": { "find": "(?i)\\bbit\\b", "replace_with": "bool" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "varbinary -> []byte.",
+      "options": { "find": "(?i)\\bvarbinary\\b(?:\\(\\s*(?:\\d+|max)\\s*\\))?", "replace_with": "[]byte" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "binary -> []byte.",
+      "options": { "find": "(?i)\\bbinary\\b(?:\\(\\d+\\))?", "replace_with": "[]byte" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "image -> []byte.",
+      "options": { "find": "(?i)\\bimage\\b", "replace_with": "[]byte" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "sql_variant -> any (flagged below).",
+      "options": { "find": "(?i)\\bsql_variant\\b", "replace_with": "any" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "Resolve the time sentinel to time.Time (kept separate to avoid re-matching the 'time' keyword).",
+      "options": { "find": "@@GODT@@", "replace_with": "time.Time" }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag SQL Server sql_variant columns (mapped to any).",
+      "options": { "pattern": "\\bany\\b", "comment": "//", "tag": "TODO", "message": "SQL Server sql_variant; runtime-typed (Go any), verify mapping.", "position": "inline" }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Rewrite nullable columns into a pointer-typed Go field carrying a db tag placeholder.",
+      "options": { "find": "(?m)^    (\\w+) (\\S+)@@N@@(.*)$", "replace_with": "    ${1} *${2} @@DB@@${1}@@${3}" }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Rewrite non-nullable columns into a Go field carrying a db tag placeholder.",
+      "options": { "find": "(?m)^    (\\w+) (\\S+)( // .*)?$", "replace_with": "    ${1} ${2} @@DB@@${1}@@${3}" }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Nilable types (slices) don't need a pointer for nullability -- drop it.",
+      "options": { "find": "\\*(\\[\\]\\w+)", "replace_with": "${1}" }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Safety: strip any leftover nullability sentinel.",
+      "options": { "find": "@@N@@", "replace_with": "" }
+    },
+    {
+      "section": "PascalCase",
+      "action": "to_pascal",
+      "description": "PascalCase each struct name (the table identifier).",
+      "only_lines_matching": "^type ",
+      "scope": { "field": { "index": 2, "delimiter": " " } }
+    },
+    {
+      "section": "PascalCase",
+      "action": "to_pascal",
+      "description": "PascalCase each field name (the column identifier); the db tag keeps the exact column name.",
+      "only_lines_matching": "^    \\w",
+      "scope": { "field": { "index": 5, "delimiter": " " } }
+    },
+    {
+      "section": "Tags",
+      "action": "replace_regex",
+      "description": "Resolve the db tag placeholder into a real Go struct tag.",
+      "options": { "find": "@@DB@@(\\w+)@@", "replace_with": "`db:\"${1}\"`" }
+    },
+    {
+      "section": "Tags",
+      "action": "replace_regex",
+      "description": "Convert the 4-space column indent to a tab (Go convention).",
+      "options": { "find": "(?m)^    ", "replace_with": "\t" }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Collapse multiple blank lines to a single blank between structs.",
+      "options": { "find": "\\n[ \\t]*(?:\\n[ \\t]*)+", "replace_with": "\n\n" }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim leading blank lines.",
+      "options": { "find": "\\A\\n+", "replace_with": "" }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim trailing blank lines to a single final newline.",
+      "options": { "find": "\\n\\s*\\z", "replace_with": "\n" }
+    }
+  ]
+}

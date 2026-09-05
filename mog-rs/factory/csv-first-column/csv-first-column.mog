@@ -1,0 +1,19 @@
+{
+  "name": "Keep the first CSV column",
+  "description": "Select just the first column of a CSV, dropping the rest (quote-aware). Handy for pulling a single key/id column out of a table. Change the fields option on the step to keep or reorder other columns (e.g. \"1,3\").",
+  "summary": "Keep only the first CSV column",
+  "tags": [
+    "csv",
+    "column",
+    "extract",
+    "query",
+    "data"
+  ],
+  "steps": [
+    {
+      "action": "cut_fields",
+      "description": "Keep column 1",
+      "options": { "fields": "1" }
+    }
+  ]
+}

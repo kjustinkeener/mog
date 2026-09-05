@@ -1,0 +1,9 @@
+{
+  "name": "TOML to INI",
+  "description": "Convert a TOML config to INI: top-level scalars first, then each table as a [section] (nested tables become dotted sections), with arrays comma-joined. Handles the flat/one-level shape. The inverse of INI to TOML.",
+  "summary": "Convert TOML to INI",
+  "tags": ["convert", "config", "toml", "ini"],
+  "steps": [
+    { "description": "Convert the TOML config to INI.", "action": "toml_to_ini" }
+  ]
+}

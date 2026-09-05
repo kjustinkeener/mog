@@ -1,0 +1,27 @@
+{
+  "name": "BigQuery DDL to Postgres",
+  "summary": "Convert a BigQuery INFORMATION_SCHEMA.ddl export to PostgreSQL DDL",
+  "description": "Convert BigQuery's INFORMATION_SCHEMA.TABLES.ddl output to PostgreSQL. Reduces the backtick project.dataset.table name to the bare table, drops per-column OPTIONS(description=...) and the table OPTIONS(...)/PARTITION BY/CLUSTER BY clauses (all flagged), and maps GoogleSQL types to Postgres (INT64->BIGINT, FLOAT64->DOUBLE PRECISION, STRING->TEXT, BYTES->BYTEA, BOOL->BOOLEAN, NUMERIC->NUMERIC, JSON->JSONB, DATETIME->TIMESTAMP, TIMESTAMP->TIMESTAMPTZ).",
+  "tags": ["sql", "bigquery", "postgres", "warehouse", "convert", "migration"],
+  "steps": [
+    { "action": "eol_lf", "description": "Normalize to LF." },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop the trailing table OPTIONS(...) block.",
+      "options": { "find": "(?s)\\nOPTIONS\\s*\\(.*$", "replace_with": "\n-- TODO(mog): dropped BigQuery table OPTIONS (labels / expiration / require_partition_filter)" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop PARTITION BY (Postgres partitioning is declared differently).",
+      "options": { "find": "(?m)^PARTITION BY .*$", "replace_with": "-- TODO(mog): dropped BigQuery PARTITION BY (use Postgres declarative partitioning if needed)" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop CLUSTER BY (Postgres CLUSTER is a maintenance command, not table DDL).",
+      "options": { "find": "(?m)^CLUSTER BY .*$", "replace_with": "-- TODO(mog): dropped BigQuery CLUSTER BY (no direct Postgres table-DDL equivalent)" } },
+    { "section": "Comments", "action": "replace_regex", "description": "Drop per-column OPTIONS(description=...) (Postgres uses COMMENT ON).",
+      "options": { "find": "\\s*OPTIONS\\(description=\"[^\"]*\"\\)", "replace_with": "" } },
+    { "section": "Identifiers", "action": "replace_regex", "description": "Reduce `project.dataset.table` to the bare table name.",
+      "options": { "find": "`[^`]*\\.([^`.]+)`", "replace_with": "$1" } },
+    { "section": "Types", "action": "replace_regex", "description": "NUMERIC / BIGNUMERIC -> NUMERIC (keeps the (p,s)).",
+      "options": { "find": "\\bBIGNUMERIC\\b", "replace_with": "NUMERIC" } },
+    { "section": "Types", "action": "replace_regex", "description": "TIMESTAMP (instant) -> TIMESTAMPTZ. Runs before DATETIME so it does not re-match.",
+      "options": { "find": "\\bTIMESTAMP\\b", "replace_with": "TIMESTAMPTZ" } },
+    { "section": "Types", "action": "replace_regex", "description": "DATETIME (wall-clock) -> TIMESTAMP.",
+      "options": { "find": "\\bDATETIME\\b", "replace_with": "TIMESTAMP" } },
+    { "section": "Types", "action": "replace_map", "description": "Map remaining GoogleSQL scalar types to Postgres.",
+      "options": { "whole_word": true, "map": { "INT64": "BIGINT", "FLOAT64": "DOUBLE PRECISION", "STRING": "TEXT", "BYTES": "BYTEA", "BOOL": "BOOLEAN", "JSON": "JSONB" } } }
+  ]
+}

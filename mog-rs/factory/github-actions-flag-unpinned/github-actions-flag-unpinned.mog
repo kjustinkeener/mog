@@ -1,0 +1,57 @@
+{
+  "name": "Flag unpinned GitHub Actions steps",
+  "description": "Audit a GitHub Actions workflow for supply-chain drift: every `uses:` that is not pinned to a full 40-character commit hash is marked (a tag such as @v4 and a branch such as @main are both mutable, and a tag can be moved to point at different code), container actions without an @sha256 digest are marked, and any `run:` line that pipes a downloaded script straight into a shell is marked too. Local `uses: ./path` references are left alone because they come from the repository itself. Nothing is rewritten: each finding gets one inline # marker, and each line gets exactly one (the most specific rule wins).",
+  "summary": "Mark GitHub Actions steps that are not pinned to a commit hash",
+  "tags": [
+    "github-actions",
+    "yaml",
+    "audit",
+    "security",
+    "supply-chain",
+    "review"
+  ],
+  "steps": [
+    {
+      "section": "Action references",
+      "action": "flag_matching",
+      "description": "uses: tracking a moving branch",
+      "options": {
+        "pattern": "^(?!\\s*#)(?!.*uses:\\s*\\.{1,2}/)\\s*(?:-\\s+)?uses:\\s*\\S+@(?:main|master|develop|dev|latest|HEAD)\\s*(?:#.*)?$",
+        "message": "this step follows a branch, so its code can change under you; use a full commit hash",
+        "comment": "#",
+        "tag": "FIXME"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "Container action without a digest",
+      "options": {
+        "pattern": "^(?!\\s*#)(?!.*\\(mog\\):)(?!.*uses:\\s*\\.{1,2}/)(?!.*@sha256:)\\s*(?:-\\s+)?uses:\\s*docker://\\S",
+        "message": "container reference has no digest; add an @sha256 reference",
+        "comment": "#",
+        "tag": "FIXME"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "uses: pinned to a tag rather than a commit hash",
+      "options": {
+        "pattern": "^(?!\\s*#)(?!.*\\(mog\\):)(?!.*uses:\\s*\\.{1,2}/)(?!.*uses:\\s*docker://)(?!.*@[0-9a-f]{40}\\b)\\s*(?:-\\s+)?uses:\\s*\\S",
+        "message": "this step is pinned to a movable name; use a full commit hash instead",
+        "comment": "#",
+        "tag": "FIXME"
+      }
+    },
+    {
+      "section": "Shell steps",
+      "action": "flag_matching",
+      "description": "A fetched script piped straight into a shell",
+      "options": {
+        "pattern": "(?i)^(?!\\s*#)(?!.*\\(mog\\):).*\\b(?:curl|wget)\\b[^|]*\\|\\s*(?:sudo\\s+)?\\S*sh\\b",
+        "message": "a downloaded script runs unchecked; fetch it, verify a checksum, then run it",
+        "comment": "#",
+        "tag": "FIXME"
+      }
+    }
+  ]
+}

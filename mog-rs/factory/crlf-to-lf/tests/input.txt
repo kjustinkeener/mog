@@ -1,0 +1,4 @@
+crlf one
+crlf two
+lf three
+old-macfour

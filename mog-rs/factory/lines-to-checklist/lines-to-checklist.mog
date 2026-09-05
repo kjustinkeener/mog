@@ -1,0 +1,18 @@
+{
+  "name": "Lines to Markdown checklist",
+  "description": "Turn a plain list (one item per line) into a Markdown task list by prefixing each non-blank line with '- [ ] '. Blank lines are left as separators. Handy for turning notes or a pasted list into an actionable checklist.",
+  "summary": "Turn a list into a Markdown checklist",
+  "tags": [
+    "markdown",
+    "list",
+    "docs"
+  ],
+  "steps": [
+    {
+      "action": "prefix_lines",
+      "description": "Prefix each non-blank line with an empty checkbox",
+      "only_lines_matching": "\\S",
+      "options": { "text": "- [ ] " }
+    }
+  ]
+}

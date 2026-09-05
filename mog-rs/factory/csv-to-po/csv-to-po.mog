@@ -1,0 +1,30 @@
+{
+  "name": "CSV to gettext PO",
+  "description": "Turn a two-column CSV (header row msgid,msgstr) back into a gettext .po catalog, one entry per row, and prepend a minimal PO header so the result is a loadable catalog. Uses a per-row template, so you can edit the step to emit reference comments or a msgctxt. The inverse of po-to-csv. Expects the exact header names msgid and msgstr; values are written verbatim between the quotes, so pre-escape any embedded double quotes or newlines in the CSV.",
+  "summary": "Convert a msgid,msgstr CSV to a gettext .po catalog",
+  "tags": [
+    "i18n",
+    "csv",
+    "convert",
+    "interchange"
+  ],
+  "steps": [
+    {
+      "section": "Render",
+      "action": "row_to_template",
+      "description": "Render each row as a PO entry",
+      "options": {
+        "has_header": true,
+        "template": "msgid \"${msgid}\"\nmsgstr \"${msgstr}\"\n"
+      }
+    },
+    {
+      "section": "Header",
+      "action": "prepend",
+      "description": "Add a minimal PO header entry",
+      "options": {
+        "text": "msgid \"\"\nmsgstr \"\"\n\"Content-Type: text/plain; charset=UTF-8\\n\"\n\n"
+      }
+    }
+  ]
+}

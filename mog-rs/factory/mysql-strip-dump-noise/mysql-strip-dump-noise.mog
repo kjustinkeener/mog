@@ -1,0 +1,55 @@
+{
+  "name": "Strip mysqldump scaffolding",
+  "description": "Remove the non-table-DDL scaffolding a mysqldump emits: version-gated /*! */ comments, DELIMITER blocks (triggers/routines), LOCK TABLES data blocks, view stubs and definitions, and the SET / USE / CREATE DATABASE / DROP TABLE noise. Leaves CREATE TABLE ... ) ENGINE...; blocks. Composable: run first (via run_mog) from a MySQL->target converter. Runs on the raw dump (backticks intact).",
+  "summary": "Strip mysqldump scaffolding, keep table DDL",
+  "tags": [
+    "fragment",
+    "sql",
+    "mysql",
+    "cleanup",
+    "strip"
+  ],
+  "steps": [
+    {
+      "description": "Normalize to LF so the block regexes below are reliable.",
+      "action": "eol_lf"
+    },
+    {
+      "description": "Remove DELIMITER blocks whole (triggers and stored routines -> PL/pgSQL, out of scope).",
+      "action": "replace_regex",
+      "options": {
+        "find": "DELIMITER ;;[\\s\\S]*?DELIMITER ;\\n",
+        "replace_with": ""
+      }
+    },
+    {
+      "description": "Remove LOCK TABLES ... UNLOCK TABLES data blocks (INSERTs + DISABLE/ENABLE KEYS).",
+      "action": "replace_regex",
+      "options": {
+        "find": "LOCK TABLES[\\s\\S]*?UNLOCK TABLES;\\n",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Remove view definitions, both the temporary stub and the final /*!50001 CREATE ... VIEW ... */; (views are out of scope).",
+      "action": "replace_regex",
+      "options": {
+        "find": "/\\*!50001 CREATE[\\s\\S]*?\\*/;\\n",
+        "replace_with": ""
+      }
+    },
+    {
+      "description": "Drop remaining single-line noise: version-gated comments, -- comments, bare SET, USE, CREATE DATABASE, DROP TABLE.",
+      "action": "remove_lines_matching",
+      "options": {
+        "pattern": "^(/\\*!|--|SET |USE |DROP TABLE IF EXISTS|CREATE DATABASE)",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Collapse the blank lines the removals leave behind.",
+      "action": "squeeze_blank_lines"
+    }
+  ]
+}

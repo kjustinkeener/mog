@@ -1,0 +1,137 @@
+{
+  "name": "Normalize dates to ISO 8601",
+  "description": "Rewrite the common written date formats to ISO 8601 (YYYY-MM-DD) so a text file or a CSV column sorts and compares correctly. Handled deterministically: YYYY/MM/DD and YYYY.MM.DD, YYYYMMDD, DD-Mon-YYYY, DD Month YYYY, Mon DD YYYY and Month DD, YYYY (ordinal suffixes allowed), and the dotted European DD.MM.YYYY. The genuinely ambiguous NN/NN/YYYY slash form is read MONTH FIRST (the US convention); every line where the day-first reading is also valid (both numbers 12 or less) is flagged for review instead of being silently guessed, and a two-digit year is flagged and left alone because the century is unknown. Swap the two group numbers in the slash-date step's replacement to read that form day first.",
+  "summary": "Rewrite mixed date formats to ISO YYYY-MM-DD",
+  "tags": [
+    "date",
+    "time",
+    "csv",
+    "normalize",
+    "data",
+    "cleanup"
+  ],
+  "steps": [
+    {
+      "action": "flag_matching",
+      "description": "Flag slash dates that read both ways",
+      "options": {
+        "pattern": "\\b(?!(\\d{1,2})/\\1/)(?:0?[1-9]|1[0-2])/(?:0?[1-9]|1[0-2])/\\d{4}\\b",
+        "message": "both readings of this slash date are valid; kept the month-first one",
+        "comment": "#",
+        "tag": "FIXME"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "Flag slash dates with a two-digit year",
+      "options": {
+        "pattern": "\\b\\d{1,2}/\\d{1,2}/\\d{2}(?!\\d)",
+        "message": "two-digit year so the century is unknown; left as written",
+        "comment": "#",
+        "tag": "FIXME"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "YYYY/MM/DD and YYYY.MM.DD to dashes",
+      "options": {
+        "find": "\\b(\\d{4})[/.](\\d{1,2})[/.](\\d{1,2})\\b",
+        "replace_with": "${1}-${2}-${3}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Dotted European DD.MM.YYYY (day first)",
+      "options": {
+        "find": "\\b(\\d{1,2})\\.(\\d{1,2})\\.(\\d{4})\\b",
+        "replace_with": "${3}-${2}-${1}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Compact YYYYMMDD",
+      "options": {
+        "find": "\\b(\\d{4})(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\b",
+        "replace_with": "${1}-${2}-${3}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Month DD YYYY to year-month-day order",
+      "options": {
+        "find": "\\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(\\d{4})\\b",
+        "replace_with": "${3}-${1}-${2}",
+        "ignore_case": true
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "DD Month YYYY to year-month-day order",
+      "options": {
+        "find": "\\b(\\d{1,2})(?:st|nd|rd|th)?[-\\s](Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\\.?[-,\\s]\\s*(\\d{4})\\b",
+        "replace_with": "${3}-${2}-${1}",
+        "ignore_case": true
+      }
+    },
+    {
+      "action": "lookup_replace",
+      "description": "Month name to month number",
+      "options": {
+        "pattern": "(?<=\\d{4}-)[A-Za-z]{3,9}(?=-\\d)",
+        "group": 0,
+        "map": {
+          "jan": "01",
+          "january": "01",
+          "feb": "02",
+          "february": "02",
+          "mar": "03",
+          "march": "03",
+          "apr": "04",
+          "april": "04",
+          "may": "05",
+          "jun": "06",
+          "june": "06",
+          "jul": "07",
+          "july": "07",
+          "aug": "08",
+          "august": "08",
+          "sep": "09",
+          "sept": "09",
+          "september": "09",
+          "oct": "10",
+          "october": "10",
+          "nov": "11",
+          "november": "11",
+          "dec": "12",
+          "december": "12"
+        },
+        "ignore_case": true,
+        "on_miss": "leave"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Slash dates NN/NN/YYYY read month first",
+      "options": {
+        "find": "\\b(\\d{1,2})/(\\d{1,2})/(\\d{4})\\b",
+        "replace_with": "${3}-${1}-${2}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Zero-pad the month",
+      "options": {
+        "find": "(\\d{4})-(\\d)-",
+        "replace_with": "${1}-0${2}-"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Zero-pad the day",
+      "options": {
+        "find": "(\\d{4}-\\d{2})-(\\d)(?!\\d)",
+        "replace_with": "${1}-0${2}"
+      }
+    }
+  ]
+}

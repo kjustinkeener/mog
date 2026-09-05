@@ -1,0 +1,22 @@
+{
+  "name": "Redact phone numbers",
+  "description": "Replace common phone-number formats with [PHONE] so a log, transcript, or message can be shared without exposing numbers. Matches US-style and international shapes: an optional +country code, an optional (area) in parentheses, and digit groups separated by spaces, dots, or hyphens. Long digit sequences that only look like phone numbers may be caught too.",
+  "summary": "Redact phone numbers to [PHONE]",
+  "tags": [
+    "redact",
+    "pii",
+    "contacts",
+    "privacy",
+    "security"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Replace phone-number-shaped sequences with a placeholder",
+      "options": {
+        "find": "(?:\\+?\\d{1,3}[-.\\s]?)?\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}",
+        "replace_with": "[PHONE]"
+      }
+    }
+  ]
+}

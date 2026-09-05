@@ -1,0 +1,88 @@
+{
+  "name": "Oracle GET_DDL to Postgres",
+  "summary": "Convert an Oracle DBMS_METADATA.GET_DDL export to PostgreSQL DDL",
+  "description": "Convert an Oracle DBMS_METADATA.GET_DDL export (storage suppressed) to PostgreSQL DDL. Strips the GET_DDL boilerplate and maps types: NUMBER(1,0)->SMALLINT, NUMBER(p,0)->BIGINT, NUMBER(p,s)->NUMERIC(p,s), VARCHAR2->VARCHAR, CLOB->TEXT, DATE->TIMESTAMP, TIMESTAMP(n)->TIMESTAMP. Execution-validated against a real PostgreSQL engine.",
+  "tags": [
+    "sql",
+    "oracle",
+    "postgres",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-oracle-getddl-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "options": {
+        "file": "strip-oracle-getddl-noise.mog"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bNUMBER\\(1,\\s*0\\)",
+        "replace_with": "SMALLINT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bNUMBER\\(\\d+,\\s*0\\)",
+        "replace_with": "BIGINT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bNUMBER\\((\\d+,\\s*\\d+)\\)",
+        "replace_with": "NUMERIC($1)"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bNUMBER\\b",
+        "replace_with": "NUMERIC"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bVARCHAR2\\b",
+        "replace_with": "VARCHAR"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bCLOB\\b",
+        "replace_with": "TEXT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bTIMESTAMP\\(\\d+\\)",
+        "replace_with": "TIMESTAMP"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bDATE\\b",
+        "replace_with": "TIMESTAMP"
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "Remove control characters",
+  "summary": "Delete non-printable control characters",
+  "description": "Remove non-printable control characters, always keeping tab, newline, and carriage return. Useful for cleaning text pasted from a terminal or a binary-tainted file so it renders cleanly.",
+  "tags": [
+    "text",
+    "cleanup",
+    "redact",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "strip_control_chars",
+      "description": "Delete control characters"
+    }
+  ]
+}

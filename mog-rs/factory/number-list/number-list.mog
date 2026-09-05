@@ -1,0 +1,15 @@
+{
+  "name": "Number a list",
+  "description": "Turn a plain list (one item per line) into a numbered Markdown ordered list (1. first, 2. second, ...). Blank lines are dropped first.",
+  "summary": "Turn a list into a numbered Markdown list",
+  "tags": [
+    "list",
+    "markdown",
+    "format"
+  ],
+  "steps": [
+    { "action": "remove_empty_lines", "description": "Drop blank lines" },
+    { "action": "prefix_lines", "description": "Prefix each line with a numbering marker", "options": { "text": "@@SEQ@@. " } },
+    { "action": "stamp_sequence", "description": "Turn the markers into 1, 2, 3, ...", "options": { "find": "@@SEQ@@", "start": 1 } }
+  ]
+}

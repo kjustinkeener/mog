@@ -1,0 +1,16 @@
+{
+  "name": "Trim leading whitespace",
+  "summary": "Remove leading whitespace from each line",
+  "description": "Remove leading whitespace (spaces and tabs) from the start of every line, leaving trailing whitespace and blank lines as-is. A left-only trim.",
+  "tags": [
+    "whitespace",
+    "cleanup",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "trim_whitespace_left",
+      "description": "Remove leading whitespace"
+    }
+  ]
+}

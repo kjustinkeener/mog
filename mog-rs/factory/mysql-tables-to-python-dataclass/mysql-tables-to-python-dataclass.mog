@@ -1,0 +1,289 @@
+{
+  "name": "MySQL SHOW CREATE tables to Python dataclasses",
+  "summary": "Generate Python dataclasses from MySQL SHOW CREATE TABLE output",
+  "description": "Turn real 'SHOW CREATE TABLE' / mysqldump DDL into idiomatic Python dataclasses, one '@dataclass' per table. Strips the MySQL plumbing (ENGINE/CHARSET/COLLATE, backtick quoting, AUTO_INCREMENT, unsigned/zerofill), drops key and constraint lines, then rewrites each CREATE TABLE into a dataclass with one 4-space-indented annotated attribute per column. Attribute names are kept EXACTLY as in the database (snake_case, PEP 8, lossless); only the class name is PascalCased. MySQL types map to Python types (tinyint(1)->bool, integer family->int, year->int, decimal/numeric->Decimal, float/double/real->float, char/varchar/text->str, datetime/timestamp->datetime, date->date, time->time, blob/binary->bytes, json->dict). Nullable columns (no NOT NULL) get a 'T | None' union. enum/set map to a best-effort str and are flagged inline with a # TODO(mog): comment. Emits a ready-to-import module with the needed 'from __future__ import annotations' + dataclass/datetime/decimal imports at the top. The Python sibling of mysql-tables-to-typescript. Assumes LF.",
+  "tags": [
+    "sql",
+    "mysql",
+    "python",
+    "codegen",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-mysql-ddl-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "description": "Strip mysqldump / SHOW CREATE noise (ENGINE, backtick quoting, AUTO_INCREMENT, unsigned).",
+      "options": { "file": "strip-mysql-ddl-noise.mog" }
+    },
+    {
+      "section": "Strip",
+      "action": "replace_regex",
+      "description": "Remove any leftover mog TODO markers from the strip fragment.",
+      "options": { "find": "(?m) *-- TODO\\(mog\\):[^\\n]*$", "replace_with": "" }
+    },
+    {
+      "section": "Strip",
+      "action": "replace_regex",
+      "description": "Drop column-level CHARACTER SET clauses.",
+      "options": { "find": "(?i) CHARACTER SET \\w+", "replace_with": "" }
+    },
+    {
+      "section": "Strip",
+      "action": "replace_regex",
+      "description": "Drop column-level COLLATE clauses.",
+      "options": { "find": "(?i) COLLATE \\w+", "replace_with": "" }
+    },
+    {
+      "section": "Keep only columns",
+      "action": "replace_regex",
+      "description": "Drop key / constraint lines.",
+      "options": { "find": "(?im)^\\s*(?:PRIMARY KEY|UNIQUE KEY|FULLTEXT KEY|KEY|CONSTRAINT|FOREIGN KEY)\\b.*\\n", "replace_with": "" }
+    },
+    {
+      "section": "Column cleanup",
+      "action": "replace_regex",
+      "description": "Remove AUTO_INCREMENT.",
+      "options": { "find": "(?i) AUTO_INCREMENT\\b", "replace_with": "" }
+    },
+    {
+      "section": "Column cleanup",
+      "action": "replace_regex",
+      "description": "Remove unsigned / zerofill numeric modifiers.",
+      "options": { "find": "(?i) (?:unsigned|zerofill)\\b", "replace_with": "" }
+    },
+    {
+      "section": "Column cleanup",
+      "action": "replace_regex",
+      "description": "Remove a bare NULL marker (keep NOT NULL).",
+      "options": { "find": "(?i)(?<!NOT) NULL\\b", "replace_with": "" }
+    },
+    {
+      "section": "Class shell",
+      "action": "replace_regex",
+      "description": "Rewrite each 'CREATE TABLE <tbl> (' into a @dataclass header.",
+      "options": { "find": "(?m)^CREATE TABLE (?:\\w+\\.)?(\\w+) \\($", "replace_with": "@dataclass\nclass ${1}:" }
+    },
+    {
+      "section": "Class shell",
+      "action": "replace_regex",
+      "description": "Remove each table-closing ')'.",
+      "options": { "find": "(?m)^\\)$", "replace_with": "" }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop DEFAULT clauses from column lines.",
+      "options": { "find": "(?im)\\s+DEFAULT\\s+.+?(?=(?:\\s+NOT\\s+NULL)?,?\\s*$)", "replace_with": "" }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop trailing commas that separated columns.",
+      "options": { "find": "(?m),[ \\t]*$", "replace_with": "" }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Mark nullable columns (2-space indent, NOT ending in NOT NULL) with a sentinel.",
+      "options": { "find": "(?m)^(  \\w[^\\n]*?)(?<! NOT NULL)$", "replace_with": "${1}@@N@@" }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Remove the NOT NULL constraint marker from non-nullable columns.",
+      "options": { "find": "(?m) NOT NULL$", "replace_with": "" }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag MySQL enum columns.",
+      "options": { "pattern": "(?i)\\benum\\(", "comment": "#", "tag": "TODO", "message": "MySQL enum; consider a Python Enum instead of a plain str.", "position": "inline" }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag MySQL set columns.",
+      "options": { "pattern": "(?i)\\bset\\(", "comment": "#", "tag": "TODO", "message": "MySQL set; comma-joined values in one str -- consider a set[str] or list[str].", "position": "inline" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "tinyint(1) -> bool.",
+      "options": { "find": "(?i)\\btinyint\\(1\\)", "replace_with": "bool" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "integer family -> int.",
+      "options": { "find": "(?i)\\b(?:tinyint|smallint|mediumint|integer|int|bigint)\\b(?:\\(\\d+\\))?", "replace_with": "int" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "year -> int.",
+      "options": { "find": "(?i)\\byear\\b", "replace_with": "int" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "decimal/numeric(p,s) -> Decimal.",
+      "options": { "find": "(?i)\\b(?:decimal|numeric)\\(\\d+,\\s*\\d+\\)", "replace_with": "Decimal" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare decimal/numeric -> Decimal.",
+      "options": { "find": "(?i)\\b(?:decimal|numeric)(?:\\(\\d+\\))?", "replace_with": "Decimal" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "double / double precision -> float.",
+      "options": { "find": "(?i)\\bdouble(?:\\s+precision)?(?:\\(\\d+,\\s*\\d+\\))?", "replace_with": "float" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "float -> float.",
+      "options": { "find": "(?i)\\bfloat(?:\\(\\d+(?:,\\s*\\d+)?\\))?", "replace_with": "float" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "real -> float.",
+      "options": { "find": "(?i)\\breal\\b", "replace_with": "float" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bit -> int.",
+      "options": { "find": "(?i)\\bbit(?:\\(\\d+\\))?", "replace_with": "int" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "varchar/char(n) -> str.",
+      "options": { "find": "(?i)\\b(?:varchar|char)\\(\\d+\\)", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare varchar/char -> str.",
+      "options": { "find": "(?i)\\b(?:varchar|char)\\b", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "text family -> str.",
+      "options": { "find": "(?i)\\b(?:tinytext|mediumtext|longtext|text)\\b", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "datetime -> datetime.",
+      "options": { "find": "(?i)\\bdatetime\\b", "replace_with": "datetime" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "timestamp -> datetime.",
+      "options": { "find": "(?i)\\btimestamp\\b", "replace_with": "datetime" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "date -> date.",
+      "options": { "find": "(?i)\\bdate\\b", "replace_with": "date" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "time -> time.",
+      "options": { "find": "(?i)\\btime\\b", "replace_with": "time" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "enum(...) -> str (flagged above).",
+      "options": { "find": "(?i)\\benum\\([^)]*\\)", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "set(...) -> str (flagged above).",
+      "options": { "find": "(?i)\\bset\\([^)]*\\)", "replace_with": "str" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "varbinary/binary -> bytes.",
+      "options": { "find": "(?i)\\b(?:varbinary|binary)(?:\\(\\d+\\))?", "replace_with": "bytes" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "blob family -> bytes.",
+      "options": { "find": "(?i)\\b(?:tinyblob|mediumblob|longblob|blob)\\b", "replace_with": "bytes" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "json -> dict.",
+      "options": { "find": "(?i)\\bjson\\b", "replace_with": "dict" }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Rewrite nullable columns into an annotated attribute with a '| None' union (4-space indent).",
+      "options": { "find": "(?m)^(  )(\\w+) (\\S+)@@N@@( # .*)?$", "replace_with": "    ${2}: ${3} | None${4}" }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Rewrite non-nullable columns into an annotated attribute (4-space indent).",
+      "options": { "find": "(?m)^(  )(\\w+) (\\S+)( # .*)?$", "replace_with": "    ${2}: ${3}${4}" }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Safety: strip any leftover nullability sentinel.",
+      "options": { "find": "@@N@@", "replace_with": "" }
+    },
+    {
+      "section": "PascalCase",
+      "action": "to_pascal",
+      "description": "PascalCase each class name (the table identifier); attributes stay snake_case.",
+      "only_lines_matching": "^class ",
+      "scope": { "field": { "index": 2, "delimiter": " " } }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Collapse multiple blank lines to a single blank between classes.",
+      "options": { "find": "\\n[ \\t]*(?:\\n[ \\t]*)+", "replace_with": "\n\n" }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim leading blank lines.",
+      "options": { "find": "\\A\\n+", "replace_with": "" }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim trailing blank lines to a single final newline.",
+      "options": { "find": "\\n\\s*\\z", "replace_with": "\n" }
+    },
+    {
+      "section": "Header",
+      "action": "replace_regex",
+      "description": "Prepend the future-annotations pragma, dataclass, and datetime/decimal imports.",
+      "options": { "find": "\\A", "replace_with": "from __future__ import annotations\nfrom dataclasses import dataclass\nfrom datetime import date, datetime, time\nfrom decimal import Decimal\n\n" }
+    }
+  ]
+}

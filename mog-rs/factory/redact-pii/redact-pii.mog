@@ -1,0 +1,80 @@
+{
+  "name": "redact-pii",
+  "description": "Redact shaped PII and secrets (emails, SSNs, credit cards, phones, IPs, AWS/Stripe keys) with [token] placeholders, then assert no obvious secret or SSN pattern survived. Names need NER and are NOT redacted.",
+  "summary": "Redact common PII and secrets with placeholders",
+  "tags": [
+    "redact",
+    "security",
+    "pii",
+    "privacy",
+    "secrets"
+  ],
+  "steps": [
+    {
+      "section": "Redact Patterns",
+      "description": "emails",
+      "action": "replace_regex",
+      "options": {
+        "find": "[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}",
+        "replace_with": "[email]"
+      }
+    },
+    {
+      "description": "US SSN",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+        "replace_with": "[ssn]"
+      }
+    },
+    {
+      "description": "credit card (16 digits)",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\b\\d{4}[ \\-]?\\d{4}[ \\-]?\\d{4}[ \\-]?\\d{4}\\b",
+        "replace_with": "[card]"
+      }
+    },
+    {
+      "description": "AWS access key",
+      "action": "replace_regex",
+      "options": {
+        "find": "AKIA[0-9A-Z]{16}",
+        "replace_with": "[secret]"
+      }
+    },
+    {
+      "description": "Stripe live key",
+      "action": "replace_regex",
+      "options": {
+        "find": "[sr]k_live_[0-9A-Za-z]{10,}",
+        "replace_with": "[secret]"
+      }
+    },
+    {
+      "description": "IPv4 address",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b",
+        "replace_with": "[ip]"
+      }
+    },
+    {
+      "description": "phone (US-ish)",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\b(?:\\+?1[ .\\-]?)?\\(?\\d{3}\\)?[ .\\-]?\\d{3}[ .\\-]?\\d{4}\\b",
+        "replace_with": "[phone]"
+      }
+    },
+    {
+      "section": "Verify Redaction",
+      "description": "prove no obvious secret/PII survived",
+      "action": "assert",
+      "options": {
+        "not_matches": "AKIA[0-9A-Z]{16}|[sr]k_live_|\\b\\d{3}-\\d{2}-\\d{4}\\b",
+        "message": "redact-pii: a secret or SSN pattern survived redaction"
+      }
+    }
+  ]
+}

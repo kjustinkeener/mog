@@ -1,0 +1,101 @@
+{
+  "name": "Generate a Markdown table of contents",
+  "description": "Build a nested, linked table of contents from a Markdown file's ATX headings: one bullet per heading, indented by heading depth, linking to a GitHub-style slug anchor - [Title](#title). The visible title keeps its exact case and punctuation while the anchor is slugified to match GitHub's convention. Emits only the TOC; paste it where you want it. GitHub parity is approximate: duplicate headings do not get -1/-2 suffixes, an underscore becomes a hyphen, and a heading containing a tab is not supported.",
+  "summary": "Build a linked table of contents from Markdown headings",
+  "tags": [
+    "markdown",
+    "docs",
+    "links"
+  ],
+  "steps": [
+    {
+      "section": "Collect headings",
+      "action": "keep_lines_matching",
+      "description": "Keep only ATX heading lines",
+      "options": {
+        "pattern": "^#{1,6} "
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Duplicate each title, tab-separated (anchor copy on the right)",
+      "options": {
+        "find": "^(#{1,6}) (.*)$",
+        "replace_with": "$1 $2\t$2"
+      }
+    },
+    {
+      "section": "Slugify the anchor",
+      "action": "remove_chars",
+      "description": "Delete punctuation (except - and _) from the anchor field, so slugify does not hyphenate it -- matches GitHub, which strips punctuation",
+      "scope": {
+        "field": {
+          "index": 2,
+          "delimiter": "\t"
+        }
+      },
+      "options": {
+        "set": "!\"#$%&'()*+,./:;<=>?@[\\]^`{|}~"
+      }
+    },
+    {
+      "action": "slugify",
+      "description": "Slugify only the second (anchor) field; the title field keeps its case and punctuation",
+      "scope": {
+        "field": {
+          "index": 2,
+          "delimiter": "\t"
+        }
+      }
+    },
+    {
+      "section": "Indent and link by level",
+      "action": "replace_regex_multiline",
+      "description": "H1 -> top-level bullet",
+      "options": {
+        "find": "^# ([^\t]*)\t(.*)$",
+        "replace_with": "- [$1](#$2)"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "H2",
+      "options": {
+        "find": "^## ([^\t]*)\t(.*)$",
+        "replace_with": "  - [$1](#$2)"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "H3",
+      "options": {
+        "find": "^### ([^\t]*)\t(.*)$",
+        "replace_with": "    - [$1](#$2)"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "H4",
+      "options": {
+        "find": "^#### ([^\t]*)\t(.*)$",
+        "replace_with": "      - [$1](#$2)"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "H5",
+      "options": {
+        "find": "^##### ([^\t]*)\t(.*)$",
+        "replace_with": "        - [$1](#$2)"
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "H6",
+      "options": {
+        "find": "^###### ([^\t]*)\t(.*)$",
+        "replace_with": "          - [$1](#$2)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Hello, world"
+msgstr "Bonjour, le monde"
+
+msgid "Goodbye"
+msgstr "Au revoir"
+
+msgid "Save"
+msgstr "Enregistrer"
+

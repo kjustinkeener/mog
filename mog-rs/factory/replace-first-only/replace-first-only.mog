@@ -1,0 +1,21 @@
+{
+  "name": "Replace only the first match",
+  "summary": "Replace just the first occurrence of a pattern",
+  "description": "Replace only the FIRST occurrence of the find pattern in the input, leaving all later occurrences untouched. Useful for changing a single leading token (a title, a first flag) without a global sweep.",
+  "tags": [
+    "replace",
+    "filter",
+    "single",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "replace_first",
+      "description": "Replace the first 'TODO' with 'DONE'",
+      "options": {
+        "find": "TODO",
+        "replace_with": "DONE"
+      }
+    }
+  ]
+}

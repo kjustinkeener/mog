@@ -1,0 +1,25 @@
+name: ci
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # uses: actions/checkout@v3 -- the old pin, kept for reference
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@v4 # FIXME(mog): this step is pinned to a movable name; use a full commit hash instead
+        with:
+          node-version: 20
+      - uses: some-org/nightly-action@main # FIXME(mog): this step follows a branch, so its code can change under you; use a full commit hash
+      - uses: ./.github/actions/local-setup
+      - uses: docker://alpine:3.19 # FIXME(mog): container reference has no digest; add an @sha256 reference
+      - uses: docker://alpine@sha256:c5b1261d6d3e43071626931fc004f70149baeba2c8ec672bd4f27761f8e1ad6b
+      - name: Install a tool
+        run: curl -sSL https://example.test/install.sh | bash # FIXME(mog): a downloaded script runs unchecked; fetch it, verify a checksum, then run it
+      - name: Fetch and check
+        run: |
+          curl -sSL https://example.test/tool.tar.gz -o tool.tar.gz
+          sha256sum -c tool.sha256
+      - uses: actions/upload-artifact@v4.3.1 # keep the build output # FIXME(mog): this step is pinned to a movable name; use a full commit hash instead

@@ -1,0 +1,4 @@
+date,from,to,subject,message_id
+"Mon, 1 Sep 2025 09:14:02 +0000","Alice Baker <alice@example.com>","bob@example.com","Quarterly planning notes and the follow-up items we agreed to review before the next steering meeting","<20250901091402.1001@example.com>"
+"Tue, 2 Sep 2025 14:30:11 +0000","Bob Chen <bob@example.com>","alice@example.com, carol@example.com, dave@example.com","Re: budget, staffing, and the ""must have"" list","<20250902143011.1002@example.com>"
+"Wed, 3 Sep 2025 07:05:44 +0000","Carol Diaz <carol@example.com>","team@example.com","Server maintenance window",""

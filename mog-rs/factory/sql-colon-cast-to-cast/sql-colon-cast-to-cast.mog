@@ -1,0 +1,30 @@
+{
+  "name": "SQL cast: :: to CAST(... AS ...)",
+  "description": "Rewrite the Postgres/Snowflake/Redshift shorthand cast expr::TYPE into the standard CAST(expr AS TYPE), for dialects that do not support :: (BigQuery, Databricks/Spark). Handles a simple operand (an identifier, dotted path, or parenthesized group) and an optional type length like (10) or (10,2). A cast whose operand is a larger expression needs manual review. Assumes LF text.",
+  "summary": "Rewrite SQL :: casts to CAST(expr AS type)",
+  "tags": [
+    "fragment",
+    "sql",
+    "bigquery",
+    "databricks",
+    "convert"
+  ],
+  "steps": [
+    {
+      "description": "(group)::TYPE -> CAST((group) AS TYPE)",
+      "action": "replace_regex",
+      "options": {
+        "find": "(\\([^()]*\\))::([A-Za-z_][A-Za-z0-9_]*(?:\\s*\\([0-9,\\s]+\\))?)",
+        "replace_with": "CAST($1 AS $2)"
+      }
+    },
+    {
+      "description": "identifier::TYPE (bare, dotted, or quoted/backticked) -> CAST(identifier AS TYPE)",
+      "action": "replace_regex",
+      "options": {
+        "find": "([A-Za-z_0-9.\"`]+)::([A-Za-z_][A-Za-z0-9_]*(?:\\s*\\([0-9,\\s]+\\))?)",
+        "replace_with": "CAST($1 AS $2)"
+      }
+    }
+  ]
+}

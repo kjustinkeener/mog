@@ -1,0 +1,12 @@
+{
+  "name": "Repo Tidy",
+  "description": "Whitespace/EOL hygiene for source files: normalize CRLF to LF, strip trailing whitespace, collapse runs of blank lines, and ensure exactly one final newline. Does NOT touch tabs or internal spacing, so it is safe for tab-indented files and Makefiles. Built to run across many files at once with preview and backup.",
+  "summary": "Normalize line endings, trailing space, and blank lines",
+  "tags": ["whitespace", "cleanup", "eol", "normalize"],
+  "steps": [
+    { "action": "eol_lf", "description": "Normalize line endings to LF" },
+    { "action": "trim_whitespace_right", "description": "Strip trailing whitespace from every line" },
+    { "action": "squeeze_blank_lines", "description": "Collapse runs of blank lines to a single blank line", "options": { "include_whitespace": true } },
+    { "action": "replace_regex", "description": "Ensure exactly one trailing newline", "options": { "find": "\\n*\\z", "replace_with": "\\n", "decode_replacement": true } }
+  ]
+}

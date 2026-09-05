@@ -1,0 +1,9 @@
+suite,classname,name,time,status
+checkout.CartTest,checkout.CartTest,addsItemToCart,0.412,passed
+checkout.CartTest,checkout.CartTest,"totals with tax, tip & discount",0.907,failed
+checkout.CartTest,checkout.CartTest,"rejects a ""negative"" quantity",0.311,passed
+checkout.CartTest,checkout.CartTest,appliesLoyaltyPoints,1.474,skipped
+api.SearchTest,api.SearchTest,findsByKeyword,0.220,passed
+api.SearchTest,api.SearchTest,paginates results,0.658,error
+api.SearchTest,api.SearchTest,"sorts by price, then name",1.030,failed
+api.SearchTest,api.SearchTest,escapesQueryString,1.400,passed

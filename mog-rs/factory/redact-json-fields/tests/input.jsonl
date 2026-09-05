@@ -1,0 +1,2 @@
+{"user": "alice", "password": "s3cret", "token": "abc123", "action": "login"}
+{"user": "bob", "password": "hunter2", "token": "def456", "action": "logout"}

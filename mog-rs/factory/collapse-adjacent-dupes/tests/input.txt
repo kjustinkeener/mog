@@ -1,0 +1,7 @@
+start
+start
+run
+run
+run
+start
+done

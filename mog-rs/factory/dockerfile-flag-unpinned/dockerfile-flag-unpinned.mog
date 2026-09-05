@@ -1,0 +1,87 @@
+{
+  "name": "Flag unpinned Dockerfile dependencies",
+  "description": "Audit a Dockerfile for supply-chain drift: every FROM whose base image is not pinned by an immutable @sha256: digest is marked, as is every package step that installs whatever version happens to be current (apt-get/apk without a pinned version, pip without ==, npm install rather than npm ci) and every RUN that pipes a downloaded script straight into a shell. Nothing is rewritten: each finding gets one inline # marker naming the risk, so a reviewer or an agent can act on it. Comment lines are skipped, and each line gets exactly one marker (the most specific rule wins). Because the recipe reads one line at a time, a FROM that refers back to an earlier build stage by its alias is reported too; ignore those markers.",
+  "summary": "Mark unpinned base images and package installs in a Dockerfile",
+  "tags": [
+    "docker",
+    "audit",
+    "security",
+    "supply-chain",
+    "review"
+  ],
+  "steps": [
+    {
+      "section": "Base images",
+      "action": "flag_matching",
+      "description": "FROM with neither a tag nor a digest",
+      "options": {
+        "pattern": "(?i)^(?!\\s*#)\\s*FROM\\s+(?:--\\S+\\s+)*[^\\s:@]+(?:\\s+AS\\s+\\S+)?\\s*$",
+        "message": "base image carries no tag and no digest, so every build can pick up a different one",
+        "comment": "#",
+        "tag": "FIXME"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "FROM not pinned to an immutable digest",
+      "options": {
+        "pattern": "(?i)^(?!\\s*#)(?!.*\\(mog\\):)\\s*FROM\\s+(?!.*@sha256:).*\\S",
+        "message": "base image is not pinned by digest; add an @sha256 reference",
+        "comment": "#",
+        "tag": "FIXME"
+      }
+    },
+    {
+      "section": "Downloads",
+      "action": "flag_matching",
+      "description": "A fetched script piped straight into a shell",
+      "options": {
+        "pattern": "(?i)^(?!\\s*#)(?!.*\\(mog\\):).*\\b(?:curl|wget)\\b[^|]*\\|\\s*(?:sudo\\s+)?\\S*sh\\b",
+        "message": "a downloaded script runs unchecked; fetch it, verify a checksum, then run it",
+        "comment": "#",
+        "tag": "FIXME"
+      }
+    },
+    {
+      "section": "Packages",
+      "action": "flag_matching",
+      "description": "apt-get install without a version",
+      "options": {
+        "pattern": "(?i)^(?!\\s*#)(?!.*\\(mog\\):).*\\bapt-get\\s+(?:-\\S+\\s+)*install\\b(?!.*=)",
+        "message": "apt package version is left open; write name=version",
+        "comment": "#",
+        "tag": "WARN"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "apk add without a version",
+      "options": {
+        "pattern": "(?i)^(?!\\s*#)(?!.*\\(mog\\):).*\\bapk\\s+(?:-\\S+\\s+)*add\\b(?!.*=)",
+        "message": "apk package version is left open; write name=version",
+        "comment": "#",
+        "tag": "WARN"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "pip install without a pinned version or a requirements file",
+      "options": {
+        "pattern": "(?i)^(?!\\s*#)(?!.*\\(mog\\):).*\\bpip[23]?\\s+install\\b(?!.*(?:==|-r\\s|--requirement))",
+        "message": "python package version is left open; write name==version or use a requirements file",
+        "comment": "#",
+        "tag": "WARN"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "npm install rather than a lockfile install",
+      "options": {
+        "pattern": "(?i)^(?!\\s*#)(?!.*\\(mog\\):).*\\bnpm\\s+(?:-\\S+\\s+)*install\\b",
+        "message": "npm resolves fresh here; npm ci installs exactly what the lockfile records",
+        "comment": "#",
+        "tag": "WARN"
+      }
+    }
+  ]
+}

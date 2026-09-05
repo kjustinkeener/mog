@@ -1,0 +1,27 @@
+{
+  "name": "Reconcile two CSV exports by key",
+  "description": "Match the rows of a CSV input against a previous CSV snapshot by a key column and annotate what changed. Point the 'previous' source at the older export with --source previous=<path>. Each input row is prefixed with a status field: ADDED (key not in the previous export), CHANGED (key present but the row differs), or SAME; keys present in the previous export but gone from the input are emitted as REMOVED. With has_header set, the key is a column name and a 'status' header is prepended. Compares whole rows; it does not merge fields.",
+  "summary": "Reconcile two CSV exports by key column",
+  "tags": [
+    "compare",
+    "csv",
+    "diff",
+    "audit",
+    "records"
+  ],
+  "sources": {
+    "previous": "reconcile-exports.Previous.csv"
+  },
+  "steps": [
+    {
+      "action": "reconcile",
+      "description": "Annotate each row ADDED / CHANGED / SAME / REMOVED versus the previous export, keyed by id",
+      "options": {
+        "ref": "previous",
+        "key": "id",
+        "has_header": true,
+        "report": "annotated"
+      }
+    }
+  ]
+}

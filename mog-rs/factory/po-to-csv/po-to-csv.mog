@@ -1,0 +1,56 @@
+{
+  "name": "gettext PO to CSV",
+  "description": "Flatten a gettext .po translation catalog into a two-column CSV (msgid,msgstr), one row per entry, for handoff to a translator or a spreadsheet. Drops all comment lines (#, #., #:, #~), the empty header entry, and folded header continuation lines. Both columns are CSV-quoted. Assumes each msgid and msgstr sits on a single line; multi-line folded strings and plural forms (msgid_plural / msgstr[N]) are not reassembled, so run it on catalogs with single-line entries. Inverse of csv-to-po.",
+  "summary": "Convert a gettext .po catalog to a msgid,msgstr CSV",
+  "tags": [
+    "i18n",
+    "csv",
+    "convert",
+    "interchange"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "remove_lines_matching",
+      "description": "Drop every comment line (#, #., #:, #~, #,)",
+      "options": {
+        "pattern": "^#"
+      }
+    },
+    {
+      "section": "Pair",
+      "action": "replace_regex_multiline",
+      "description": "Join each msgid line with the msgstr below it into one quoted CSV row",
+      "options": {
+        "find": "^msgid \"(.*)\"\nmsgstr \"(.*)\"$",
+        "replace_with": "\"$1\",\"$2\""
+      }
+    },
+    {
+      "action": "remove_lines_matching",
+      "description": "Drop folded header continuation lines (a lone quoted string)",
+      "options": {
+        "pattern": "^\"[^\"]*\"$"
+      }
+    },
+    {
+      "action": "remove_lines_matching",
+      "description": "Drop the empty header row",
+      "options": {
+        "pattern": "^\"\",\"\"$"
+      }
+    },
+    {
+      "action": "remove_empty_lines",
+      "description": "Remove the blank lines that separated entries"
+    },
+    {
+      "section": "Header",
+      "action": "prepend",
+      "description": "Add the CSV header row",
+      "options": {
+        "text": "msgid,msgstr\n"
+      }
+    }
+  ]
+}

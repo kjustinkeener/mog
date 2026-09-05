@@ -1,0 +1,10 @@
+name = "demo"
+version = 2
+tags = [
+    "a",
+    "b",
+]
+
+[server]
+host = "localhost"
+port = 8080

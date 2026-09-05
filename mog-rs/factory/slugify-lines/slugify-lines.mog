@@ -1,0 +1,18 @@
+{
+  "name": "Slugify each line",
+  "description": "Turn each line (a title or heading) into a URL/filename-friendly slug: lowercase, spaces and punctuation collapsed to single hyphens, leading/trailing hyphens trimmed. Handy for generating anchors, slugs, or file names from a list of titles.",
+  "summary": "Turn each line into a URL-friendly slug",
+  "tags": [
+    "case",
+    "url",
+    "identifier",
+    "text",
+    "convert"
+  ],
+  "steps": [
+    {
+      "action": "slugify",
+      "description": "Slugify each line"
+    }
+  ]
+}

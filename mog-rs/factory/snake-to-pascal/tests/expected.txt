@@ -1,0 +1,4 @@
+UserId
+FirstName
+HttpResponse
+ParseJsonData

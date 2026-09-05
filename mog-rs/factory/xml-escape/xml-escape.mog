@@ -1,0 +1,18 @@
+{
+  "name": "XML/HTML-escape each line",
+  "summary": "Escape & < > \" ' as XML entities",
+  "description": "Replace the five XML special characters ( & < > \" ' ) with their entity references on every line, so the text is safe to drop inside an XML or HTML document as character data or an attribute value.",
+  "tags": [
+    "escape",
+    "xml",
+    "html",
+    "encode",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "escape_xml",
+      "description": "Escape XML special characters"
+    }
+  ]
+}

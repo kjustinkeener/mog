@@ -1,0 +1,4 @@
+# blocklist
+0.0.0.0 ads.example.com
+0.0.0.0 tracker.net
+127.0.0.1 analytics.example.io

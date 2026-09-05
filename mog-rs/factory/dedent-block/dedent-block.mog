@@ -1,0 +1,17 @@
+{
+  "name": "Remove common leading indent",
+  "summary": "Strip the shared leading whitespace from all lines",
+  "description": "Remove the longest common leading-whitespace prefix shared by all non-blank lines, so an over-indented block returns to the left margin while relative indentation is kept. The inverse of indent-block.",
+  "tags": [
+    "whitespace",
+    "indent",
+    "format",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "dedent",
+      "description": "Remove the common leading indent"
+    }
+  ]
+}

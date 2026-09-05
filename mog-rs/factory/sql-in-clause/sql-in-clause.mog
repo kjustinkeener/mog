@@ -1,0 +1,71 @@
+{
+  "name": "SQL IN clause from a list",
+  "description": "Turn a plain list (one value per line) into a SQL IN (...) clause: trim each value, drop blank lines, single-quote each value with embedded single quotes doubled (SQL-escaped), join with ', ', and wrap in IN (...). Values are treated as string literals; numbers come out quoted too (most databases accept that, but drop the quotes yourself if you need bare numerics).",
+  "summary": "Build a SQL IN (...) clause from a list",
+  "tags": [
+    "sql",
+    "list",
+    "quote"
+  ],
+  "steps": [
+    {
+      "section": "Clean Input",
+      "action": "trim_whitespace",
+      "description": "Trim surrounding whitespace from each value"
+    },
+    {
+      "action": "remove_empty_lines",
+      "description": "Drop blank lines",
+      "options": {
+        "include_whitespace": true
+      }
+    },
+    {
+      "section": "Quote Values",
+      "action": "replace",
+      "description": "SQL-escape embedded single quotes (' -> '')",
+      "options": {
+        "find": "'",
+        "replace_with": "''"
+      }
+    },
+    {
+      "action": "wrap_lines",
+      "description": "Quote each value",
+      "options": {
+        "prefix": "'",
+        "suffix": "'"
+      }
+    },
+    {
+      "section": "Assemble Clause",
+      "action": "join_lines",
+      "description": "Comma-separate the quoted values",
+      "options": {
+        "separator": ", "
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Drop the trailing newline so ) hugs the last value",
+      "options": {
+        "find": "\n",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "prepend",
+      "description": "Open the IN clause",
+      "options": {
+        "text": "IN ("
+      }
+    },
+    {
+      "action": "append",
+      "description": "Close the IN clause",
+      "options": {
+        "text": ")"
+      }
+    }
+  ]
+}

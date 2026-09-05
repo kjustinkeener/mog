@@ -1,0 +1,9 @@
+{
+  "name": "JSON to .env",
+  "description": "Convert a flat JSON object to KEY=VALUE .env lines. Values with spaces or special characters are double-quoted; null is skipped. The read counterpart to .env to JSON.",
+  "summary": "Convert a flat JSON object to KEY=VALUE .env lines",
+  "tags": ["convert", "json", "env", "dotenv", "config"],
+  "steps": [
+    { "description": "Render the JSON object as .env lines.", "action": "json_to_env" }
+  ]
+}

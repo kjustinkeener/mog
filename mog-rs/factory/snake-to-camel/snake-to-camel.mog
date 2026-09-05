@@ -1,0 +1,12 @@
+{
+  "name": "snake_case to camelCase",
+  "summary": "Convert snake_case identifiers to camelCase",
+  "description": "Recase each snake_case (or kebab-case) identifier to camelCase: the first word stays lowercase and every following word is capitalized, dropping the separators. The mirror of camel-to-snake. Best on a list or column of identifiers, one per line.",
+  "tags": ["case", "identifier", "codemod", "convert", "single-action"],
+  "steps": [
+    {
+      "action": "to_camel",
+      "description": "Recase each identifier to camelCase"
+    }
+  ]
+}

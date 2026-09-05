@@ -1,0 +1,76 @@
+{
+  "name": "HAR to CSV",
+  "description": "Turn a browser HAR network export (the JSON a devtools Network tab saves) into a CSV request table -- one row per entry, with the columns method,url,status,mime_type,transfer_size,time_ms: the fields you actually triage a slow or failing page load with. The HAR is read with the JSON actions, not scraped with regex: the log.entries array is lifted out, expanded to one object per line, and each entry is projected through a template. transfer_size prefers the Chrome response._transferSize (bytes on the wire) and falls back to response.bodySize; time_ms is the HAR's own entry time in milliseconds, left at its original precision. Values are emitted as RFC 4180 CSV, so URLs holding commas or quotes are quoted and internal quotes are doubled. Sort or filter the result with any CSV tool -- by status to find failures, by time_ms to find the slow requests. Scope: one HAR log per file; request/response bodies, headers, cookies and the timings breakdown are not exported (add ${timings.wait} and friends to the template step if you want them).",
+  "summary": "Convert a browser HAR export to a CSV request table",
+  "tags": [
+    "har",
+    "json",
+    "csv",
+    "convert",
+    "web",
+    "observability"
+  ],
+  "steps": [
+    {
+      "section": "Lift the entries array",
+      "action": "json_minify",
+      "description": "Parse the HAR and re-serialize it on a single line."
+    },
+    {
+      "action": "replace_regex",
+      "description": "Drop everything ahead of the log.entries array.",
+      "options": {
+        "find": "^.*?\"entries\"\\s*:\\s*",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "extract_json",
+      "description": "Take the balanced entries array and discard the rest of the log."
+    },
+    {
+      "action": "json_to_jsonl",
+      "description": "Expand the array to one request object per line."
+    },
+    {
+      "section": "Project the request columns",
+      "action": "json_extract",
+      "description": "Emit method, URL, status, MIME type, transfer size and time for each request.",
+      "options": {
+        "template": "${request.method}\u001f${request.url}\u001f${response.status}\u001f${response.content.mimeType}\u001f${response._transferSize||response.bodySize}\u001f${time}"
+      }
+    },
+    {
+      "section": "Emit the CSV table",
+      "action": "replace",
+      "description": "Double every embedded double quote.",
+      "options": {
+        "find": "\"",
+        "replace_with": "\"\""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Wrap any field holding a comma or a quote in double quotes.",
+      "options": {
+        "find": "(?m)(^|\\x1f)([^\\x1f\\n]*[\",][^\\x1f\\n]*)(?=\\x1f|$)",
+        "replace_with": "${1}\"${2}\""
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Swap each unit separator for a comma.",
+      "options": {
+        "find": "\u001f",
+        "replace_with": ","
+      }
+    },
+    {
+      "action": "prepend",
+      "description": "Add the CSV header row.",
+      "options": {
+        "text": "method,url,status,mime_type,transfer_size,time_ms\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,210 @@
+//! market-admin: registry-side maintenance for the Mog marketplace. It
+//! generates the signing keypair and builds + signs the catalog `index.json`.
+//! This is NOT shipped to end users; the registry's CI (or a maintainer) runs it
+//! on merge. It reuses the `mog` library's `market_index` contract so the format
+//! and crypto can never drift from what the client verifies.
+
+use std::path::PathBuf;
+
+use anyhow::{Context, Result};
+use clap::{Parser, Subcommand};
+use ed25519_dalek::SigningKey;
+use mog::market_index::{self, build_index, load_curation, sign, signing_key_from_b64, Curation};
+use mog::selfupdate::{EngineManifest, EnginePlatform};
+
+#[derive(Parser)]
+#[command(name = "market-admin", about = "Mog marketplace registry maintenance")]
+struct Cli {
+    #[command(subcommand)]
+    cmd: Cmd,
+}
+
+#[derive(Subcommand)]
+enum Cmd {
+    /// Generate a fresh ed25519 keypair. Save the signing key as a CI secret and
+    /// paste the verifying key into `MARKET_PUBLIC_KEY_B64`.
+    Keygen,
+    /// Build and sign `index.json` from a directory of recipes.
+    Index {
+        /// Directory of `.mog` recipes (with sibling fixtures).
+        #[arg(long)]
+        recipes: PathBuf,
+        /// Optional `curation.json`: name -> {category, featured, version}.
+        #[arg(long)]
+        curation: Option<PathBuf>,
+        /// Signing key: base64, or `@path` to a file containing it.
+        #[arg(long)]
+        sign_key: String,
+        /// Output dir for `index.json` + `index.json.sig` (default: --recipes).
+        #[arg(long)]
+        out: Option<PathBuf>,
+        /// Value for the index's `generated_at` field (e.g. an ISO timestamp).
+        /// Passed in, not read from the clock, so generation stays reproducible.
+        #[arg(long)]
+        generated_at: Option<String>,
+    },
+    /// Build and sign `engine.json`: the per-platform engine binaries that
+    /// `mog update` self-replaces from. Each `--platform` is copied into
+    /// `<out>/bin/` and hashed; the client verifies that hash before swapping.
+    Engine {
+        /// Published version string (display only; the hash is the freshness check).
+        #[arg(long)]
+        version: String,
+        /// A platform binary as `<os>-<arch>=<local-path>`, e.g.
+        /// `windows-x86_64=./dist/mog.exe`. Repeatable, one per platform.
+        #[arg(long = "platform", value_name = "KEY=PATH")]
+        platforms: Vec<String>,
+        /// Signing key: base64, or `@path` to a file containing it.
+        #[arg(long)]
+        sign_key: String,
+        /// Output dir for `engine.json` + `engine.json.sig` + `bin/`.
+        #[arg(long)]
+        out: PathBuf,
+    },
+    /// Build and sign `studio.json`: the per-platform Studio binaries that
+    /// `mog install studio` downloads. Same shape as `engine`; publish it beside
+    /// the engine manifest (CI order: build dist mog.exe, embed it into Studio,
+    /// then publish both). Each `--platform` is copied into `<out>/bin/` and hashed.
+    Studio {
+        /// Published version string (display only; the hash is the freshness check).
+        #[arg(long)]
+        version: String,
+        /// A platform binary as `<os>-<arch>=<local-path>`, e.g.
+        /// `windows-x86_64=./MogStudio/.../mog-studio.exe`. Repeatable.
+        #[arg(long = "platform", value_name = "KEY=PATH")]
+        platforms: Vec<String>,
+        /// Signing key: base64, or `@path` to a file containing it.
+        #[arg(long)]
+        sign_key: String,
+        /// Output dir for `studio.json` + `studio.json.sig` + `bin/`.
+        #[arg(long)]
+        out: PathBuf,
+    },
+}
+
+/// Build + sign a per-platform binary manifest (`engine.json` / `studio.json`).
+/// Copies each `KEY=PATH` binary into `<out>/bin/`, hashes it, and writes the
+/// signed `<name>.json` (+ `.sig`). Shared by the `engine` and `studio` commands
+/// so their format can never drift.
+fn publish_manifest(
+    name: &str,
+    version: String,
+    platforms: &[String],
+    sign_key: &str,
+    out: &std::path::Path,
+) -> Result<()> {
+    let sk = read_sign_key(sign_key)?;
+    let bin_dir = out.join("bin");
+    std::fs::create_dir_all(&bin_dir)?;
+    let mut map = std::collections::BTreeMap::new();
+    for spec in platforms {
+        let (key, src) = spec
+            .split_once('=')
+            .with_context(|| format!("--platform must be KEY=PATH, got '{spec}'"))?;
+        let src = PathBuf::from(src);
+        let bytes = std::fs::read(&src)
+            .with_context(|| format!("read platform binary '{}'", src.display()))?;
+        let sha = market_index::sha256_hex(&bytes);
+        let fname = src
+            .file_name()
+            .map(|f| f.to_string_lossy().to_string())
+            .unwrap_or_else(|| format!("{name}-{key}"));
+        let rel = format!("bin/{fname}");
+        std::fs::write(out.join(&rel), &bytes)?;
+        map.insert(
+            key.to_string(),
+            EnginePlatform {
+                path: rel,
+                sha256: sha,
+            },
+        );
+    }
+    let manifest = EngineManifest {
+        version,
+        platforms: map,
+    };
+    let mut bytes = serde_json::to_vec_pretty(&manifest)?;
+    bytes.push(b'\n');
+    let sig = sign(&sk, &bytes);
+    let man_path = out.join(format!("{name}.json"));
+    let sig_path = out.join(format!("{name}.json.sig"));
+    std::fs::write(&man_path, &bytes)?;
+    std::fs::write(&sig_path, format!("{sig}\n"))?;
+    eprintln!(
+        "wrote {} ({} platforms) + {}",
+        man_path.display(),
+        manifest.platforms.len(),
+        sig_path.display()
+    );
+    Ok(())
+}
+
+fn read_sign_key(arg: &str) -> Result<SigningKey> {
+    let b64 = if let Some(path) = arg.strip_prefix('@') {
+        std::fs::read_to_string(path).with_context(|| format!("read sign-key file '{path}'"))?
+    } else {
+        arg.to_string()
+    };
+    signing_key_from_b64(&b64)
+}
+
+fn main() -> Result<()> {
+    match Cli::parse().cmd {
+        Cmd::Keygen => {
+            let sk = market_index::generate_keypair();
+            println!(
+                "signing key  (SECRET, keep private): {}",
+                market_index::signing_key_to_b64(&sk)
+            );
+            println!(
+                "verifying key (public, embed in mog): {}",
+                market_index::verifying_key_to_b64(&sk.verifying_key())
+            );
+        }
+        Cmd::Index {
+            recipes,
+            curation,
+            sign_key,
+            out,
+            generated_at,
+        } => {
+            let cur: Curation = match curation {
+                Some(p) => load_curation(&p)?,
+                None => Curation::new(),
+            };
+            let sk = read_sign_key(&sign_key)?;
+            let out_dir = out.unwrap_or_else(|| recipes.clone());
+            // Paths in the index are relative to the output dir (where index.json
+            // lives), so recipes may sit in a `recipes/` subdir and the client
+            // still fetches base/<path> correctly.
+            let index = build_index(&recipes, &out_dir, &cur, generated_at)?;
+            let bytes = index.to_json_bytes()?;
+            let sig = sign(&sk, &bytes);
+
+            std::fs::create_dir_all(&out_dir)?;
+            let idx_path = out_dir.join("index.json");
+            let sig_path = out_dir.join("index.json.sig");
+            std::fs::write(&idx_path, &bytes)?;
+            std::fs::write(&sig_path, format!("{sig}\n"))?;
+            eprintln!(
+                "wrote {} ({} entries) + {}",
+                idx_path.display(),
+                index.entries.len(),
+                sig_path.display()
+            );
+        }
+        Cmd::Engine {
+            version,
+            platforms,
+            sign_key,
+            out,
+        } => publish_manifest("engine", version, &platforms, &sign_key, &out)?,
+        Cmd::Studio {
+            version,
+            platforms,
+            sign_key,
+            out,
+        } => publish_manifest("studio", version, &platforms, &sign_key, &out)?,
+    }
+    Ok(())
+}

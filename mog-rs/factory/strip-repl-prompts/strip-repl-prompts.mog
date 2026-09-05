@@ -1,0 +1,22 @@
+{
+  "name": "Strip REPL and shell prompts",
+  "description": "Remove interactive prompts from pasted sessions so you are left with just the code/commands: Python's >>> and ... continuation, a leading $ shell prompt, and Jupyter's In [n]: / Out[n]: markers. Handy for turning a copied REPL transcript into a runnable script. Lines without a prompt are left alone.",
+  "summary": "Remove REPL and shell prompts from pasted sessions",
+  "tags": [
+    "paste",
+    "jupyter",
+    "python",
+    "shell",
+    "cleanup"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex_multiline",
+      "description": "Remove a leading prompt marker",
+      "options": {
+        "find": "^(?:>>> |\\.\\.\\. |\\$ |In \\[\\d+\\]: |Out\\[\\d+\\]: )",
+        "replace_with": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Unwrap a fenced code block",
+  "description": "Remove the triple-backtick fence lines (opening ```lang and closing ```) from Markdown, leaving just the code inside. Useful for extracting the raw content of a fenced block. Every fence line is dropped, so on a document with multiple code blocks the prose between them remains too.",
+  "summary": "Remove triple-backtick fence lines, keeping the code",
+  "tags": [
+    "markdown",
+    "codemod",
+    "strip",
+    "extract"
+  ],
+  "steps": [
+    {
+      "action": "remove_lines_matching",
+      "description": "Drop lines that are a ``` fence",
+      "options": { "pattern": "^```" }
+    }
+  ]
+}

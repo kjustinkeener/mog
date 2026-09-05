@@ -1,0 +1,23 @@
+{
+  "name": "SQL requote: double-quote to backtick",
+  "description": "Rewrite standard-SQL double-quoted identifiers (\"id\") to BigQuery/Spark backtick identifiers (`id`). Composable fragment for any converter that targets BigQuery or Databricks. Assumes the source uses single quotes for string literals (Snowflake/Postgres/Redshift), so every \"...\" is an identifier; a double quote inside a single-quoted string literal is a known limitation (rare in DDL). Assumes LF text.",
+  "summary": "Rewrite SQL double-quoted identifiers to backticks",
+  "tags": [
+    "fragment",
+    "sql",
+    "bigquery",
+    "databricks",
+    "identifier",
+    "quote"
+  ],
+  "steps": [
+    {
+      "description": "\"identifier\" -> `identifier`",
+      "action": "replace_regex",
+      "options": {
+        "find": "\"([^\"]*)\"",
+        "replace_with": "`$1`"
+      }
+    }
+  ]
+}

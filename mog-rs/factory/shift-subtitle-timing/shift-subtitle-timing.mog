@@ -1,0 +1,197 @@
+{
+  "name": "Shift subtitle timing",
+  "description": "Offset every cue timestamp in a SubRip (.srt) or WebVTT (.vtt) file by a fixed number of milliseconds, so subtitles that run ahead of or behind the audio can be pulled back into sync. Both timestamps of each cue move by the same amount, the interval between cues is preserved, and the file's own decimal separator is kept (a comma for SubRip, a dot for WebVTT); a WebVTT stamp written without an hours part gains one. The offset is the constant offset_ms, negative to pull cues earlier: override it with -D offset_ms=1500 (the demo value is -2500). A cue that would land before zero is pulled to the start of the file rather than written as a negative time, and a cue that would land at or past twenty-four hours is pulled back to the last moment of the day; both cases get a review marker naming what happened. Cue text, cue numbers, WebVTT settings and headers are untouched. Limit: a source timestamp whose hours field is already at or past twenty-four is left alone and marked, because the arithmetic runs over a single day.",
+  "summary": "Offset every SRT or WebVTT timestamp by a fixed number of milliseconds",
+  "tags": [
+    "subtitles",
+    "srt",
+    "webvtt",
+    "time",
+    "sync"
+  ],
+  "constants": {
+    "offset_ms": "-2500"
+  },
+  "steps": [
+    {
+      "section": "Guard",
+      "action": "flag_matching",
+      "description": "A cue already past the day boundary cannot be shifted",
+      "options": {
+        "pattern": "^(?:\\d{3,}|2[4-9]|[3-9]\\d):\\d{2}:\\d{2}[.,]\\d{3}[ \\t]*-->",
+        "message": "cue time is already at or past twenty-four hours, so this line is left as it is",
+        "comment": "#",
+        "tag": "WARN"
+      }
+    },
+    {
+      "section": "Normalize",
+      "action": "replace_regex",
+      "description": "WebVTT start stamp without hours gains an hours part",
+      "options": {
+        "find": "(?m)^(\\d{2}:\\d{2}[.,]\\d{3})([ \\t]*-->)",
+        "replace_with": "00:${1}${2}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "WebVTT end stamp without hours gains an hours part",
+      "options": {
+        "find": "-->[ \\t]*(\\d{2}:\\d{2}[.,]\\d{3})",
+        "replace_with": "--> 00:${1}"
+      }
+    },
+    {
+      "section": "Timestamps to milliseconds",
+      "action": "replace_regex",
+      "description": "Split each cue's two stamps onto working lines, keeping the separator and any settings",
+      "options": {
+        "find": "(?m)^([01]\\d|2[0-3]):(\\d{2}):(\\d{2})([.,])(\\d{3})[ \\t]*-->[ \\t]*([01]\\d|2[0-3]):(\\d{2}):(\\d{2})[.,](\\d{3})(.*)$",
+        "replace_with": "@@A@@|1970-01-01T${1}:${2}:${3}|${5}\n@@B@@|1970-01-01T${6}:${7}:${8}|${9}\n@@C@@${4}${10}"
+      }
+    },
+    {
+      "action": "iso_to_epoch",
+      "description": "Seconds since the start of the day",
+      "only_lines_matching": "^@@[AB]",
+      "options": {
+        "field": 2,
+        "delimiter": "|",
+        "unit": "seconds"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Fold the milliseconds back onto the seconds",
+      "only_lines_matching": "^@@[AB]",
+      "options": {
+        "find": "(?m)^(@@[AB]@@)\\|(\\d+)\\|(\\d{3})$",
+        "replace_with": "${1}|${2}${3}"
+      }
+    },
+    {
+      "section": "Shift",
+      "action": "arithmetic",
+      "description": "Add the offset to every cue time",
+      "only_lines_matching": "^@@[AB]",
+      "options": {
+        "op": "add",
+        "by": "{{offset_ms}}"
+      }
+    },
+    {
+      "section": "Bounds",
+      "action": "replace_regex",
+      "description": "A time before zero is pulled to the start of the file",
+      "only_lines_matching": "^@@[AB]",
+      "options": {
+        "find": "(?m)^@@([AB])@@\\|-\\d+$",
+        "replace_with": "@@${1}~@@|0"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Widen a one-digit result",
+      "only_lines_matching": "^@@[AB]",
+      "options": {
+        "find": "(?m)^(@@[AB][~^]?@@\\|)(\\d)$",
+        "replace_with": "${1}000${2}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Widen a two-digit result",
+      "only_lines_matching": "^@@[AB]",
+      "options": {
+        "find": "(?m)^(@@[AB][~^]?@@\\|)(\\d{2})$",
+        "replace_with": "${1}00${2}"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Widen a three-digit result",
+      "only_lines_matching": "^@@[AB]",
+      "options": {
+        "find": "(?m)^(@@[AB][~^]?@@\\|)(\\d{3})$",
+        "replace_with": "${1}0${2}"
+      }
+    },
+    {
+      "section": "Back to timestamps",
+      "action": "replace_regex",
+      "description": "Peel the milliseconds off again",
+      "only_lines_matching": "^@@[AB]",
+      "options": {
+        "find": "(?m)^(@@[AB][~^]?@@)\\|(\\d+)(\\d{3})$",
+        "replace_with": "${1}|${2}|${3}"
+      }
+    },
+    {
+      "action": "epoch_to_iso",
+      "description": "Seconds back to a clock time",
+      "only_lines_matching": "^@@[AB]",
+      "options": {
+        "field": 2,
+        "delimiter": "|",
+        "unit": "seconds",
+        "format": "datetime"
+      }
+    },
+    {
+      "action": "replace",
+      "description": "Drop the carrier date",
+      "only_lines_matching": "^@@[AB]",
+      "options": {
+        "find": "|1970-01-01T",
+        "replace_with": "|"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "A time past the day boundary is pulled back to the last moment of the day",
+      "only_lines_matching": "^@@[AB]",
+      "options": {
+        "find": "(?m)^(@@[AB])(~?)@@\\|1970-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z\\|\\d{3}$",
+        "replace_with": "${1}^@@|23:59:59Z|999"
+      }
+    },
+    {
+      "section": "Rejoin",
+      "action": "replace_regex",
+      "description": "Put each cue's two stamps back on one line",
+      "options": {
+        "find": "(?m)^@@A([~^]?)@@\\|(\\d{2}:\\d{2}:\\d{2})Z\\|(\\d{3})\\n@@B([~^]?)@@\\|(\\d{2}:\\d{2}:\\d{2})Z\\|(\\d{3})\\n@@C@@(.)(.*)$",
+        "replace_with": "${2}${7}${3} --> ${5}${7}${6}${8}@@W${1}${4}@@"
+      }
+    },
+    {
+      "section": "Review",
+      "action": "flag_matching",
+      "description": "Mark a cue that was pulled to the start of the file",
+      "options": {
+        "pattern": "@@W[~^]*~",
+        "message": "this cue reached back before the start of the file and was pulled to zero",
+        "comment": "#",
+        "tag": "WARN"
+      }
+    },
+    {
+      "action": "flag_matching",
+      "description": "Mark a cue that was pulled back to the end of the day",
+      "options": {
+        "pattern": "^(?!.*\\(mog\\):).*@@W[~^]*\\^",
+        "message": "this cue ran past twenty-four hours and was pulled back to the last moment of the day",
+        "comment": "#",
+        "tag": "WARN"
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Remove the working markers",
+      "options": {
+        "find": "@@W[~^]*@@",
+        "replace_with": ""
+      }
+    }
+  ]
+}

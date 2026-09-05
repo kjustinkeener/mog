@@ -1,0 +1,5 @@
+range 3-4 and pages 10-12.
+The engine - written in Rust - is fast.
+non-breaking and softhyphen words.
+temperature -5 degrees.
+wide gap a - b

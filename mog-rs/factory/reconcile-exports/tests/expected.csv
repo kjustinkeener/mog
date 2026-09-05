@@ -1,0 +1,6 @@
+status,id,name,role
+SAME,1,Alice,admin
+CHANGED,2,Bob,admin
+ADDED,4,Dave,viewer
+SAME,5,Erin,editor
+REMOVED,3,Carol,viewer

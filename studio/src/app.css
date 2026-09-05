@@ -1,0 +1,195 @@
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --panel-2: #f0f2f5;
+  --border: #d9dde3;
+  --border-strong: #bcc3cd;
+  --btn: #bddbd5;
+  --btn-hover: #a4d0c7;
+  --tab-off: #afc5c1;
+  --tab-on: #445e5a;
+  --text: #1c2530;
+  --muted: #6a7480;
+  --accent: #73a79e;
+  --accent-weak: #eff6f4;
+  --accent-strong: #2f9182;
+  /* Brand aqua->orange gradient (matches the Marketplace hero glyph/title). Theme-
+     independent, so it lives on :root only and the dark/high-contrast blocks leave
+     it untouched. */
+  --brand-grad: linear-gradient(120deg, #00a2a9, #ff8b00);
+  --brand-grad-strong: linear-gradient(120deg, #008b91, #f07f00);
+  --danger: #d43c3c;
+  --ok: #2a9d5c;
+  --warn: #b7791f;
+  --warn-weak: #fbeecb;
+  --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --cat-replace: #6d5cf0;
+  --cat-line: #73a79e;
+  --cat-whitespace: #0a9396;
+  --cat-eol: #8a6d1e;
+  --cat-case: #b5468a;
+  --cat-affix: #c05621;
+  --cat-encode: #2a9d5c;
+  --cat-compose: #556070;
+  --cat-text: #5a6b7a;
+  --cat-data: #0d8a7a;
+  --cat-json: #b5731e;
+  --cat-detect: #c0392b;
+  --cat-assert: #7a5cf0;
+  --cat-compare: #8e44ad;
+  --cat-fallback: #8a8f98;
+
+  color-scheme: light dark;
+}
+
+/* Dark palette. Applied when the OS prefers dark AND the user hasn't forced light
+   (theme = auto/dark), or when the theme setting explicitly forces dark. The two
+   selectors share the same declarations. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #14181d;
+    --panel: #1b2027;
+    --panel-2: #232a33;
+    --border: #2f3742;
+    --border-strong: #454f5c;
+    --btn: #385751;
+    --btn-hover: #426c63;
+    --tab-off: #34423f;
+    --tab-on: #5b7671;
+    --text: #e6eaef;
+    --muted: #9aa5b1;
+    --accent: #96c4be;
+    --accent-weak: #2c3735;
+    --accent-strong: #46b3a0;
+    --danger: #ff6b6b;
+    --ok: #4cc38a;
+    --warn: #e0b050;
+    --warn-weak: #3a2f14;
+  }
+}
+:root[data-theme='dark'] {
+  --bg: #14181d;
+  --panel: #1b2027;
+  --panel-2: #232a33;
+  --border: #2f3742;
+  --border-strong: #454f5c;
+  --btn: #385751;
+  --btn-hover: #426c63;
+  --tab-off: #3f504d;
+  --tab-on: #3b9686;
+  --text: #e6eaef;
+  --muted: #9aa5b1;
+  --accent: #96c4be;
+  --accent-weak: #2c3735;
+  --accent-strong: #46b3a0;
+  --danger: #ff6b6b;
+  --ok: #4cc38a;
+  --warn: #e0b050;
+  --warn-weak: #3a2f14;
+  color-scheme: dark;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  overflow: hidden;
+}
+
+button {
+  font: inherit;
+  color: var(--text);
+  background: var(--btn);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+button:hover {
+  background: var(--btn-hover);
+  border-color: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14);
+}
+button:active {
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  box-shadow: none;
+}
+button.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+button.ghost {
+  background: transparent;
+  border-color: transparent;
+  padding: 2px 6px;
+  box-shadow: none;
+}
+button.ghost:hover {
+  border-color: transparent;
+  background: var(--panel-2);
+  box-shadow: none;
+}
+
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 7px;
+  width: 100%;
+}
+textarea {
+  font-family: var(--mono);
+  resize: none;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mono {
+  font-family: var(--mono);
+}
+
+.cap {
+  color: var(--muted);
+  font-size: 12px;
+}

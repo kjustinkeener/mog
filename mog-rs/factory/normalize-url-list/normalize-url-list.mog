@@ -1,0 +1,11 @@
+{
+  "name": "Normalize and dedupe a URL list",
+  "description": "Canonicalize each http(s) URL (lowercase scheme and host, drop the default port and a trailing host dot, sort query params), then sort and de-duplicate the list, so URLs that differ only cosmetically collapse to one entry. Non-URL lines pass through the normalize step and are sorted/deduped as-is.",
+  "summary": "Canonicalize, sort, and dedupe a URL list",
+  "tags": ["url", "normalize", "dedupe", "sort", "web"],
+  "steps": [
+    { "section": "Canonicalize", "action": "normalize_url", "description": "Lowercase host/scheme, drop default port, sort query", "options": { "sort_query": true } },
+    { "section": "Collapse", "action": "sort_lines", "description": "Sort so duplicates are adjacent" },
+    { "action": "remove_duplicate_lines", "description": "Drop duplicate URLs" }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Remove trailing commas (JSON5 to JSON)",
+  "description": "Delete trailing commas that appear right before a closing } or ] (the JSON5 / JavaScript convenience that strict JSON rejects), so the text parses as valid JSON. A comma+bracket inside a string literal would also be changed, so review data containing such strings.",
+  "summary": "Remove trailing commas to make JSON5 valid JSON",
+  "tags": [
+    "json",
+    "javascript",
+    "cleanup"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Drop a comma before a closing bracket",
+      "options": {
+        "find": ",(\\s*[}\\]])",
+        "replace_with": "$1"
+      }
+    }
+  ]
+}

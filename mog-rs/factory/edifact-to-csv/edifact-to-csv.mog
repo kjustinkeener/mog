@@ -1,0 +1,18 @@
+{
+  "name": "UN/EDIFACT to CSV (flat, lossy)",
+  "description": "Flatten a UN/EDIFACT interchange to CSV: one row per segment, one column per data element. Turns the ' segment terminator into newlines, then re-delimits each segment from the + element separator to comma (quote-aware). Component separators (:) are left inside their cells, so this is a flat text dump, not a semantic message parse. Does not resolve UNA delimiter overrides (assumes the standard ' + : terminators), does not process the release/escape character (?), and does not decode segment/message semantics (UNB/UNH/BGM meanings, qualifiers, code lists). A UNA header line, if present, is flattened verbatim.",
+  "summary": "Flatten UN/EDIFACT segments to CSV",
+  "tags": [
+    "edi",
+    "csv",
+    "convert",
+    "interchange",
+    "lossy",
+    "best-effort"
+  ],
+  "steps": [
+    { "section": "Split segments", "action": "replace", "description": "Segment terminator ' -> newline", "options": { "find": "'", "replace_with": "\n" } },
+    { "section": "Re-delimit elements", "action": "change_delimiter", "description": "Elements: + -> comma (quote-aware)", "options": { "from": "+", "to": "," } },
+    { "section": "Tidy", "action": "remove_empty_lines", "description": "Drop blank lines left by the trailing terminator" }
+  ]
+}

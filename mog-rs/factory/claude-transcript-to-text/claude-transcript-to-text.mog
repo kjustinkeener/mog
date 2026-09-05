@@ -1,0 +1,26 @@
+{
+  "name": "Claude transcript to text",
+  "description": "Strip a Claude Code / AI session transcript (JSONL) down to the readable conversation: keep user and assistant turns, pull the prose (a plain string, or the text blocks of an assistant message), and drop tool calls, tool results, thinking, and system/meta lines. Markdown by default (## role headers); pass -D header= for plain prose. Reads JSON per line; not a general transcript parser.",
+  "summary": "Extract readable conversation from a Claude transcript",
+  "tags": ["json", "text", "ai", "extract", "cleanup"],
+  "constants": {
+    "header": "## ${message.role}\n\n"
+  },
+  "steps": [
+    {
+      "description": "Keep only user and assistant turns (drop system/meta lines).",
+      "action": "json_filter",
+      "options": { "path": "type", "matches": "^(user|assistant)$" }
+    },
+    {
+      "description": "Keep only turns that carry prose (drops tool-only turns and tool results).",
+      "action": "json_filter",
+      "options": { "path": "message.content[*].text||message.content" }
+    },
+    {
+      "description": "Emit each turn as text: an optional role header plus the prose.",
+      "action": "json_extract",
+      "options": { "template": "{{header}}${message.content[*].text||message.content}\n" }
+    }
+  ]
+}

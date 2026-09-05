@@ -1,0 +1,7 @@
+api.example.com
+tracker.evil.example
+CDN.example.com
+  auth.example.com
+metrics.thirdparty.net
+api.example.com
+mail.example.com

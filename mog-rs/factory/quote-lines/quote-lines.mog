@@ -1,0 +1,18 @@
+{
+  "name": "Wrap each line in double quotes",
+  "description": "Surround each line with double quotes, turning a plain list into quoted strings; combine with join-lines-comma for an inline list. Does not escape quotes already inside a line; for safe JSON strings use lines-to-json-strings.",
+  "summary": "Wrap each line in double quotes",
+  "tags": [
+    "text",
+    "quote",
+    "list",
+    "format"
+  ],
+  "steps": [
+    {
+      "action": "wrap_lines",
+      "description": "Add a double quote before and after each line",
+      "options": { "prefix": "\"", "suffix": "\"" }
+    }
+  ]
+}

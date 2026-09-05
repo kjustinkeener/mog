@@ -1,0 +1,22 @@
+{
+  "name": "Strip HTML to plain text",
+  "summary": "Remove HTML tags and decode entities",
+  "description": "Convert a snippet of HTML to plain text in two steps: remove every <...> tag, then decode HTML entities ( &amp; &lt; &#39; etc. ) back to their characters. A de-markup pass, not a full HTML parser.",
+  "tags": [
+    "html",
+    "text",
+    "strip",
+    "markdown",
+    "convert"
+  ],
+  "steps": [
+    {
+      "action": "strip_html_tags",
+      "description": "Remove HTML/XML tags"
+    },
+    {
+      "action": "html_decode",
+      "description": "Decode HTML entities to characters"
+    }
+  ]
+}

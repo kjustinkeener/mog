@@ -1,0 +1,4 @@
+api.example.com
+cdn.example.com
+auth.example.com
+mail.example.com

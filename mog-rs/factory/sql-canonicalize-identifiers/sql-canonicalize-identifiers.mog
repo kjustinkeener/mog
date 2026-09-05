@@ -1,0 +1,20 @@
+{
+  "name": "Canonicalize SQL identifier case",
+  "description": "Normalize unquoted identifier case in a SQL statement to the target dialect's storage rule, so the same query written with inconsistent casing collapses to one canonical form. 'dialect' is required and decides the direction: snowflake folds unquoted identifiers to UPPER CASE, postgres folds them to lower case. Quoted identifiers are left as written (they are case-sensitive). Set 'quote':true to additionally wrap every identifier in the dialect's quote character. Parse-based (polyglot-sql): it rewrites identifiers structurally, not by find/replace, so keywords, string literals, and aliases are handled correctly. The whole input is treated as one statement.",
+  "summary": "Fold SQL identifier case to a dialect's storage rule",
+  "tags": [
+    "sql",
+    "snowflake",
+    "normalize",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "sql_canonicalize_identifiers",
+      "description": "Fold unquoted identifiers to Snowflake's upper-case storage form",
+      "options": {
+        "dialect": "snowflake"
+      }
+    }
+  ]
+}

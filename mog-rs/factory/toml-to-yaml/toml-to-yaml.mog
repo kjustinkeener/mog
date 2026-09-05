@@ -1,0 +1,15 @@
+{
+  "name": "TOML to YAML",
+  "description": "Convert a TOML document to YAML, bridging through JSON. Key order is preserved. The inverse of yaml-to-toml.",
+  "summary": "Convert TOML to YAML",
+  "tags": [
+    "toml",
+    "yaml",
+    "config",
+    "convert"
+  ],
+  "steps": [
+    { "action": "toml_to_json", "description": "Parse TOML into JSON" },
+    { "action": "json_to_yaml", "description": "Serialize the JSON as YAML" }
+  ]
+}

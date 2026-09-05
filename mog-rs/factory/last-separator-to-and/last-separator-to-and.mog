@@ -1,0 +1,9 @@
+{
+  "name": "Last list separator to 'and'",
+  "description": "Replace only the LAST comma-space in the text with ' and ', turning 'apples, oranges, pears' into 'apples, oranges and pears' (a non-Oxford list join). Written for a single list on one line; for many lists, run it per line.",
+  "summary": "Change the last list comma to 'and'",
+  "tags": ["replace", "list", "prose", "column", "single-action"],
+  "steps": [
+    { "action": "replace_last", "options": { "find": ", ", "replace_with": " and " } }
+  ]
+}

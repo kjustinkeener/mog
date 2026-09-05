@@ -1,0 +1,16 @@
+{
+  "name": "JSONL to YAML",
+  "description": "Convert JSON Lines (one JSON object per line) into a YAML list: gather the objects into an array, then serialize as YAML. Key order is preserved.",
+  "summary": "Convert JSONL to a YAML list",
+  "tags": [
+    "jsonl",
+    "json",
+    "yaml",
+    "convert",
+    "data"
+  ],
+  "steps": [
+    { "action": "jsonl_to_json", "description": "Gather JSONL into a JSON array" },
+    { "action": "json_to_yaml", "description": "Serialize as YAML" }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Add line numbers",
+  "description": "Prefix each line with its line number (right-aligned) and a separator, the way a code viewer shows them. Handy for referring to specific lines when sharing a file. To remove line numbers again, see strip-line-numbers.",
+  "summary": "Prefix each line with a right-aligned line number",
+  "tags": [
+    "line-numbers",
+    "codemod",
+    "format",
+    "text"
+  ],
+  "steps": [
+    {
+      "action": "number_lines",
+      "description": "Prefix each line with its number",
+      "options": { "start": 1, "separator": ": " }
+    }
+  ]
+}

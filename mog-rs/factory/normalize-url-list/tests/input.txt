@@ -1,0 +1,4 @@
+HTTPS://Example.com:443/p?b=2&a=1
+https://example.com/p?a=1&b=2
+http://Host.:80/x
+http://host/x

@@ -1,0 +1,22 @@
+{
+  "name": "TSV to CSV",
+  "description": "Convert tab-separated values to comma-separated values, quote-aware: any field that contains a comma, a quote, or a CR/LF is wrapped in double quotes (RFC 4180), so a cell like London, UK is preserved as \"London, UK\". The inverse of csv-to-tsv. Single-line fields only.",
+  "summary": "Convert TSV to CSV with RFC 4180 quoting",
+  "tags": [
+    "tsv",
+    "csv",
+    "convert",
+    "data",
+    "fragment"
+  ],
+  "steps": [
+    {
+      "action": "change_delimiter",
+      "description": "Re-delimit each line from tab to comma (re-quoting as needed)",
+      "options": {
+        "from": "\t",
+        "to": ","
+      }
+    }
+  ]
+}

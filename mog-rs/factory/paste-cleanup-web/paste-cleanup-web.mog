@@ -1,0 +1,42 @@
+{
+  "name": "Paste cleanup: web article",
+  "description": "Tidy text copied from a web article or HTML page. Trims trailing spaces, drops common boilerplate lines (Advertisement, Share this, Sign up / Subscribe, cookie-banner lines), removes inline [edit] and [12] footnote/citation markers, and collapses runs of blank lines to a single blank line. The boilerplate list is a fixed set of common phrases (case-insensitive), so site-specific chrome may still slip through.",
+  "summary": "Tidy text copied from a web article",
+  "tags": [
+    "paste",
+    "cleanup",
+    "web",
+    "prose",
+    "html",
+    "codegen"
+  ],
+  "steps": [
+    {
+      "section": "Drop boilerplate lines",
+      "action": "remove_lines_matching",
+      "description": "Remove common ad / share / signup / cookie-banner lines (case-insensitive).",
+      "options": {
+        "pattern": "(?i)^\\s*(advertisement|share this.*|sign up.*|subscribe.*|accept( all)? cookies.*|we use cookies.*|cookie (policy|settings|preferences).*|related articles?.*)\\s*$"
+      }
+    },
+    {
+      "section": "Strip inline footnote markers",
+      "action": "replace_regex_multiline",
+      "description": "Remove [edit] and [12] citation/footnote markers left inline.",
+      "options": {
+        "find": "\\[(edit|\\d+)\\]",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Trim trailing spaces",
+      "action": "trim_whitespace_right",
+      "description": "Remove trailing whitespace from each line (also cleans spaces left by marker removal)."
+    },
+    {
+      "section": "Collapse blank runs",
+      "action": "squeeze_blank_lines",
+      "description": "Collapse runs of blank lines to a single blank line."
+    }
+  ]
+}

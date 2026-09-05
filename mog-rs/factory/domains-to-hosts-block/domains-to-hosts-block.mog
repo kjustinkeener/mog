@@ -1,0 +1,20 @@
+{
+  "name": "Domain list to hosts blocklist",
+  "description": "Turn a plain list of domains into /etc/hosts blocklist entries by prefixing each domain with 0.0.0.0 (so the host resolves nowhere). Comment lines (#) and blank lines pass through untouched. Point it at a domain list to build an ad/tracker blocklist you can append to your hosts file.",
+  "summary": "Convert a domain list to a hosts blocklist",
+  "tags": [
+    "network",
+    "blocklist",
+    "convert"
+  ],
+  "steps": [
+    {
+      "action": "prefix_lines",
+      "description": "Prefix each domain line with 0.0.0.0",
+      "only_lines_matching": "^[A-Za-z0-9]",
+      "options": {
+        "text": "0.0.0.0 "
+      }
+    }
+  ]
+}

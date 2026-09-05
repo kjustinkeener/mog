@@ -1,0 +1,25 @@
+{
+  "name": "Indent each delimited block",
+  "summary": "Run a sub-recipe over every BEGIN..END block",
+  "description": "For each region between a '-- BEGIN' line and the next '-- END' line, run a sub-recipe over the whole block and replace it with the result. Demonstrates block-scoped composition: swap the run recipe to comment, renumber, or reformat each block. Delimiters are matched by regex.",
+  "tags": [
+    "docker",
+    "fragment",
+    "single-action",
+    "indent"
+  ],
+  "dependencies": [
+    "indent-block"
+  ],
+  "steps": [
+    {
+      "action": "for_each_block",
+      "description": "Indent every -- BEGIN..-- END block",
+      "options": {
+        "block_start": "^-- BEGIN",
+        "block_end": "^-- END",
+        "run": "indent-block"
+      }
+    }
+  ]
+}

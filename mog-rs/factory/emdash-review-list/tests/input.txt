@@ -1,0 +1,5 @@
+The engine ― written in Rust ― is fast.
+― an opening dash line
+dangling thought ―
+range 3–4 stays tight.
+no dashes here

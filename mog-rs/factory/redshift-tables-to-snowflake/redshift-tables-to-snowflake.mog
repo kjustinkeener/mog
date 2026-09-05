@@ -1,0 +1,31 @@
+{
+  "name": "Redshift DDL to Snowflake",
+  "summary": "Convert a Redshift v_generate_tbl_ddl export to Snowflake DDL",
+  "description": "Convert Redshift v_generate_tbl_ddl (or SHOW TABLE) output to Snowflake DDL: strips the --DROP/--WARNING comment lines and the ALTER TABLE ... owner to trailer, removes ENCODE compression and the DISTSTYLE/DISTKEY/SORTKEY physical clauses (flagged, since Snowflake has no distribution/sort keys), unquotes identifiers and drops the public. schema qualifier, and maps TIMESTAMP WITHOUT/WITH TIME ZONE to TIMESTAMP_NTZ/TIMESTAMP_TZ. Not a semantic transpiler; dropped physical clauses are flagged inline as TODO(mog). Validated by executing the result in a real Snowflake engine (fakesnow).",
+  "tags": ["sql", "redshift", "snowflake", "warehouse", "convert", "migration"],
+  "steps": [
+    { "action": "eol_lf", "description": "Normalize to LF." },
+    { "section": "Strip noise", "action": "replace_regex", "description": "Drop --DROP / --WARNING comment lines.",
+      "options": { "find": "(?m)^--(?:DROP TABLE|WARNING).*$", "replace_with": "" } },
+    { "section": "Strip noise", "action": "replace_regex", "description": "Drop the ALTER TABLE ... owner to trailer.",
+      "options": { "find": "(?mi)^ALTER TABLE .* owner to .*$", "replace_with": "" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Remove per-column ENCODE compression (Snowflake auto-compresses).",
+      "options": { "find": "(?i) ENCODE \\w+", "replace_with": "" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop DISTSTYLE (flagged).",
+      "options": { "find": "(?mi)^DISTSTYLE \\w+.*$", "replace_with": "-- TODO(mog): dropped Redshift DISTSTYLE (Snowflake has no distribution style)" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop DISTKEY (flagged).",
+      "options": { "find": "(?mi)^\\s*DISTKEY\\s*\\([^)]*\\).*$", "replace_with": "-- TODO(mog): dropped Redshift DISTKEY" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop the (multi-line) SORTKEY (flagged; consider CLUSTER BY).",
+      "options": { "find": "(?is)\\s*SORTKEY\\s*\\(.*?\\)", "replace_with": "\n-- TODO(mog): dropped Redshift SORTKEY (consider Snowflake CLUSTER BY)" } },
+    { "section": "Types", "action": "replace_regex", "description": "TIMESTAMP WITHOUT TIME ZONE -> TIMESTAMP_NTZ.",
+      "options": { "find": "(?i)\\bTIMESTAMP WITHOUT TIME ZONE\\b", "replace_with": "TIMESTAMP_NTZ" } },
+    { "section": "Types", "action": "replace_regex", "description": "TIMESTAMP WITH TIME ZONE -> TIMESTAMP_TZ.",
+      "options": { "find": "(?i)\\bTIMESTAMP WITH TIME ZONE\\b", "replace_with": "TIMESTAMP_TZ" } },
+    { "section": "Identifiers", "action": "replace", "description": "Drop the public. schema qualifier.",
+      "options": { "find": "\"public\".", "replace_with": "" } },
+    { "section": "Identifiers", "action": "replace", "description": "Unquote the everything-quoted Redshift identifiers.",
+      "options": { "find": "\"", "replace_with": "" } },
+    { "section": "Finalize", "action": "replace_regex", "description": "Collapse blank lines left behind.",
+      "options": { "find": "\\n[ \\t]*(?:\\n[ \\t]*)+", "replace_with": "\n\n" } }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "Redact UUIDs",
+  "description": "Replace every UUID (8-4-4-4-12 hex, like 550e8400-e29b-41d4-a716-446655440000) with [UUID] so identifiers in a log or config can be shared without leaking them. Case-insensitive.",
+  "summary": "Redact UUIDs to [UUID]",
+  "tags": [
+    "redact",
+    "identifier",
+    "privacy",
+    "security",
+    "log"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Replace UUIDs with a placeholder",
+      "options": {
+        "find": "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+        "replace_with": "[UUID]"
+      }
+    }
+  ]
+}

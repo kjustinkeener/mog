@@ -1,0 +1,28 @@
+{
+  "name": "BibTeX to RIS",
+  "description": "Convert well-formatted BibTeX entries to RIS (the reference format EndNote / Zotero / RefWorks import). Maps the entry type to a RIS TY tag (article->JOUR, book->BOOK, inproceedings->CPAPER, misc->GEN) and common fields to RIS tags (author->AU, title->TI, journal->JO, booktitle->T2, year->PY, volume->VL, number->IS, pages->SP, publisher->PB, doi->DO, url->UR), closing each record with ER. Expects one field per line with a brace- or quote-delimited value; does not handle multi-line values, nested braces, @string macros, or LaTeX accents.",
+  "summary": "Convert BibTeX references to RIS",
+  "tags": [
+    "citation",
+    "convert",
+    "interchange"
+  ],
+  "steps": [
+    {"section":"Entry type -> TY","action":"replace_regex_multiline","description":"@article -> JOUR","options":{"find":"^@[Aa]rticle\\{.*$","replace_with":"TY  - JOUR"}},
+    {"action":"replace_regex_multiline","description":"@book -> BOOK","options":{"find":"^@[Bb]ook\\{.*$","replace_with":"TY  - BOOK"}},
+    {"action":"replace_regex_multiline","description":"@inproceedings -> CPAPER","options":{"find":"^@[Ii]nproceedings\\{.*$","replace_with":"TY  - CPAPER"}},
+    {"action":"replace_regex_multiline","description":"@misc -> GEN","options":{"find":"^@[Mm]isc\\{.*$","replace_with":"TY  - GEN"}},
+    {"section":"Fields -> RIS tags","action":"replace_regex_multiline","description":"author","options":{"find":"^\\s*author\\s*=\\s*[{\"](.*?)[}\"],?\\s*$","replace_with":"AU  - $1"}},
+    {"action":"replace_regex_multiline","description":"title","options":{"find":"^\\s*title\\s*=\\s*[{\"](.*?)[}\"],?\\s*$","replace_with":"TI  - $1"}},
+    {"action":"replace_regex_multiline","description":"journal","options":{"find":"^\\s*journal\\s*=\\s*[{\"](.*?)[}\"],?\\s*$","replace_with":"JO  - $1"}},
+    {"action":"replace_regex_multiline","description":"booktitle","options":{"find":"^\\s*booktitle\\s*=\\s*[{\"](.*?)[}\"],?\\s*$","replace_with":"T2  - $1"}},
+    {"action":"replace_regex_multiline","description":"year","options":{"find":"^\\s*year\\s*=\\s*[{\"](.*?)[}\"],?\\s*$","replace_with":"PY  - $1"}},
+    {"action":"replace_regex_multiline","description":"volume","options":{"find":"^\\s*volume\\s*=\\s*[{\"](.*?)[}\"],?\\s*$","replace_with":"VL  - $1"}},
+    {"action":"replace_regex_multiline","description":"number","options":{"find":"^\\s*number\\s*=\\s*[{\"](.*?)[}\"],?\\s*$","replace_with":"IS  - $1"}},
+    {"action":"replace_regex_multiline","description":"pages","options":{"find":"^\\s*pages\\s*=\\s*[{\"](.*?)[}\"],?\\s*$","replace_with":"SP  - $1"}},
+    {"action":"replace_regex_multiline","description":"publisher","options":{"find":"^\\s*publisher\\s*=\\s*[{\"](.*?)[}\"],?\\s*$","replace_with":"PB  - $1"}},
+    {"action":"replace_regex_multiline","description":"doi","options":{"find":"^\\s*doi\\s*=\\s*[{\"](.*?)[}\"],?\\s*$","replace_with":"DO  - $1"}},
+    {"action":"replace_regex_multiline","description":"url","options":{"find":"^\\s*url\\s*=\\s*[{\"](.*?)[}\"],?\\s*$","replace_with":"UR  - $1"}},
+    {"section":"End of record","action":"replace_regex_multiline","description":"closing brace -> ER","options":{"find":"^\\}[ \\t]*$","replace_with":"ER  - "}}
+  ]
+}

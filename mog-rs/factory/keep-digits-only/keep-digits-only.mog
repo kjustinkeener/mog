@@ -1,0 +1,22 @@
+{
+  "name": "Keep only the digits",
+  "summary": "Drop every non-digit character from each line",
+  "description": "Keep only the digit characters on each line, dropping everything else (spaces, punctuation, letters). Line breaks are preserved. Handy for normalizing phone numbers, IDs, or codes to bare digits.",
+  "tags": [
+    "text",
+    "numbers",
+    "filter",
+    "normalize",
+    "contacts",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "keep_chars",
+      "description": "Keep only digit characters",
+      "options": {
+        "class": "digits"
+      }
+    }
+  ]
+}

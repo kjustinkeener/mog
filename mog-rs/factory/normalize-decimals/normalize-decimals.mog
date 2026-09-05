@@ -1,0 +1,9 @@
+{
+  "name": "Normalize decimal separators (EU to US)",
+  "description": "Rewrite numbers from the European convention (1.234,56: dot thousands, comma decimal) to the US convention (1,234.56: comma thousands, dot decimal). Only numbers that carry a separator are changed, so bare integers such as years are left alone. Change the 'from'/'to' options for other conventions (us, eu, swiss, space_comma, space_dot) or set 'grouping' false to drop thousands separators.",
+  "summary": "Convert European number format to US decimals",
+  "tags": ["numbers", "unicode", "csv", "normalize", "finance"],
+  "steps": [
+    { "action": "decimal_separator_normalize", "description": "EU number format to US number format", "options": { "from": "eu", "to": "us" } }
+  ]
+}

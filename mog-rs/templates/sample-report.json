@@ -1,0 +1,51 @@
+{
+  "mog": { "name": "MySQL to PostgreSQL", "path": "user/MySQL-To-PGSQL.mog" },
+  "mode": "apply",
+  "when": "2026-08-21T18:04:11Z",
+  "summary": { "files": 4, "changed": 3, "errors": 1, "lines_added": 18, "lines_removed": 11 },
+  "files": [
+    {
+      "path": "schema/users.sql",
+      "changed": true,
+      "bytes_before": 812,
+      "bytes_after": 905,
+      "lines_added": 8,
+      "lines_removed": 5,
+      "error": null,
+      "diff": "--- schema/users.sql\n+++ schema/users.sql\n@@ -1,9 +1,9 @@\n-CREATE TABLE `users` (\n-  `id` INT AUTO_INCREMENT PRIMARY KEY,\n-  `email` VARCHAR(255) NOT NULL,\n-  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,\n-  `is_active` TINYINT(1) DEFAULT 1\n-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n+CREATE TABLE \"users\" (\n+  \"id\" SERIAL PRIMARY KEY,\n+  \"email\" VARCHAR(255) NOT NULL,\n+  \"created_at\" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n+  \"is_active\" BOOLEAN DEFAULT TRUE\n+);\n@@ -12,3 +12,4 @@\n CREATE INDEX idx_users_email ON users(email);\n+-- FIXME: verify SERIAL vs GENERATED ALWAYS AS IDENTITY for target version"
+    },
+    {
+      "path": "schema/orders.sql",
+      "changed": true,
+      "bytes_before": 1043,
+      "bytes_after": 1102,
+      "lines_added": 10,
+      "lines_removed": 6,
+      "error": null,
+      "diff": "--- schema/orders.sql\n+++ schema/orders.sql\n@@ -1,12 +1,12 @@\n-CREATE TABLE `orders` (\n-  `id` INT AUTO_INCREMENT PRIMARY KEY,\n-  `user_id` INT NOT NULL,\n-  `total` DECIMAL(10,2) NOT NULL,\n-  `status` ENUM('new','paid','shipped') DEFAULT 'new',\n-  `placed_at` DATETIME DEFAULT CURRENT_TIMESTAMP\n-) ENGINE=InnoDB;\n+CREATE TABLE \"orders\" (\n+  \"id\" SERIAL PRIMARY KEY,\n+  \"user_id\" INTEGER NOT NULL,\n+  \"total\" NUMERIC(10,2) NOT NULL,\n+  \"status\" TEXT DEFAULT 'new' CHECK (status IN ('new','paid','shipped')),\n+  \"placed_at\" TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n+);\n \n-ALTER TABLE orders ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(`id`);\n+ALTER TABLE orders ADD CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES users(\"id\");\n+-- FIXME: ENUM converted to CHECK constraint, confirm downstream code tolerates it"
+    },
+    {
+      "path": "schema/legacy_notes.sql",
+      "changed": false,
+      "bytes_before": 240,
+      "bytes_after": 240,
+      "lines_added": 0,
+      "lines_removed": 0,
+      "error": null
+    },
+    {
+      "path": "schema/reports.sql",
+      "changed": false,
+      "bytes_before": 0,
+      "bytes_after": 0,
+      "lines_added": 0,
+      "lines_removed": 0,
+      "error": "failed to read file: permission denied (os error 5)"
+    }
+  ],
+  "flags": [
+    { "tag": "FIXME", "file": "schema/users.sql", "line": 13, "message": "verify SERIAL vs GENERATED ALWAYS AS IDENTITY for target version" },
+    { "tag": "FIXME", "file": "schema/orders.sql", "line": 13, "message": "ENUM converted to CHECK constraint, confirm downstream code tolerates it" }
+  ],
+  "flag_counts": { "FIXME": 2 }
+}

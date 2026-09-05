@@ -1,0 +1,17 @@
+{
+  "name": "Collapse adjacent duplicate lines",
+  "summary": "uniq: collapse runs of identical adjacent lines to one",
+  "description": "Collapse runs of identical adjacent lines to a single line (the classic uniq behavior). Non-adjacent duplicates are left alone. Useful for squashing repeated log lines.",
+  "tags": [
+    "line",
+    "dedupe",
+    "whitespace",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "remove_consecutive_duplicate_lines",
+      "description": "Collapse adjacent duplicates"
+    }
+  ]
+}

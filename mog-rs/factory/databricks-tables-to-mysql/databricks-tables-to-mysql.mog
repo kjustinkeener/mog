@@ -1,0 +1,87 @@
+{
+  "name": "Databricks SHOW CREATE TABLE to MySQL",
+  "summary": "Convert a Databricks/Spark table export to MySQL DDL",
+  "description": "Convert Databricks 'SHOW CREATE TABLE' output to MySQL. Strips Delta/Spark export noise, reduces catalog.schema.table to the bare table, collapses nested ARRAY/MAP/STRUCT to JSON (flagged), maps Spark scalars (STRING->TEXT, LONG->BIGINT, SHORT->SMALLINT, BYTE->TINYINT) and TIMESTAMP->DATETIME.",
+  "tags": [
+    "sql",
+    "databricks",
+    "spark",
+    "mysql",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-databricks-export-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip export noise",
+      "action": "run_mog",
+      "options": {
+        "file": "strip-databricks-export-noise.mog"
+      }
+    },
+    {
+      "section": "Identifiers",
+      "action": "replace_regex",
+      "description": "Reduce catalog.schema.table to the bare table.",
+      "options": {
+        "find": "(?im)^(CREATE(?: OR REPLACE)? TABLE )\\w+\\.\\w+\\.(\\w+)",
+        "replace_with": "$1$2"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Collapse nested ARRAY/MAP/STRUCT<...> to JSON (flagged).",
+      "options": {
+        "find": "\\b(?:ARRAY|MAP|STRUCT)\\s*<[^<>]*>",
+        "replace_with": "JSON"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "flag_matching",
+      "description": "Flag JSON columns collapsed from a nested type.",
+      "options": {
+        "pattern": "\\bJSON\\b",
+        "message": "collapsed from a Databricks nested type; element/field types were lost",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Spark TIMESTAMP -> DATETIME.",
+      "options": {
+        "find": "\\bTIMESTAMP\\b",
+        "replace_with": "DATETIME"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_map",
+      "description": "Map Spark scalar types to MySQL.",
+      "options": {
+        "whole_word": true,
+        "map": {
+          "STRING": "TEXT",
+          "LONG": "BIGINT",
+          "SHORT": "SMALLINT",
+          "BYTE": "TINYINT"
+        }
+      }
+    },
+    {
+      "section": "Comments",
+      "action": "replace_regex",
+      "description": "Drop the trailing table COMMENT.",
+      "options": {
+        "find": "(?m)^COMMENT '[^']*'",
+        "replace_with": "-- TODO(mog): table comment dropped (use COMMENT ON in MySQL)"
+      }
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "name": "Snowflake GET_DDL to Redshift",
+  "summary": "Convert a Snowflake GET_DDL table export to Redshift DDL",
+  "description": "Convert Snowflake GET_DDL('TABLE', ...) output to Redshift DDL. Strips the Snowflake-only renderings (cluster by, comments, terminator), rewrites autoincrement and the create verb, and maps types (NUMBER(38,0)->BIGINT, NUMBER(p,s)->DECIMAL(p,s), VARIANT->SUPER, TIMESTAMP_NTZ->TIMESTAMP, TIMESTAMP_TZ/LTZ->TIMESTAMPTZ). Not a semantic transpiler; leaves TODO(mog) markers where a construct needs manual review.",
+  "tags": [
+    "sql",
+    "snowflake",
+    "redshift",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "strip-snowflake-getddl-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip export noise",
+      "action": "run_mog",
+      "options": {
+        "file": "strip-snowflake-getddl-noise.mog"
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Snowflake autoincrement -> Redshift identity.",
+      "options": {
+        "find": "(?i)autoincrement start \\d+ increment \\d+",
+        "replace_with": "IDENTITY(1,1)"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "NUMBER(38,0) -> BIGINT.",
+      "options": {
+        "find": "\\bNUMBER\\(38,\\s*0\\)",
+        "replace_with": "BIGINT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "NUMBER(p,s) -> DECIMAL(p,s).",
+      "options": {
+        "find": "\\bNUMBER\\(",
+        "replace_with": "DECIMAL("
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "Bare NUMBER -> BIGINT.",
+      "options": {
+        "find": "\\bNUMBER\\b",
+        "replace_with": "BIGINT"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "VARIANT -> SUPER.",
+      "options": {
+        "find": "\\bVARIANT\\b",
+        "replace_with": "SUPER"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "TIMESTAMP_NTZ(n) -> TIMESTAMP.",
+      "options": {
+        "find": "\\bTIMESTAMP_NTZ(\\(\\d+\\))?",
+        "replace_with": "TIMESTAMP"
+      }
+    },
+    {
+      "section": "Types",
+      "action": "replace_regex",
+      "description": "TIMESTAMP_TZ / TIMESTAMP_LTZ -> TIMESTAMPTZ.",
+      "options": {
+        "find": "\\bTIMESTAMP_(?:LTZ|TZ)(\\(\\d+\\))?",
+        "replace_with": "TIMESTAMPTZ"
+      }
+    },
+    {
+      "section": "Statement",
+      "action": "replace",
+      "description": "Normalize the create verb for Redshift.",
+      "options": {
+        "find": "create or replace TABLE ",
+        "replace_with": "CREATE TABLE "
+      }
+    }
+  ]
+}

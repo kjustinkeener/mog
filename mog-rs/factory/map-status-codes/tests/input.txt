@@ -1,0 +1,4 @@
+GET /a 200
+GET /b 404
+GET /c 302
+GET /d 500

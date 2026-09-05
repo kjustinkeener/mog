@@ -1,0 +1,21 @@
+{
+  "name": "One sentence per line",
+  "description": "Break prose so each sentence sits on its own line, inserting a newline after sentence-ending punctuation (. ! ?) followed by spaces, so git diffs line up per sentence instead of reflowing a whole paragraph. Also breaks after abbreviations like 'e.g.' or 'Mr.'.",
+  "summary": "Break prose so each sentence is on its own line",
+  "tags": [
+    "text",
+    "prose",
+    "markdown",
+    "diff"
+  ],
+  "steps": [
+    {
+      "action": "replace_regex",
+      "description": "Break after sentence-ending punctuation followed by spaces",
+      "options": {
+        "find": "([.!?]) +",
+        "replace_with": "$1\n"
+      }
+    }
+  ]
+}

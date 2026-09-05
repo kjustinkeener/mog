@@ -1,0 +1,477 @@
+{
+  "name": "BigQuery tables to Go structs",
+  "summary": "Generate Go structs (with bigquery tags) from a BigQuery DDL export",
+  "description": "Generate idiomatic Go type declarations from a BigQuery DDL export (INFORMATION_SCHEMA.TABLES.ddl or 'bq show'), one 'type <Table> struct' per table. Discards every non-table statement (CREATE SCHEMA, views, ALTERs) and BigQuery's physical-layout trailers (PARTITION BY, CLUSTER BY, table and column OPTIONS), then rewrites each CREATE TABLE into a struct with one exported field per column. Field names are PascalCased for export, with the exact BigQuery column name preserved losslessly in a `bigquery:\"...\"` struct tag (the tag cloud.google.com/go/bigquery reads). BigQuery types map to Go types (INT64 -> int64, FLOAT64 -> float64, BOOL -> bool, STRING -> string, BYTES -> []byte, DATE/DATETIME/TIME/TIMESTAMP -> time.Time, JSON -> json.RawMessage, STRUCT<...> -> map[string]any, ARRAY<T> -> []T). NUMERIC and BIGNUMERIC map to string (Go has no native fixed-point) and are flagged. BigQuery columns are NULLABLE by default -- only an explicit NOT NULL makes a column required -- so a missing NOT NULL is what produces a pointer type (*T); nilable types (slices, maps, json.RawMessage) stay as-is, and ARRAY columns are never null. Emits the struct declarations only: add your own 'package' clause and imports (time, encoding/json), then run gofmt to align fields. Assumes LF.",
+  "tags": [
+    "sql",
+    "bigquery",
+    "go",
+    "codegen",
+    "convert",
+    "migration"
+  ],
+  "steps": [
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop the export's leading '--' comment banners and per-table headers.",
+      "options": {
+        "find": "(?m)^--.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CREATE SCHEMA / CREATE DATASET statements.",
+      "options": {
+        "find": "(?im)^CREATE (?:SCHEMA|DATASET)\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop DROP TABLE / DROP VIEW statements.",
+      "options": {
+        "find": "(?im)^DROP (?:TABLE|VIEW)\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CREATE VIEW / MATERIALIZED VIEW statements (multi-line, to the first ';').",
+      "options": {
+        "find": "(?ims)^CREATE (?:OR REPLACE )?(?:MATERIALIZED )?VIEW\\b.*?;[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop ALTER TABLE statements (SET OPTIONS, ADD COLUMN, drops).",
+      "options": {
+        "find": "(?ims)^ALTER TABLE\\b.*?;[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop the table-level OPTIONS(...) trailer (description, labels, expiration).",
+      "options": {
+        "find": "(?ims)^OPTIONS\\(.*?\\);[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop PARTITION BY trailers (BigQuery physical layout, not part of the row type).",
+      "options": {
+        "find": "(?im)^PARTITION BY\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop CLUSTER BY trailers (BigQuery physical layout, not part of the row type).",
+      "options": {
+        "find": "(?im)^CLUSTER BY\\b.*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Strip the backtick quoting BigQuery puts around table and column identifiers.",
+      "options": {
+        "find": "`",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Collapse the blank lines the removals left behind.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Struct shell",
+      "action": "replace_regex",
+      "description": "Rewrite each 'CREATE OR REPLACE TABLE <project>.<dataset>.<tbl>' plus its own-line '(' into the type header.",
+      "options": {
+        "find": "(?m)^CREATE (?:OR REPLACE )?TABLE (?:IF NOT EXISTS )?(?:[\\w-]+\\.)*(\\w+)\\n\\($",
+        "replace_with": "type ${1} struct {"
+      }
+    },
+    {
+      "section": "Struct shell",
+      "action": "replace_regex",
+      "description": "Rewrite each table-closing ')' (with or without a trailing ';') into the closing form.",
+      "options": {
+        "find": "(?m)^\\)[ \\t]*;?[ \\t]*$",
+        "replace_with": "}"
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop per-column OPTIONS(...) clauses (column descriptions and policy tags).",
+      "options": {
+        "find": "(?im)\\s+OPTIONS\\([^)]*\\)(?=,?[ \\t]*$)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop DEFAULT clauses from column lines (literals, CURRENT_TIMESTAMP(), GENERATE_UUID()).",
+      "options": {
+        "find": "(?im)\\s+DEFAULT\\s+.+?(?=(?:\\s+NOT\\s+NULL)?,?\\s*$)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop trailing commas that separated columns.",
+      "options": {
+        "find": "(?m),[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "BigQuery ARRAY columns are never NULL (an absent value is the empty array), so mark them NOT NULL before the nullability pass.",
+      "options": {
+        "find": "(?m)^(    \\w+ ARRAY<[^\\n]*>)(?! NOT NULL)$",
+        "replace_with": "${1} NOT NULL"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Mark nullable columns with a sentinel: in BigQuery a column is NULLABLE unless it explicitly says NOT NULL, so nullability is driven by the ABSENCE of the constraint.",
+      "options": {
+        "find": "(?m)^(    \\w[^\\n]*?)(?<! NOT NULL)$",
+        "replace_with": "${1}@@N@@"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Remove the NOT NULL constraint marker from non-nullable columns.",
+      "options": {
+        "find": "(?m) NOT NULL$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery JSON columns: mapped to json.RawMessage.",
+      "options": {
+        "pattern": "\\bJSON\\b",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "BigQuery semi-structured column; kept in its raw encoded form -- unmarshal into a concrete Go type where you need field access.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery STRUCT columns: mapped to a map.",
+      "options": {
+        "pattern": "\\bSTRUCT<",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "BigQuery record type; flattened to a Go map -- declare a nested Go struct for typed field access.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery ARRAY columns: mapped to a Go slice.",
+      "options": {
+        "pattern": "\\bARRAY<",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "BigQuery repeated column; never null (an absent value is the empty slice) -- verify the element type.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery BIGNUMERIC columns: mapped to string.",
+      "options": {
+        "pattern": "\\bBIGNUMERIC\\b",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "BigQuery 76-digit exact numbers have no native Go equivalent; carried as text -- use math/big or a fixed-point library for arithmetic.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag BigQuery NUMERIC columns: mapped to string.",
+      "options": {
+        "pattern": "\\bNUMERIC\\b",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "BigQuery exact-precision column; no native Go fixed-point -- carried as text, parse with a fixed-point library for arithmetic.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "STRUCT<...> -> map[string]any (flagged above).",
+      "options": {
+        "find": "(?i)\\bSTRUCT<[^>]*>",
+        "replace_with": "map[string]any"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "BIGNUMERIC(p,s) -> string (flagged above).",
+      "options": {
+        "find": "(?i)\\bBIGNUMERIC\\(\\d+,\\s*\\d+\\)",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare BIGNUMERIC -> string (flagged above).",
+      "options": {
+        "find": "(?i)\\bBIGNUMERIC\\b",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "NUMERIC(p,s) / DECIMAL(p,s) -> string (flagged above).",
+      "options": {
+        "find": "(?i)\\b(?:NUMERIC|DECIMAL)\\(\\d+,\\s*\\d+\\)",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare NUMERIC / DECIMAL -> string (flagged above).",
+      "options": {
+        "find": "(?i)\\b(?:NUMERIC|DECIMAL)\\b",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "INT64 / INT / INTEGER -> int64.",
+      "options": {
+        "find": "(?i)\\b(?:INT64|INTEGER|INT)\\b",
+        "replace_with": "int64"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "FLOAT64 / FLOAT -> float64.",
+      "options": {
+        "find": "(?i)\\b(?:FLOAT64|FLOAT)\\b",
+        "replace_with": "float64"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "BOOL / BOOLEAN -> bool.",
+      "options": {
+        "find": "(?i)\\b(?:BOOLEAN|BOOL)\\b",
+        "replace_with": "bool"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "STRING(n) -> string.",
+      "options": {
+        "find": "(?i)\\bSTRING\\(\\d+\\)",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bare STRING -> string.",
+      "options": {
+        "find": "(?i)\\bSTRING\\b",
+        "replace_with": "string"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "BYTES(n) / BYTES -> []byte.",
+      "options": {
+        "find": "(?i)\\bBYTES(?:\\(\\d+\\))?",
+        "replace_with": "[]byte"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "TIMESTAMP / DATETIME / DATE / TIME -> time.Time (via sentinel, so the 'time' keyword is not re-matched).",
+      "options": {
+        "find": "(?i)\\b(?:TIMESTAMP|DATETIME|DATE|TIME)\\b",
+        "replace_with": "@@GODT@@"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "JSON -> json.RawMessage (flagged above).",
+      "options": {
+        "find": "(?i)\\bJSON\\b",
+        "replace_with": "json.RawMessage"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "ARRAY<T> -> []T (flagged above).",
+      "options": {
+        "find": "(?i)\\bARRAY<([^<>]+)>",
+        "replace_with": "[]${1}"
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "Resolve the time sentinel to time.Time.",
+      "options": {
+        "find": "@@GODT@@",
+        "replace_with": "time.Time"
+      }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Rewrite nullable columns into a pointer-typed Go field carrying a bigquery tag placeholder.",
+      "options": {
+        "find": "(?m)^    (\\w+) (\\S+)@@N@@(.*)$",
+        "replace_with": "    ${1} *${2} @@BQ@@${1}@@${3}"
+      }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Rewrite non-nullable columns into a Go field carrying a bigquery tag placeholder.",
+      "options": {
+        "find": "(?m)^    (\\w+) (\\S+)( // .*)?$",
+        "replace_with": "    ${1} ${2} @@BQ@@${1}@@${3}"
+      }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Nilable types (slices, maps, json.RawMessage) don't need a pointer for nullability -- drop it.",
+      "options": {
+        "find": "\\*(\\[\\]\\S+|map\\[string\\]any|json\\.RawMessage)",
+        "replace_with": "${1}"
+      }
+    },
+    {
+      "section": "Fields",
+      "action": "replace_regex",
+      "description": "Safety: strip any leftover nullability sentinel.",
+      "options": {
+        "find": "@@N@@",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "PascalCase",
+      "action": "to_pascal",
+      "description": "PascalCase each struct name (the table identifier).",
+      "only_lines_matching": "^type ",
+      "scope": {
+        "field": {
+          "index": 2,
+          "delimiter": " "
+        }
+      }
+    },
+    {
+      "section": "PascalCase",
+      "action": "to_pascal",
+      "description": "PascalCase each field name (the column identifier); the bigquery tag keeps the exact column name.",
+      "only_lines_matching": "^    \\w",
+      "scope": {
+        "field": {
+          "index": 5,
+          "delimiter": " "
+        }
+      }
+    },
+    {
+      "section": "Tags",
+      "action": "replace_regex",
+      "description": "Resolve the bigquery tag placeholder into a real Go struct tag.",
+      "options": {
+        "find": "@@BQ@@(\\w+)@@",
+        "replace_with": "`bigquery:\"${1}\"`"
+      }
+    },
+    {
+      "section": "Tags",
+      "action": "replace_regex",
+      "description": "Convert the 4-space column indent to a tab (Go convention).",
+      "options": {
+        "find": "(?m)^    ",
+        "replace_with": "\t"
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Collapse multiple blank lines to a single blank between declarations.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim leading blank lines.",
+      "options": {
+        "find": "\\A\\n+",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim trailing blank lines to a single final newline.",
+      "options": {
+        "find": "\\n\\s*\\z",
+        "replace_with": "\n"
+      }
+    }
+  ]
+}

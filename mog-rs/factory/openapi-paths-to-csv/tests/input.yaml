@@ -1,0 +1,101 @@
+openapi: 3.0.3
+info:
+  title: Pet Store
+  version: 1.2.0
+  description: A small, deliberately awkward spec.
+servers:
+  - url: https://api.example.com/v1
+paths:
+  /pets:
+    parameters:
+      - name: X-Trace-Id
+        in: header
+        required: false
+        schema:
+          type: string
+    get:
+      operationId: listPets
+      summary: List pets, newest first
+      tags:
+        - pets
+        - public
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A paged list of pets.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PetList'
+    post:
+      operationId: createPet
+      summary: 'Register a "new" pet'
+      tags:
+        - pets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+      responses:
+        '201':
+          description: Created.
+    delete:
+      summary: Delete every pet
+      tags:
+        - pets
+        - admin
+      deprecated: true
+      responses:
+        '204':
+          description: Gone.
+  /pets/{petId}:
+    get:
+      operationId: getPet
+      tags:
+        - pets
+      responses:
+        '200':
+          description: One pet.
+    put:
+      operationId: replacePet
+      summary: "Replace a pet: name, tags and it's owner"
+      tags:
+        - pets
+      responses:
+        '200':
+          description: Replaced.
+    patch:
+      operationId: updatePet
+      summary: "Update a pet's name, colour or age"
+      tags: []
+      responses:
+        '200':
+          description: Updated.
+  /health:
+    $ref: '#/components/pathItems/health'
+  /metrics:
+    x-internal: true
+    servers:
+      - url: https://metrics.example.com
+components:
+  schemas:
+    Pet:
+      type: object
+      properties:
+        name:
+          type: string
+    PetList:
+      type: array
+      items:
+        $ref: '#/components/schemas/Pet'
+  pathItems:
+    health:
+      get:
+        operationId: health
+        summary: Liveness probe

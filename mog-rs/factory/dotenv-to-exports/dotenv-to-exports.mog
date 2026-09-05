@@ -1,0 +1,22 @@
+{
+  "name": "dotenv to shell exports",
+  "description": "Turn a .env file into shell `export KEY=VALUE` statements you can source. Only KEY=VALUE lines are prefixed with `export `; comments (#) and blank lines pass through untouched. Values are left exactly as written (no quoting changes), so quote them in the .env if they contain spaces.",
+  "summary": "Convert .env to shell export statements",
+  "tags": [
+    "env",
+    "dotenv",
+    "shell",
+    "convert",
+    "config"
+  ],
+  "steps": [
+    {
+      "action": "prefix_lines",
+      "description": "Prefix each KEY=VALUE line with 'export '",
+      "only_lines_matching": "^[A-Za-z_][A-Za-z0-9_]*=",
+      "options": {
+        "text": "export "
+      }
+    }
+  ]
+}

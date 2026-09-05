@@ -1,0 +1,9 @@
+{
+  "name": "JSON to query string",
+  "description": "Convert a flat JSON object to a URL query string (a=1&b=2), url-encoded. An array value repeats its key; null values are skipped. The read counterpart to query string to JSON.",
+  "summary": "Convert a flat JSON object to a URL query string",
+  "tags": ["convert", "json", "url", "web"],
+  "steps": [
+    { "description": "Render the JSON object as a query string.", "action": "json_to_querystring" }
+  ]
+}

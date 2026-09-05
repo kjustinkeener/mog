@@ -1,0 +1,647 @@
+<!--
+  Mog run dashboard: factory template "default"
+  ================================================================
+
+  INJECTION CONTRACT (the engine depends on this, do not change it):
+
+    This template contains a single, unambiguous placeholder token, the
+    string "MOG_REPORT_JSON" wrapped in a leading and trailing pair of
+    underscores. That literal token appears EXACTLY ONCE in this file, on
+    the injection line inside the script block below.
+
+    At emit time the engine reads this static file and string-replaces that
+    token with the run report JSON object. The one line it
+    replaces reads, before injection:
+
+        window.MOG_REPORT = <TOKEN>;
+
+    After injection that line becomes, for example:
+
+        window.MOG_REPORT = { "mog": { ... }, "files": [ ... ], ... };
+
+  RUNTIME RULES:
+    - Fully self-contained. All CSS and JS are inline. There are NO external
+      requests: no CDNs, no web fonts, no external stylesheets or scripts.
+      It renders from a file:// path with zero network access.
+    - The template does NOT fetch any data at runtime. The report arrives
+      only via the injected window.MOG_REPORT token above.
+    - If the token is left as its default (null), the page degrades
+      gracefully to a friendly "no report data" state.
+    - Theme-aware (light/dark via prefers-color-scheme). All values are
+      escaped before insertion into the DOM.
+-->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mog run report</title>
+
+<style>
+  :root {
+    color-scheme: light dark;
+
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --border: #dfe3e8;
+    --text: #1b1f24;
+    --text-dim: #5b6470;
+    --accent: #2f6feb;
+    --accent-soft: #e6efff;
+
+    --add-bg: #e6ffed;
+    --add-text: #116329;
+    --add-marker: #1a7f37;
+    --del-bg: #ffebe9;
+    --del-text: #82071e;
+    --del-marker: #cf222e;
+    --hunk-text: #6639ba;
+
+    --ok: #1a7f37;
+    --warn: #9a6700;
+    --err: #cf222e;
+    --err-bg: #ffebe9;
+
+    --shadow: 0 1px 2px rgba(27,31,36,0.06), 0 3px 8px rgba(27,31,36,0.05);
+    --mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-2: #1c232c;
+      --border: #2d333b;
+      --text: #e6edf3;
+      --text-dim: #9198a1;
+      --accent: #4c8dff;
+      --accent-soft: #16283f;
+
+      --add-bg: #0f2a17;
+      --add-text: #7ee2a8;
+      --add-marker: #3fb950;
+      --del-bg: #331418;
+      --del-text: #ffa198;
+      --del-marker: #f85149;
+      --hunk-text: #a371f7;
+
+      --ok: #3fb950;
+      --warn: #d29922;
+      --err: #f85149;
+      --err-bg: #331418;
+
+      --shadow: 0 1px 2px rgba(1,4,9,0.5), 0 3px 10px rgba(1,4,9,0.4);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+  }
+
+  /* Header */
+  header.mast {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px 16px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .brand {
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .mog-name {
+    font-size: 22px;
+    font-weight: 650;
+    margin: 0;
+  }
+  .mog-path {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text-dim);
+    word-break: break-all;
+  }
+  .meta {
+    margin-left: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .pill.mode-apply { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .pill.mode-preview, .pill.mode-dry-run, .pill.mode-test {
+    background: var(--surface-2); color: var(--warn); border-color: var(--border);
+  }
+  .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  /* Summary tiles */
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .tile .num { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .tile .lbl { font-size: 12px; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .tile.added .num { color: var(--add-marker); }
+  .tile.removed .num { color: var(--del-marker); }
+  .tile.flags .num { color: var(--warn); }
+  .tile.errors .num { color: var(--err); }
+
+  /* Sections */
+  section { margin-bottom: 32px; }
+  h2.sec {
+    font-size: 15px;
+    font-weight: 650;
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2.sec .count {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 1px 8px;
+  }
+  /* A small note when the enumerated files are fewer than the run changed
+     (the report is capped by construction; see the spec, section 8). */
+  .cap-note {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin: -4px 0 12px;
+  }
+
+  /* File list */
+  .file {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .file > summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    user-select: none;
+  }
+  .file > summary::-webkit-details-marker { display: none; }
+  .file > summary:hover { background: var(--surface-2); }
+  .file .chev {
+    flex: none;
+    transition: transform 0.15s ease;
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+  .file[open] .chev { transform: rotate(90deg); }
+  .file .fname {
+    font-family: var(--mono);
+    font-size: 13.5px;
+    font-weight: 600;
+    word-break: break-all;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .file .stat {
+    flex: none;
+    font-family: var(--mono);
+    font-size: 12px;
+    display: flex;
+    gap: 8px;
+  }
+  .file .stat .plus { color: var(--add-marker); }
+  .file .stat .minus { color: var(--del-marker); }
+  .badge {
+    flex: none;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .badge.unchanged { background: var(--surface-2); color: var(--text-dim); border: 1px solid var(--border); }
+  .badge.error { background: var(--err-bg); color: var(--err); }
+
+  /* Diff */
+  .diff-wrap {
+    border-top: 1px solid var(--border);
+    overflow-x: auto;
+    background: var(--surface);
+  }
+  pre.diff {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.5;
+    min-width: max-content;
+  }
+  pre.diff .line { display: block; padding: 0 16px; white-space: pre; }
+  pre.diff .line.add { background: var(--add-bg); color: var(--add-text); }
+  pre.diff .line.del { background: var(--del-bg); color: var(--del-text); }
+  pre.diff .line.hunk { color: var(--hunk-text); background: var(--surface-2); }
+  pre.diff .line.meta { color: var(--text-dim); }
+
+  .file-note {
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  .file-note.err { color: var(--err); background: var(--err-bg); }
+  .file-note code { font-family: var(--mono); font-size: 12.5px; }
+
+  /* Flags */
+  .flag-group { margin-bottom: 14px; }
+  .flag-group-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .tag-badge {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    letter-spacing: 0.03em;
+  }
+  .tag-badge.FIXME, .tag-badge.BUG { background: var(--del-bg); color: var(--del-marker); }
+  .tag-badge.TODO { background: var(--surface-2); color: var(--warn); }
+  .tag-badge.NOTE, .tag-badge.INFO { background: var(--accent-soft); color: var(--accent); }
+  .flag-group .grp-count { font-size: 12px; color: var(--text-dim); }
+  ul.flag-list { list-style: none; margin: 0; padding: 0; }
+  ul.flag-list li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    margin-bottom: 6px;
+    box-shadow: var(--shadow);
+  }
+  ul.flag-list .ref {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--accent);
+    flex: none;
+  }
+  ul.flag-list .msg { color: var(--text); flex: 1 1 240px; min-width: 0; }
+
+  /* Empty state */
+  .empty {
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 22px 18px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .no-data {
+    max-width: 520px;
+    margin: 12vh auto 0;
+    text-align: center;
+    padding: 0 20px;
+  }
+  .no-data h1 { font-size: 20px; margin: 0 0 8px; }
+  .no-data p { color: var(--text-dim); }
+
+  /* Footer */
+  footer.optout {
+    margin-top: 40px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+  }
+  footer.optout .copy {
+    font-weight: 600;
+    color: var(--text);
+  }
+  footer.optout .made { margin-left: auto; font-size: 12px; }
+  footer.optout .made b { color: var(--accent); font-weight: 700; }
+
+  @media (max-width: 560px) {
+    .meta { margin-left: 0; width: 100%; }
+    .tile .num { font-size: 22px; }
+  }
+</style>
+
+<div id="root" class="wrap"></div>
+
+<script>
+  // ---- INJECTION POINT (see contract in the top comment) ----------------
+  // The engine replaces the token on the next line with the report JSON.
+  // Left as null, the page shows a graceful "no report data" state.
+  window.MOG_REPORT = __MOG_REPORT_JSON__;
+  // -----------------------------------------------------------------------
+
+  (function () {
+    "use strict";
+
+    var root = document.getElementById("root");
+
+    // --- helpers ---------------------------------------------------------
+    function esc(v) {
+      if (v === null || v === undefined) return "";
+      return String(v)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+    function num(n) {
+      var v = (typeof n === "number" && isFinite(n)) ? n : 0;
+      return v.toLocaleString("en-US");
+    }
+    function el(tag, cls, html) {
+      var e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+    function fmtWhen(iso) {
+      if (!iso) return "";
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return esc(iso);
+      try {
+        return d.toLocaleString(undefined, {
+          year: "numeric", month: "short", day: "numeric",
+          hour: "2-digit", minute: "2-digit"
+        });
+      } catch (e) {
+        return esc(iso);
+      }
+    }
+    // Keep only characters allowed in a CSS class name (tags feed classes).
+    function cssSafe(s) {
+      return String(s || "").replace(/[^A-Za-z0-9_-]/g, "");
+    }
+
+    // --- no-data state ---------------------------------------------------
+    var report = window.MOG_REPORT;
+    if (!report || typeof report !== "object") {
+      root.innerHTML = "";
+      var nd = el("div", "no-data");
+      nd.appendChild(el("div", "brand", "MOG RUN REPORT"));
+      nd.appendChild(el("h1", null, "No report data"));
+      nd.appendChild(el("p", null,
+        "This dashboard was opened without an injected report. Run Mog with " +
+        "<code>--report</code> to generate a populated dashboard."));
+      root.appendChild(nd);
+      return;
+    }
+
+    var mog = report.mog || {};
+    var summary = report.summary || {};
+    var files = Array.isArray(report.files) ? report.files : [];
+    var flags = Array.isArray(report.flags) ? report.flags : [];
+    var flagCounts = report.flag_counts || {};
+
+    // --- header ----------------------------------------------------------
+    var header = el("header", "mast");
+    var left = el("div");
+    left.appendChild(el("div", "brand", "MOG RUN REPORT"));
+    left.appendChild(el("h1", "mog-name", esc(mog.name || "Untitled run")));
+    if (mog.path) left.appendChild(el("div", "mog-path", esc(mog.path)));
+    header.appendChild(left);
+
+    var meta = el("div", "meta");
+    var mode = String(report.mode || "").toLowerCase();
+    if (mode) {
+      var mp = el("span", "pill mode-" + cssSafe(mode));
+      mp.appendChild(el("span", "dot"));
+      mp.appendChild(document.createTextNode(mode));
+      meta.appendChild(mp);
+    }
+    if (report.when) {
+      meta.appendChild(el("span", "pill", esc(fmtWhen(report.when))));
+    }
+    header.appendChild(meta);
+    root.appendChild(header);
+
+    // --- summary tiles ---------------------------------------------------
+    var tiles = el("div", "tiles");
+    function tile(cls, value, label) {
+      var t = el("div", "tile " + cls);
+      t.appendChild(el("div", "num", esc(value)));
+      t.appendChild(el("div", "lbl", esc(label)));
+      return t;
+    }
+    var flagTotal = flags.length;
+    tiles.appendChild(tile("scanned", num(summary.files), "Files scanned"));
+    tiles.appendChild(tile("changed", num(summary.changed), "Files changed"));
+    tiles.appendChild(tile("added", "+" + num(summary.lines_added), "Lines added"));
+    tiles.appendChild(tile("removed", "-" + num(summary.lines_removed), "Lines removed"));
+    tiles.appendChild(tile("flags", num(flagTotal), flagTotal === 1 ? "Flag" : "Flags"));
+    if (summary.errors) {
+      tiles.appendChild(tile("errors", num(summary.errors), summary.errors === 1 ? "Error" : "Errors"));
+    }
+    root.appendChild(tiles);
+
+    // --- diff rendering --------------------------------------------------
+    function renderDiff(text) {
+      var wrap = el("div", "diff-wrap");
+      var pre = el("pre", "diff");
+      var lines = String(text).split("\n");
+      // Drop a single trailing empty line from split.
+      if (lines.length && lines[lines.length - 1] === "") lines.pop();
+      var html = "";
+      for (var i = 0; i < lines.length; i++) {
+        var ln = lines[i];
+        var cls = "line";
+        if (ln.indexOf("@@") === 0) cls = "line hunk";
+        else if (ln.indexOf("+++") === 0 || ln.indexOf("---") === 0 ||
+                 ln.indexOf("diff ") === 0 || ln.indexOf("index ") === 0) cls = "line meta";
+        else if (ln.charAt(0) === "+") cls = "line add";
+        else if (ln.charAt(0) === "-") cls = "line del";
+        // A blank line still needs height.
+        var content = ln === "" ? "&nbsp;" : esc(ln);
+        html += '<span class="' + cls + '">' + content + "</span>";
+      }
+      pre.innerHTML = html;
+      wrap.appendChild(pre);
+      return wrap;
+    }
+
+    // --- files section ---------------------------------------------------
+    var filesSec = el("section");
+    var changedFiles = files.filter(function (f) { return f && f.changed; });
+    var h = el("h2", "sec");
+    h.appendChild(document.createTextNode("Files"));
+    h.appendChild(el("span", "count", num(changedFiles.length) + " changed of " + num(files.length)));
+    filesSec.appendChild(h);
+
+    // The report is bounded: when fewer changed files are enumerated than the run
+    // actually changed (summary.changed), say so. Derived from existing fields; no
+    // new schema field is required.
+    var totalChanged = (typeof summary.changed === "number") ? summary.changed : changedFiles.length;
+    if (changedFiles.length < totalChanged) {
+      filesSec.appendChild(el("div", "cap-note",
+        "Showing " + num(changedFiles.length) + " of " + num(totalChanged) +
+        " changed files (report capped)."));
+    }
+
+    if (files.length === 0) {
+      filesSec.appendChild(el("div", "empty", "No files were scanned in this run."));
+    } else if (changedFiles.length === 0 && !files.some(function (f) { return f && f.error; })) {
+      filesSec.appendChild(el("div", "empty", "No files changed. Every scanned file was left untouched."));
+    }
+
+    files.forEach(function (f) {
+      if (!f) return;
+      var hasError = !!f.error;
+      var isChanged = !!f.changed;
+
+      // Unchanged, error-free files: show a compact non-collapsible row.
+      var det = el("details", "file");
+      // Auto-open changed files that carry a diff so the result is visible.
+      if (isChanged && f.diff) det.open = true;
+
+      var sm = el("summary");
+      sm.appendChild(el("span", "chev", "&#9656;")); // right-pointing triangle
+      sm.appendChild(el("span", "fname", esc(f.path || "(unknown path)")));
+
+      if (isChanged && (f.lines_added || f.lines_removed)) {
+        var st = el("span", "stat");
+        st.appendChild(el("span", "plus", "+" + num(f.lines_added)));
+        st.appendChild(el("span", "minus", "-" + num(f.lines_removed)));
+        sm.appendChild(st);
+      }
+      if (hasError) {
+        sm.appendChild(el("span", "badge error", "error"));
+      } else if (!isChanged) {
+        sm.appendChild(el("span", "badge unchanged", "unchanged"));
+      }
+      det.appendChild(sm);
+
+      if (hasError) {
+        det.appendChild(el("div", "file-note err", "Error: " + esc(f.error)));
+      } else if (isChanged && f.diff) {
+        det.appendChild(renderDiff(f.diff));
+      } else if (isChanged && !f.diff) {
+        det.appendChild(el("div", "file-note",
+          "This file changed, but no diff was recorded for it."));
+      } else {
+        det.appendChild(el("div", "file-note", "No changes."));
+      }
+
+      filesSec.appendChild(det);
+    });
+    root.appendChild(filesSec);
+
+    // --- flags section ---------------------------------------------------
+    var flagsSec = el("section");
+    var fh = el("h2", "sec");
+    fh.appendChild(document.createTextNode("Flags"));
+    fh.appendChild(el("span", "count", num(flags.length)));
+    flagsSec.appendChild(fh);
+
+    if (flags.length === 0) {
+      flagsSec.appendChild(el("div", "empty", "No flags were raised."));
+    } else {
+      // Group by tag. Prefer flag_counts order, then any tags only in flags[].
+      var groups = {};
+      flags.forEach(function (fl) {
+        if (!fl) return;
+        var tag = fl.tag || "UNTAGGED";
+        (groups[tag] = groups[tag] || []).push(fl);
+      });
+      var order = Object.keys(flagCounts);
+      Object.keys(groups).forEach(function (t) {
+        if (order.indexOf(t) === -1) order.push(t);
+      });
+
+      order.forEach(function (tag) {
+        var items = groups[tag];
+        if (!items || !items.length) return;
+        var g = el("div", "flag-group");
+        var gh = el("div", "flag-group-head");
+        gh.appendChild(el("span", "tag-badge " + cssSafe(tag), esc(tag)));
+        gh.appendChild(el("span", "grp-count",
+          items.length + (items.length === 1 ? " occurrence" : " occurrences")));
+        g.appendChild(gh);
+
+        var ul = el("ul", "flag-list");
+        items.forEach(function (fl) {
+          var li = el("li");
+          var ref = esc(fl.file || "?");
+          if (fl.line !== undefined && fl.line !== null) ref += ":" + esc(fl.line);
+          li.appendChild(el("span", "ref", ref));
+          if (fl.message) li.appendChild(el("span", "msg", esc(fl.message)));
+          ul.appendChild(li);
+        });
+        g.appendChild(ul);
+        flagsSec.appendChild(g);
+      });
+    }
+    root.appendChild(flagsSec);
+
+    // --- footer (opt-out) ------------------------------------------------
+    var footer = el("footer", "optout");
+    footer.appendChild(document.createTextNode("Prefer no dashboards? "));
+    footer.appendChild(el("span", "copy", "Tell Claude: turn off mog reports."));
+    footer.appendChild(el("span", "made", ""));
+    footer.lastChild.innerHTML = "Generated by <b>Mog</b>";
+    root.appendChild(footer);
+  })();
+</script>

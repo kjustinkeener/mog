@@ -1,0 +1,15 @@
+{
+  "name": "HL7 v2 to CSV (flat)",
+  "description": "Flatten HL7 v2 messages into CSV: one row per segment, one column per field. Normalizes the segment separator (HL7 uses CR) to newlines, then re-delimits each segment from | to comma (quote-aware). Component (^) and repetition (~) separators are left inside their cells, so this is a flat dump, not a full structural parse. Good for eyeballing or loading a message into a spreadsheet.",
+  "summary": "Flatten HL7 v2 segments to CSV",
+  "tags": [
+    "healthcare",
+    "csv",
+    "convert",
+    "interchange"
+  ],
+  "steps": [
+    { "action": "eol_lf", "description": "Normalize CR segment separators to newlines" },
+    { "action": "change_delimiter", "description": "Fields: | -> comma", "options": { "from": "|", "to": "," } }
+  ]
+}

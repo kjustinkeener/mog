@@ -1,0 +1,44 @@
+{
+  "name": "PostgreSQL to BigQuery (DDL/SQL)",
+  "description": "Rewrite PostgreSQL SQL toward BigQuery: :: casts to CAST(...), double-quoted identifiers to backticks, SERIAL family to INT64 (BigQuery has no auto-increment), and type keywords (TEXT/VARCHAR->STRING, BOOLEAN->BOOL, BYTEA->BYTES, TIMESTAMPTZ->TIMESTAMP, TIMESTAMP->DATETIME, DOUBLE PRECISION/REAL->FLOAT64, JSONB/JSON->JSON, UUID->STRING). Minimal-diff regex rewrite, NOT a semantic transpiler. Assumes LF text.",
+  "summary": "Convert PostgreSQL SQL to BigQuery",
+  "tags": [
+    "sql",
+    "postgres",
+    "bigquery",
+    "warehouse",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "sql-colon-cast-to-cast",
+    "sql-requote-quote-to-backtick"
+  ],
+  "steps": [
+    { "section": "Casts", "action": "run_mog", "description": ":: -> CAST()", "options": { "file": "sql-colon-cast-to-cast.mog" } },
+    { "section": "Identifiers", "action": "run_mog", "description": "\"id\" -> `id`", "options": { "file": "sql-requote-quote-to-backtick.mog" } },
+    {
+      "section": "Types",
+      "action": "replace_map",
+      "options": {
+        "ignore_case": true,
+        "whole_word": true,
+        "map": {
+          "DOUBLE PRECISION": "FLOAT64",
+          "BIGSERIAL": "INT64",
+          "SMALLSERIAL": "INT64",
+          "SERIAL": "INT64",
+          "TEXT": "STRING",
+          "VARCHAR": "STRING",
+          "BOOLEAN": "BOOL",
+          "BYTEA": "BYTES",
+          "TIMESTAMPTZ": "TIMESTAMP",
+          "TIMESTAMP": "DATETIME",
+          "REAL": "FLOAT64",
+          "JSONB": "JSON",
+          "UUID": "STRING"
+        }
+      }
+    }
+  ]
+}

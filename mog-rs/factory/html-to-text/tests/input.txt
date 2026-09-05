@@ -1,0 +1,2 @@
+<p>Hello &amp; welcome</p>
+<b>Bold</b> &lt;tag&gt;

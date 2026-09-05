@@ -1,0 +1,9 @@
+{
+  "name": "Sort version numbers",
+  "description": "Sort a list of version strings like sort -V, with semver pre-release rules: 1.9.0 sorts before 1.10.0, and 1.0.0-rc.1 before the final 1.0.0. The version is the first token of each line (a leading 'v' is ignored); non-version lines keep their order at the end.",
+  "summary": "Sort version numbers by semver order",
+  "tags": ["sort", "version", "list"],
+  "steps": [
+    { "action": "sort_versions", "description": "Order lines by version value" }
+  ]
+}

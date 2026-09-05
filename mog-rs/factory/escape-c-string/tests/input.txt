@@ -1,0 +1,3 @@
+say "hi"
+path\to\file
+plain text

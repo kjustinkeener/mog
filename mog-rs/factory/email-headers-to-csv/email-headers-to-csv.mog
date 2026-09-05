@@ -1,0 +1,19 @@
+{
+  "name": "Email headers to CSV",
+  "description": "Turn blank-line-separated blocks of email headers (From:, To:, Subject:, Date:, ...) into a CSV table, one row per message, with a column for each header seen. Splits each line on the first colon. Good for summarizing an mbox-style export or a batch of saved headers.",
+  "summary": "Convert email header blocks to CSV",
+  "tags": [
+    "email",
+    "headers",
+    "csv",
+    "convert",
+    "data"
+  ],
+  "steps": [
+    {
+      "action": "records_to_columns",
+      "description": "Pivot each header block into a CSV row",
+      "options": { "separator": ":", "delimiter": ",", "header": true }
+    }
+  ]
+}

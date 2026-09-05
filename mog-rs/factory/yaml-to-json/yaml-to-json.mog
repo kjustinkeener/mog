@@ -1,0 +1,9 @@
+{
+  "name": "YAML to JSON",
+  "description": "Parse a YAML document and emit it as pretty JSON, with key order preserved. Single-document YAML.",
+  "summary": "Convert YAML to JSON",
+  "tags": ["convert", "yaml", "json", "data"],
+  "steps": [
+    { "description": "Convert the YAML document to JSON.", "action": "yaml_to_json" }
+  ]
+}

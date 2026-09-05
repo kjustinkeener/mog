@@ -1,0 +1,9 @@
+{
+  "name": "Sort IP addresses",
+  "description": "Sort a list of IP addresses by numeric value (not lexically, so 10.0.0.2 comes before 10.0.0.10), IPv4 before IPv6. The IP is the first token of each line, so plain lists and 'IP rest-of-line' access logs both sort correctly; lines whose first token is not an IP keep their order at the end.",
+  "summary": "Sort IP addresses numerically, IPv4 before IPv6",
+  "tags": ["sort", "network", "log", "list"],
+  "steps": [
+    { "action": "sort_ip", "description": "Order lines by IP address value" }
+  ]
+}

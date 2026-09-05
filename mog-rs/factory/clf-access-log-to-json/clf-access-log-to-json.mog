@@ -1,0 +1,21 @@
+{
+  "name": "Access log (CLF) to JSON",
+  "description": "Parse Common/Combined Log Format access-log lines into JSON, one object per line (JSONL), with fields ip, timestamp, method, path, protocol, status, size, referer, user_agent. Lines that do not match the log format are skipped.",
+  "summary": "Convert Common/Combined access logs to JSON",
+  "tags": [
+    "log",
+    "json",
+    "convert",
+    "observability"
+  ],
+  "steps": [
+    {
+      "action": "access_log_to_csv",
+      "description": "Parse the log lines into a CSV table"
+    },
+    {
+      "action": "csv_to_json",
+      "description": "Turn the CSV rows into a JSON array of objects"
+    }
+  ]
+}

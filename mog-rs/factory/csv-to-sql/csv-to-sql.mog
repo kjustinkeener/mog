@@ -1,0 +1,10 @@
+{
+  "name": "CSV to SQL INSERT",
+  "description": "Convert CSV (with a header row) into INSERT INTO <table> (...) VALUES (...); statements. Numbers are bare, empty cells become NULL, everything else is a single-quoted escaped string. Set the table with -D table=... (default my_table).",
+  "summary": "Convert CSV to SQL INSERT statements",
+  "tags": ["convert", "csv", "sql", "data"],
+  "constants": { "table": "my_table" },
+  "steps": [
+    { "description": "Emit an INSERT per CSV row.", "action": "csv_to_sql", "options": { "table": "{{table}}" } }
+  ]
+}

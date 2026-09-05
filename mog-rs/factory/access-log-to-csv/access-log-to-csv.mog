@@ -1,0 +1,9 @@
+{
+  "name": "Access log to CSV",
+  "description": "Parse Common/Combined access-log lines into CSV with columns ip, timestamp, method, path, protocol, status, size, referer, user_agent. Lines that do not match are skipped.",
+  "summary": "Convert Common/Combined access logs to CSV",
+  "tags": ["convert", "log", "csv", "observability"],
+  "steps": [
+    { "description": "Parse the access log into CSV.", "action": "access_log_to_csv" }
+  ]
+}

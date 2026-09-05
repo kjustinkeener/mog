@@ -1,0 +1,20 @@
+{
+  "name": "Round numbers to N places",
+  "summary": "Round each number to a fixed number of decimals",
+  "description": "Round every number in scope to a fixed number of decimal places (default 2 here). Non-numeric text is untouched. Useful for tidying measurement or currency columns before display.",
+  "tags": [
+    "text",
+    "numbers",
+    "math",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "round_numbers",
+      "description": "Round each number to 2 decimals",
+      "options": {
+        "places": 2
+      }
+    }
+  ]
+}

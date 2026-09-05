@@ -1,0 +1,27 @@
+{
+  "name": "BigQuery DDL to Snowflake",
+  "summary": "Convert a BigQuery INFORMATION_SCHEMA.ddl export to Snowflake DDL",
+  "description": "Convert BigQuery's INFORMATION_SCHEMA.TABLES.ddl (console 'Copy DDL') output to Snowflake. Drops the backtick project.dataset.table quoting and project prefix, rewrites per-column OPTIONS(description=...) to Snowflake COMMENT, drops the table-level OPTIONS(...) block and PARTITION BY (flagged), rewrites CLUSTER BY a,b to Snowflake CLUSTER BY (a,b), and maps GoogleSQL types to Snowflake (INT64->BIGINT, FLOAT64->FLOAT, STRING->VARCHAR, BYTES->BINARY, BOOL->BOOLEAN, NUMERIC->NUMBER, JSON->VARIANT, DATETIME->TIMESTAMP_NTZ, TIMESTAMP->TIMESTAMP_TZ).",
+  "tags": ["sql", "bigquery", "snowflake", "warehouse", "convert", "migration"],
+  "steps": [
+    { "action": "eol_lf", "description": "Normalize to LF." },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop the trailing table OPTIONS(...) block (labels/expiration/etc).",
+      "options": { "find": "(?s)\\nOPTIONS\\s*\\(.*$", "replace_with": "\n-- TODO(mog): dropped BigQuery table OPTIONS (labels / partition_expiration_days / require_partition_filter)" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "Drop PARTITION BY (Snowflake auto-partitions).",
+      "options": { "find": "(?m)^PARTITION BY .*$", "replace_with": "-- TODO(mog): dropped BigQuery PARTITION BY (Snowflake auto-partitions via micro-partitions)" } },
+    { "section": "Physical clauses", "action": "replace_regex", "description": "BigQuery CLUSTER BY a, b -> Snowflake CLUSTER BY (a, b).",
+      "options": { "find": "(?m)^CLUSTER BY (.+)$", "replace_with": "CLUSTER BY ($1)" } },
+    { "section": "Identifiers", "action": "replace_regex", "description": "Drop the `project.dataset.table` backticks and the project prefix.",
+      "options": { "find": "`[^`.]+\\.([^`]+)`", "replace_with": "$1" } },
+    { "section": "Comments", "action": "replace_regex", "description": "Per-column OPTIONS(description=...) -> Snowflake COMMENT.",
+      "options": { "find": "OPTIONS\\(description=\"([^\"]*)\"\\)", "replace_with": "COMMENT '$1'" } },
+    { "section": "Types", "action": "replace_regex", "description": "NUMERIC / BIGNUMERIC -> NUMBER (keeps the (p,s)).",
+      "options": { "find": "\\b(?:BIG)?NUMERIC\\b", "replace_with": "NUMBER" } },
+    { "section": "Types", "action": "replace_regex", "description": "DATETIME -> TIMESTAMP_NTZ (wall-clock).",
+      "options": { "find": "\\bDATETIME\\b", "replace_with": "TIMESTAMP_NTZ" } },
+    { "section": "Types", "action": "replace_regex", "description": "TIMESTAMP (instant) -> TIMESTAMP_TZ.",
+      "options": { "find": "\\bTIMESTAMP\\b", "replace_with": "TIMESTAMP_TZ" } },
+    { "section": "Types", "action": "replace_map", "description": "Map remaining GoogleSQL scalar types to Snowflake.",
+      "options": { "whole_word": true, "map": { "INT64": "BIGINT", "FLOAT64": "FLOAT", "STRING": "VARCHAR", "BYTES": "BINARY", "BOOL": "BOOLEAN", "JSON": "VARIANT" } } }
+  ]
+}

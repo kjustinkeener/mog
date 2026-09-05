@@ -1,0 +1,67 @@
+{
+  "name": "Paste cleanup: Slack / Discord / Teams",
+  "description": "Strip chat-client cruft from a pasted Slack/Discord/Teams conversation, leaving the message text. Removes 'New messages' dividers, 'X replied to a thread' lines, author + timestamp header lines (Name, two or more spaces, then a HH:MM time), standalone timestamp lines, and reaction rows (:emoji: count). Strips a leading [HH:MM]/HH:MM AM timestamp from message lines and inline '(edited)' markers. Chat exports vary: the author-line rule requires two or more spaces before the time to avoid eating real messages, so unusual layouts may leak through or a message ending in a bare time could be dropped.",
+  "summary": "Strip chat cruft from pasted Slack/Discord/Teams text",
+  "tags": [
+    "paste",
+    "cleanup",
+    "chat"
+  ],
+  "steps": [
+    {
+      "section": "Drop divider and thread lines",
+      "action": "remove_lines_matching",
+      "description": "Remove 'New messages' dividers.",
+      "options": {
+        "pattern": "^\\s*New messages\\s*$"
+      }
+    },
+    {
+      "action": "remove_lines_matching",
+      "description": "Remove 'X replied to a thread' notice lines.",
+      "options": {
+        "pattern": "replied to a thread"
+      }
+    },
+    {
+      "section": "Drop reaction rows",
+      "action": "remove_lines_matching",
+      "description": "Remove reaction rows: one or more :emoji: each with a count.",
+      "options": {
+        "pattern": "^\\s*(:[a-z0-9_+'-]+:\\s*\\d+\\s*)+$"
+      }
+    },
+    {
+      "section": "Drop author and timestamp headers",
+      "action": "remove_lines_matching",
+      "description": "Remove 'Name  HH:MM AM' author header lines (two or more spaces before the time).",
+      "options": {
+        "pattern": "^\\S.*\\s{2,}\\d{1,2}:\\d{2}(\\s?[AP]M)?$"
+      }
+    },
+    {
+      "action": "remove_lines_matching",
+      "description": "Remove standalone timestamp lines.",
+      "options": {
+        "pattern": "^\\s*\\d{1,2}:\\d{2}(\\s?[AP]M)?\\s*$"
+      }
+    },
+    {
+      "section": "Clean message lines",
+      "action": "replace_regex_multiline",
+      "description": "Strip a leading [HH:MM]/HH:MM AM timestamp from a message line.",
+      "options": {
+        "find": "^\\[?\\d{1,2}:\\d{2}(\\s?[AP]M)?\\]?\\s+",
+        "replace_with": ""
+      }
+    },
+    {
+      "action": "replace_regex_multiline",
+      "description": "Remove inline '(edited)' markers.",
+      "options": {
+        "find": "\\s*\\(edited\\)",
+        "replace_with": ""
+      }
+    }
+  ]
+}

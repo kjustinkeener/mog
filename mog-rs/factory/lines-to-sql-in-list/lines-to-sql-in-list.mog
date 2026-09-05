@@ -1,0 +1,24 @@
+{
+  "name": "Wrap lines into a SQL IN-list",
+  "summary": "Turn lines into IN ('a', 'b', 'c')",
+  "description": "Wrap the whole set of lines into a single structured snippet: quote each line and join them into a SQL IN (...) list. Change the header/item/separator/footer to emit a JSON array, a function call, or any other bracketed list instead.",
+  "tags": [
+    "prefix",
+    "format",
+    "sql",
+    "list",
+    "single-action"
+  ],
+  "steps": [
+    {
+      "action": "format_list",
+      "description": "Wrap the lines into a SQL IN-list",
+      "options": {
+        "header": "IN (",
+        "item": "'$0'",
+        "separator": ", ",
+        "footer": ")"
+      }
+    }
+  ]
+}

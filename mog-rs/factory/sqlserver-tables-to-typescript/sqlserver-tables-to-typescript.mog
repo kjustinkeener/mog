@@ -1,0 +1,282 @@
+{
+  "name": "SQL Server tables to TypeScript interfaces",
+  "summary": "Generate TypeScript interfaces from SSMS-scripted SQL Server table DDL",
+  "description": "Generate idiomatic TypeScript 'export interface' declarations from SQL Server SSMS 'Generate Scripts' / mssql-scripter table DDL, one interface per table. Strips the SSMS scaffolding, unquotes [bracketed] identifiers, drops GO separators, and discards non-table statements (USE, ALTER TABLE constraints/DEFAULTs, CREATE INDEX). Each column becomes a two-space-indented member. Type map: bigint/int/smallint/tinyint, decimal(p,s)/numeric/money/smallmoney/float/real -> number; bit -> boolean; char/nchar/varchar/nvarchar((n)/(max))/text/ntext/uniqueidentifier -> string; binary/varbinary((max))/image -> Uint8Array; date/time(n)/datetime/datetime2(n)/datetimeoffset(n)/smalldatetime -> string (ISO-8601; no native TS date type). Nullable columns get a ' | null' union; NOT NULL columns get the plain type. Interface names are PascalCased; member names keep the DB snake_case. sql_variant maps to 'unknown' with a // TODO(mog) comment. Sibling of sqlserver-tables-to-csharp and postgres-tables-to-typescript. Not a full T-SQL parser. Assumes LF.",
+  "tags": [
+    "sql",
+    "mssql",
+    "typescript",
+    "codegen",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "mssql-strip-server-noise"
+  ],
+  "steps": [
+    {
+      "section": "Strip",
+      "action": "run_mog",
+      "description": "Remove SSMS server/session/DROP scaffolding (object banners, SET batches, CREATE/DROP DATABASE, the guarded DROP phase, extended properties). Runs while GO batches are intact.",
+      "options": {
+        "file": "mssql-strip-server-noise.mog"
+      }
+    },
+    {
+      "section": "Unquote",
+      "action": "replace",
+      "description": "Strip T-SQL square-bracket quoting: opening bracket.",
+      "options": { "find": "[", "replace_with": "" }
+    },
+    {
+      "section": "Unquote",
+      "action": "replace",
+      "description": "Strip T-SQL square-bracket quoting: closing bracket.",
+      "options": { "find": "]", "replace_with": "" }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop the leading USE <db> batch (TypeScript has no database-switch statement).",
+      "options": {
+        "find": "(?im)^USE .*\\nGO\\n",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop every ALTER TABLE batch (PRIMARY KEY / UNIQUE / FOREIGN KEY / CHECK / DEFAULT constraints), each spanning up to its GO.",
+      "options": {
+        "find": "(?ims)^ALTER TABLE\\b.*?\\nGO\\n",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Drop standalone CREATE INDEX batches (clustered/nonclustered/unique) with their WITH(...) options, each spanning up to its GO.",
+      "options": {
+        "find": "(?ims)^CREATE (?:UNIQUE )?(?:CLUSTERED |NONCLUSTERED )?INDEX\\b.*?\\nGO\\n",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Remove the remaining GO batch terminators (the one after each CREATE TABLE).",
+      "options": {
+        "find": "(?im)^GO$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Normalize the SSMS leading tab on each column line to four spaces (matches the member regexes below).",
+      "options": {
+        "find": "(?m)^\\t",
+        "replace_with": "    "
+      }
+    },
+    {
+      "section": "Keep only tables",
+      "action": "replace_regex",
+      "description": "Collapse the blank lines the removals left behind.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Interface shell",
+      "action": "replace_regex",
+      "description": "Rewrite each 'CREATE TABLE dbo.<tbl>(' into a TypeScript interface header + opening brace.",
+      "options": {
+        "find": "(?m)^CREATE TABLE (?:\\w+\\.)?(\\w+)\\($",
+        "replace_with": "export interface ${1} {"
+      }
+    },
+    {
+      "section": "Interface shell",
+      "action": "replace_regex",
+      "description": "Rewrite each table-closing line ') ON PRIMARY ...' (or a bare ')') into a closing brace.",
+      "options": {
+        "find": "(?m)^\\).*$",
+        "replace_with": "}"
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop the IDENTITY(seed,step) column marker (TypeScript has no auto-increment).",
+      "options": {
+        "find": "(?i) IDENTITY\\(\\d+,\\s*\\d+\\)",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Columns",
+      "action": "replace_regex",
+      "description": "Drop trailing commas that separated columns.",
+      "options": {
+        "find": "(?m),[ \\t]*$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Mark nullable columns (a column line ending in a bare NULL, not NOT NULL) with a sentinel.",
+      "options": {
+        "find": "(?m)^(    \\w[^\\n]*?)(?<!NOT) NULL$",
+        "replace_with": "${1}@@N@@"
+      }
+    },
+    {
+      "section": "Nullability",
+      "action": "replace_regex",
+      "description": "Remove the NOT NULL constraint marker from non-nullable columns.",
+      "options": {
+        "find": "(?m) NOT NULL$",
+        "replace_with": ""
+      }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "date / time(n) / datetime / datetime2(n) / datetimeoffset(n) / smalldatetime -> string (ISO-8601; no native TS date type).",
+      "options": { "find": "(?i)\\b(?:datetimeoffset|datetime2|smalldatetime|datetime|date|time)\\b(?:\\(\\d+\\))?", "replace_with": "string" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "nvarchar / varchar / nchar / char / ntext / text (with or without (n) / (max)) -> string.",
+      "options": { "find": "(?i)\\b(?:nvarchar|varchar|nchar|char|ntext|text)\\b(?:\\(\\s*(?:\\d+|max)\\s*\\))?", "replace_with": "string" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "uniqueidentifier -> string.",
+      "options": { "find": "(?i)\\buniqueidentifier\\b", "replace_with": "string" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "decimal(p,s) / numeric(p,s) / bare decimal / numeric -> number.",
+      "options": { "find": "(?i)\\b(?:decimal|numeric)\\b(?:\\(\\s*\\d+\\s*(?:,\\s*\\d+\\s*)?\\))?", "replace_with": "number" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "smallmoney / money -> number.",
+      "options": { "find": "(?i)\\b(?:smallmoney|money)\\b", "replace_with": "number" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "float(n) / bare float / real -> number.",
+      "options": { "find": "(?i)\\b(?:float|real)\\b(?:\\(\\d+\\))?", "replace_with": "number" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bigint / smallint / tinyint / int -> number.",
+      "options": { "find": "(?i)\\b(?:bigint|smallint|tinyint|int)\\b", "replace_with": "number" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "bit -> boolean.",
+      "options": { "find": "(?i)\\bbit\\b", "replace_with": "boolean" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "varbinary(n) / varbinary(max) / bare varbinary -> Uint8Array (run before binary).",
+      "options": { "find": "(?i)\\bvarbinary\\b(?:\\(\\s*(?:\\d+|max)\\s*\\))?", "replace_with": "Uint8Array" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "binary(n) / bare binary -> Uint8Array.",
+      "options": { "find": "(?i)\\bbinary\\b(?:\\(\\d+\\))?", "replace_with": "Uint8Array" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "image -> Uint8Array.",
+      "options": { "find": "(?i)\\bimage\\b", "replace_with": "Uint8Array" }
+    },
+    {
+      "section": "Type map",
+      "action": "replace_regex",
+      "description": "sql_variant -> unknown.",
+      "options": { "find": "(?i)\\bsql_variant\\b", "replace_with": "unknown" }
+    },
+    {
+      "section": "Flag exotic types",
+      "action": "flag_matching",
+      "description": "Flag the mapped sql_variant columns (now 'unknown'): runtime-typed. Flagged after the type map so the literal 'sql_variant' in the comment is not itself rewritten.",
+      "options": {
+        "pattern": "\\bunknown\\b",
+        "comment": "//",
+        "tag": "TODO",
+        "message": "SQL Server sql_variant; runtime-typed, verify mapping.",
+        "position": "inline"
+      }
+    },
+    {
+      "section": "Members",
+      "action": "replace_regex",
+      "description": "Rewrite nullable columns into a TypeScript member with a ' | null' union.",
+      "options": {
+        "find": "(?m)^    (\\w+) (\\S+)@@N@@(.*)$",
+        "replace_with": "  ${1}: ${2} | null;${3}"
+      }
+    },
+    {
+      "section": "Members",
+      "action": "replace_regex",
+      "description": "Rewrite non-nullable columns into a TypeScript member.",
+      "options": {
+        "find": "(?m)^    (\\w+) (\\S+)( // .*)?$",
+        "replace_with": "  ${1}: ${2};${3}"
+      }
+    },
+    {
+      "section": "Members",
+      "action": "replace_regex",
+      "description": "Safety: strip any leftover nullability sentinel.",
+      "options": { "find": "@@N@@", "replace_with": "" }
+    },
+    {
+      "section": "PascalCase",
+      "action": "to_pascal",
+      "description": "PascalCase each interface name (the table identifier); member names keep their snake_case.",
+      "only_lines_matching": "^export interface ",
+      "scope": { "field": { "index": 3, "delimiter": " " } }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Collapse multiple blank lines to a single blank between interfaces.",
+      "options": {
+        "find": "\\n[ \\t]*(?:\\n[ \\t]*)+",
+        "replace_with": "\n\n"
+      }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim leading blank lines.",
+      "options": { "find": "\\A\\n+", "replace_with": "" }
+    },
+    {
+      "section": "Tidy",
+      "action": "replace_regex",
+      "description": "Trim trailing blank lines to a single final newline.",
+      "options": { "find": "\\n\\s*\\z", "replace_with": "\n" }
+    }
+  ]
+}

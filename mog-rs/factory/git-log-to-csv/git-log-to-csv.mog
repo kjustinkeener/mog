@@ -1,0 +1,63 @@
+{
+  "name": "git log to CSV",
+  "description": "Turn `git log` output into a CSV commit table (one row per commit) with the columns commit,author_name,author_email,author_date,subject. INPUT CONTRACT: git log has no canonical text shape, so this recipe consumes exactly one format -- run `git log --pretty=format:'%H%x1f%an%x1f%ae%x1f%aI%x1f%s'` and pipe that in. %x1f writes an ASCII unit separator (U+001F) between fields, which cannot occur in a commit subject, so subjects holding commas, quotes or pipes stay intact. Fields are then re-joined as RFC 4180 CSV: a field is quoted only when it contains a comma, a quote or a line break, and internal quotes are doubled. Reorder or drop columns by editing the --pretty format and the header line on the prepend step. Lines that do not carry the expected five fields are flagged in place rather than dropped.",
+  "summary": "Convert git log output to a CSV commit table",
+  "tags": [
+    "git",
+    "csv",
+    "convert",
+    "data",
+    "audit"
+  ],
+  "steps": [
+    {
+      "section": "Clean the log stream",
+      "action": "remove_empty_lines",
+      "description": "Drop blank lines (a trailing newline from git log leaves one)."
+    },
+    {
+      "action": "flag_matching",
+      "description": "Flag any line that is not five unit-separated fields.",
+      "options": {
+        "pattern": "^(?!(?:[^\\x1f]*\\x1f){4}[^\\x1f]*$)",
+        "message": "row does not carry five %x1f-separated pieces; check the git log --pretty format",
+        "comment": "#",
+        "tag": "WARN",
+        "position": "before"
+      }
+    },
+    {
+      "section": "Quote the fields for RFC 4180",
+      "action": "replace",
+      "description": "Double every embedded double quote.",
+      "options": {
+        "find": "\"",
+        "replace_with": "\"\""
+      }
+    },
+    {
+      "action": "replace_regex",
+      "description": "Wrap any field holding a comma or a quote in double quotes.",
+      "options": {
+        "find": "(?m)(^|\\x1f)([^\\x1f\\n]*[\",][^\\x1f\\n]*)(?=\\x1f|$)",
+        "replace_with": "${1}\"${2}\""
+      }
+    },
+    {
+      "section": "Emit the CSV table",
+      "action": "replace",
+      "description": "Swap each unit separator for a comma.",
+      "options": {
+        "find": "\u001f",
+        "replace_with": ","
+      }
+    },
+    {
+      "action": "prepend",
+      "description": "Add the CSV header row.",
+      "options": {
+        "text": "commit,author_name,author_email,author_date,subject\n"
+      }
+    }
+  ]
+}

@@ -1,0 +1,536 @@
+{
+  "name": "SQL Server (SSMS) table DDL to DuckDB",
+  "summary": "Convert SQL Server table DDL to DuckDB",
+  "description": "Convert a SQL Server SSMS 'Generate Scripts' (mssql-scripter) table export to runnable DuckDB DDL. Strips all SSMS server/session/DROP scaffolding and GO batches; rewrites [bracket] quoting and the dbo. schema prefix; maps every T-SQL type (NVARCHAR/VARCHAR(MAX)->VARCHAR, NVARCHAR(n)/NCHAR/NTEXT/TEXT->VARCHAR, DATETIME2/DATETIME/SMALLDATETIME->TIMESTAMP, DATETIMEOFFSET->TIMESTAMPTZ, BIT->BOOLEAN, UNIQUEIDENTIFIER->UUID, VARBINARY/BINARY/IMAGE->BLOB, MONEY->DECIMAL(19,4), SMALLMONEY->DECIMAL(10,4), TINYINT->SMALLINT, FLOAT->DOUBLE); maps functions (newsequentialid()/newid()->uuid(), sysdatetime()/getdate() family->now()); rewrites DEFAULT constraints to ALTER COLUMN ... SET DEFAULT (unwrapping SSMS doubled parens); keeps PRIMARY KEY as an ALTER TABLE ADD CONSTRAINT; converts a UNIQUE constraint to CREATE UNIQUE INDEX (DuckDB cannot ADD UNIQUE via ALTER); maps a PERSISTED computed column to a DuckDB generated column; and flags the non-portable bits with -- TODO(mog): IDENTITY (no DuckDB auto-increment), covering-index INCLUDE columns, PERSISTED->VIRTUAL semantics, and CHECK constraints (DuckDB has no ALTER ADD CHECK). Not a full SQL parser.",
+  "tags": [
+    "sql",
+    "mssql",
+    "duckdb",
+    "convert",
+    "migration"
+  ],
+  "dependencies": [
+    "mssql-strip-server-noise",
+    "sql-finalize-whitespace"
+  ],
+  "steps": [
+    {
+      "section": "Normalize And Strip Noise",
+      "description": "Normalize to LF first so every later CRLF-sensitive and GO-batch regex is reliable. Output stays LF (standard for SQL scripts).",
+      "action": "eol_lf"
+    },
+    {
+      "section": "Extended Properties To Comment",
+      "description": "sp_addextendedproperty 'MS_Description' on a COLUMN -> DuckDB COMMENT ON COLUMN table.column. Runs BEFORE the strip fragment (which would otherwise delete the extended-property calls) and before the TABLE rule so a column property is not mis-read as a table property. No trailing ';' -- the GO pass adds it.",
+      "action": "replace_regex",
+      "options": {
+        "find": "EXEC(?:UTE)?\\s+sys\\.sp_addextendedproperty\\s+@name\\s*=\\s*N'MS_Description'\\s*,\\s*@value\\s*=\\s*N'((?:[^']|'')*)'\\s*,[^\\n]*?@level1type\\s*=\\s*N'\\w+'\\s*,\\s*@level1name\\s*=\\s*N'([^']+)'\\s*,\\s*@level2type\\s*=\\s*N'COLUMN'\\s*,\\s*@level2name\\s*=\\s*N'([^']+)'",
+        "replace_with": "COMMENT ON COLUMN ${2}.${3} IS '${1}'",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "sp_addextendedproperty 'MS_Description' on a TABLE or VIEW -> DuckDB COMMENT ON TABLE object. No trailing ';' -- the GO pass adds it.",
+      "action": "replace_regex",
+      "options": {
+        "find": "EXEC(?:UTE)?\\s+sys\\.sp_addextendedproperty\\s+@name\\s*=\\s*N'MS_Description'\\s*,\\s*@value\\s*=\\s*N'((?:[^']|'')*)'\\s*,[^\\n]*?@level1type\\s*=\\s*N'(?:TABLE|VIEW)'\\s*,\\s*@level1name\\s*=\\s*N'([^']+)'",
+        "replace_with": "COMMENT ON TABLE ${2} IS '${1}'",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Strip SQL Server server/session/DROP scaffolding (object banners, SET options, CREATE/DROP DATABASE, ALTER DATABASE settings, the DROP phase, constraint re-enables, any remaining extended properties). Runs on the raw SSMS text while GO batches are intact. Reusable across MSSQL->target converters.",
+      "action": "run_mog",
+      "options": {
+        "file": "mssql-strip-server-noise.mog"
+      }
+    },
+    {
+      "section": "Rewrite Quoting And Schema",
+      "description": "Strip T-SQL square-bracket quoting: opening bracket.",
+      "action": "replace",
+      "options": {
+        "find": "[",
+        "replace_with": ""
+      }
+    },
+    {
+      "description": "Strip T-SQL square-bracket quoting: closing bracket.",
+      "action": "replace",
+      "options": {
+        "find": "]",
+        "replace_with": ""
+      }
+    },
+    {
+      "description": "Drop the SQL Server 'dbo.' schema qualifier so objects are unqualified in DuckDB's default schema (main).",
+      "action": "replace",
+      "options": {
+        "find": "dbo.",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "USE <db> + its GO -> a documenting comment (DuckDB has no USE-for-database; you ATTACH/connect to a database file instead).",
+      "action": "replace_regex",
+      "options": {
+        "find": "USE (\\w+)\\nGO\\n",
+        "replace_with": "-- Database: ${1}\n\n",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Rewrite Functions",
+      "description": "Function map: newsequentialid() -> uuid() (DuckDB has no sequential-GUID; uuid() is the portable default).",
+      "action": "replace",
+      "options": {
+        "find": "newsequentialid()",
+        "replace_with": "uuid()",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: newid() -> uuid().",
+      "action": "replace",
+      "options": {
+        "find": "newid()",
+        "replace_with": "uuid()",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: sysdatetimeoffset() -> now(). Must run before the datetimeoffset/datetime type maps, which would otherwise corrupt the name.",
+      "action": "replace",
+      "options": {
+        "find": "sysdatetimeoffset()",
+        "replace_with": "now()",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: sysutcdatetime() -> now(). Before the datetime type map.",
+      "action": "replace",
+      "options": {
+        "find": "sysutcdatetime()",
+        "replace_with": "now()",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: sysdatetime() -> now(). Before the datetime type map.",
+      "action": "replace",
+      "options": {
+        "find": "sysdatetime()",
+        "replace_with": "now()",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: getutcdate() -> now().",
+      "action": "replace",
+      "options": {
+        "find": "getutcdate()",
+        "replace_with": "now()",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Function map: getdate() -> now().",
+      "action": "replace",
+      "options": {
+        "find": "getdate()",
+        "replace_with": "now()",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Rewrite Types",
+      "description": "Type map: datetimeoffset(n) -> TIMESTAMPTZ (DuckDB TIMESTAMPTZ has no scripted precision). Run before datetime.",
+      "action": "replace_regex",
+      "options": {
+        "find": "datetimeoffset\\(\\d+\\)",
+        "replace_with": "TIMESTAMPTZ",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: bare datetimeoffset -> TIMESTAMPTZ.",
+      "action": "replace",
+      "options": {
+        "find": "datetimeoffset",
+        "replace_with": "TIMESTAMPTZ",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: datetime2(n) -> TIMESTAMP. Run before datetime.",
+      "action": "replace_regex",
+      "options": {
+        "find": "datetime2\\(\\d+\\)",
+        "replace_with": "TIMESTAMP",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: bare datetime2 -> TIMESTAMP.",
+      "action": "replace",
+      "options": {
+        "find": "datetime2",
+        "replace_with": "TIMESTAMP",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: smalldatetime -> TIMESTAMP (run before datetime; it contains 'datetime').",
+      "action": "replace",
+      "options": {
+        "find": "smalldatetime",
+        "replace_with": "TIMESTAMP",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: datetime -> TIMESTAMP (whole word, so it never bites into an identifier or a sys*datetime* function that slipped through).",
+      "action": "replace",
+      "options": {
+        "find": "datetime",
+        "replace_with": "TIMESTAMP",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: tinyint -> SMALLINT (DuckDB TINYINT is signed 1-byte; T-SQL tinyint is 0-255, so SMALLINT is the safe portable choice).",
+      "action": "replace",
+      "options": {
+        "find": "tinyint",
+        "replace_with": "SMALLINT",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: uniqueidentifier -> UUID.",
+      "action": "replace",
+      "options": {
+        "find": "uniqueidentifier",
+        "replace_with": "UUID",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: bit -> BOOLEAN (whole word). DuckDB accepts a 0/1 literal DEFAULT on a BOOLEAN column, so bit DEFAULTs port cleanly.",
+      "action": "replace",
+      "options": {
+        "find": "bit",
+        "replace_with": "BOOLEAN",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: nvarchar(max) -> VARCHAR (DuckDB VARCHAR is unbounded). Run before varchar(max), which it contains.",
+      "action": "replace",
+      "options": {
+        "find": "nvarchar(max)",
+        "replace_with": "VARCHAR",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: varchar(max) -> VARCHAR.",
+      "action": "replace",
+      "options": {
+        "find": "varchar(max)",
+        "replace_with": "VARCHAR",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: nvarchar(n) -> VARCHAR(n) (DuckDB VARCHAR is already Unicode; no separate national type). The (n) length is preserved and ignored by DuckDB.",
+      "action": "replace",
+      "options": {
+        "find": "nvarchar",
+        "replace_with": "VARCHAR",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: nchar -> VARCHAR.",
+      "action": "replace",
+      "options": {
+        "find": "nchar",
+        "replace_with": "VARCHAR",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: ntext -> VARCHAR (deprecated T-SQL LOB).",
+      "action": "replace",
+      "options": {
+        "find": "ntext",
+        "replace_with": "VARCHAR",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: text -> VARCHAR (deprecated T-SQL LOB; whole word so it never bites a column comment).",
+      "action": "replace",
+      "options": {
+        "find": "text",
+        "replace_with": "VARCHAR",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: smallmoney -> DECIMAL(10,4) (run before money).",
+      "action": "replace",
+      "options": {
+        "find": "smallmoney",
+        "replace_with": "DECIMAL(10,4)",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: money -> DECIMAL(19,4).",
+      "action": "replace",
+      "options": {
+        "find": "money",
+        "replace_with": "DECIMAL(19,4)",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: float -> DOUBLE.",
+      "action": "replace",
+      "options": {
+        "find": "float",
+        "replace_with": "DOUBLE",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: varbinary(max) -> BLOB (run before varbinary(n)/binary).",
+      "action": "replace",
+      "options": {
+        "find": "varbinary(max)",
+        "replace_with": "BLOB",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: varbinary(n) / bare varbinary -> BLOB (DuckDB BLOB is unsized).",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bvarbinary(\\(\\d+\\))?",
+        "replace_with": "BLOB",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: binary(n) / bare binary -> BLOB.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\bbinary(\\(\\d+\\))?",
+        "replace_with": "BLOB",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Type map: image -> BLOB.",
+      "action": "replace",
+      "options": {
+        "find": "image",
+        "replace_with": "BLOB",
+        "whole_word": true,
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Rewrite Identity",
+      "description": "Flag IDENTITY: DuckDB has no auto-increment column type. Stamp a TODO on the line before it.",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "IDENTITY\\(\\d+,\\s*\\d+\\)",
+        "message": "SQL Server IDENTITY dropped; DuckDB has no auto-increment column. Create a SEQUENCE and set this column's DEFAULT to nextval('seq') to reproduce it.",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "before",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Drop the IDENTITY(seed,step) clause (handled by the TODO above); the column keeps its integer type + NOT NULL.",
+      "action": "replace_regex",
+      "options": {
+        "find": " IDENTITY\\(\\d+,\\s*\\d+\\)",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Rewrite Computed Columns",
+      "description": "Flag a PERSISTED computed column: DuckDB has no STORED generated column, so it becomes a VIRTUAL one (recomputed on read).",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "PERSISTED",
+        "message": "SQL Server stored computed column (PERSISTED) mapped to a DuckDB VIRTUAL generated column; it is recomputed on read, not materialized.",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "inline",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Drop the PERSISTED keyword; 'col AS (expr)' is a valid DuckDB (virtual) generated column.",
+      "action": "replace",
+      "options": {
+        "find": " PERSISTED",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Rewrite Constraints And Storage",
+      "description": "Constraint ALTER: '  WITH CHECK ADD  ' -> ' ADD ' (DuckDB has no WITH CHECK ADD).",
+      "action": "replace_regex",
+      "options": {
+        "find": " +WITH CHECK ADD +",
+        "replace_with": " ADD ",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Drop any index/constraint storage-option clause: WITH (PAD_INDEX = ...). One regex covers PK/UNIQUE constraints and standalone CREATE INDEX. A trailing ON PRIMARY is removed below.",
+      "action": "replace_regex",
+      "options": {
+        "find": "WITH \\(PAD_INDEX[^)]*\\)",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Flag covering-index INCLUDE columns: DuckDB indexes do not support INCLUDE.",
+      "action": "flag_matching",
+      "options": {
+        "pattern": "INCLUDE \\(",
+        "message": "SQL Server covering-index INCLUDE columns dropped; DuckDB indexes have no INCLUDE clause.",
+        "comment": "--",
+        "tag": "TODO",
+        "position": "before",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Drop the INCLUDE (...) covering-column list (handled by the TODO above).",
+      "action": "replace_regex",
+      "options": {
+        "find": "INCLUDE \\([^)]*\\)",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Drop ' CLUSTERED' (DuckDB has no clustered-index syntax).",
+      "action": "replace",
+      "options": {
+        "find": " CLUSTERED",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Drop ' NONCLUSTERED' (no DuckDB equivalent; CREATE NONCLUSTERED INDEX -> CREATE INDEX).",
+      "action": "replace",
+      "options": {
+        "find": " NONCLUSTERED",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Drop ' ASC' from key/index column lists (DuckDB default; invalid inside these inline column lists).",
+      "action": "replace",
+      "options": {
+        "find": " ASC",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Drop filegroup placement 'ON PRIMARY TEXTIMAGE_ON PRIMARY'.",
+      "action": "replace",
+      "options": {
+        "find": "ON PRIMARY TEXTIMAGE_ON PRIMARY",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Drop remaining ' ON PRIMARY' filegroup placement.",
+      "action": "replace",
+      "options": {
+        "find": " ON PRIMARY",
+        "replace_with": "",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Rewrite Unique And Check",
+      "description": "UNIQUE constraint -> CREATE UNIQUE INDEX. DuckDB cannot ADD a UNIQUE constraint via ALTER TABLE, but a UNIQUE INDEX enforces the same rule and executes. Runs after the storage/CLUSTERED/ASC cleanup so the column list is bare.",
+      "action": "replace_regex",
+      "options": {
+        "find": "ALTER TABLE (\\S+) ADD\\s+CONSTRAINT (\\S+) UNIQUE\\s*\\n\\(\\n\\s*([^\\n]+?)\\s*\\n\\)",
+        "replace_with": "CREATE UNIQUE INDEX ${2} ON ${1} (${3})",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "CHECK constraint ALTER -> a commented-out TODO. DuckDB has no ALTER TABLE ADD CHECK, so the constraint is preserved as a comment for you to enforce in your pipeline.",
+      "action": "replace_regex",
+      "options": {
+        "find": "(ALTER TABLE \\S+ ADD\\s+CONSTRAINT \\S+ CHECK[^\\n]*)",
+        "replace_with": "-- TODO(mog): DuckDB has no ALTER TABLE ADD CHECK; enforce this rule in your ETL/pipeline. Original: ${1}",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Rewrite Defaults",
+      "description": "Rewrite DEFAULT constraints to DuckDB ALTER TABLE ... ALTER COLUMN ... SET DEFAULT, unwrapping the SSMS captured expression (doubled parens like ((0)) become (0), which DuckDB accepts). No trailing ';' -- the GO pass adds it.",
+      "action": "replace_regex",
+      "options": {
+        "find": "ALTER TABLE ([a-zA-Z0-9_.]+) ADD  CONSTRAINT DF_[a-zA-Z0-9_]+  DEFAULT \\((.+)\\) FOR ([a-zA-Z0-9_]+)",
+        "replace_with": "ALTER TABLE ${1} ALTER COLUMN ${3} SET DEFAULT ${2}",
+        "ignore_case": true
+      }
+    },
+    {
+      "section": "Finalize And Format",
+      "description": "Turn each GO batch separator into a statement terminator, plus a blank line between statements.",
+      "action": "replace_regex",
+      "options": {
+        "find": "\\nGO\\n",
+        "replace_with": ";\n\n",
+        "ignore_case": true
+      }
+    },
+    {
+      "description": "Canonical whitespace finalize via the shared fragment (collapse double spaces left by dropped markers, tidy spaces before ';', trim trailing whitespace, squeeze blank lines).",
+      "action": "run_mog",
+      "options": {
+        "file": "sql-finalize-whitespace.mog",
+        "with": {
+          "tidy_chars": ";"
+        }
+      }
+    }
+  ]
+}

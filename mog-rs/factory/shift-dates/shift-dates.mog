@@ -1,0 +1,16 @@
+{
+  "name": "Shift all dates by N days",
+  "description": "Offset every ISO date (YYYY-MM-DD) in the text by a fixed number of days, preserving the interval between them. The demo shifts back one year (-365); edit days on the step. Useful for anonymizing dates in test/sample data while keeping durations intact, or for moving a schedule. Only YYYY-MM-DD tokens change.",
+  "summary": "Shift every ISO date by a fixed number of days",
+  "tags": [
+    "data",
+    "time",
+    "date",
+    "privacy",
+    "numbers",
+    "single-action"
+  ],
+  "steps": [
+    { "action": "shift_dates", "description": "Shift dates back one year", "options": { "days": -365 } }
+  ]
+}

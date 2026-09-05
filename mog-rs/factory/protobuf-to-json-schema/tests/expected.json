@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "title": "User",
+  "properties": {
+    "id": { "type": "integer" },
+    "name": { "type": "string" },
+    "email": { "type": "string" },
+    "active": { "type": "boolean" },
+    "score": { "type": "number" },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  }
+}

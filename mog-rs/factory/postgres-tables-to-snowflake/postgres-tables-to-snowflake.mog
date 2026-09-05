@@ -1,0 +1,33 @@
+{
+  "name": "pg_dump (Postgres) to Snowflake",
+  "summary": "Convert pg_dump --schema-only output to Snowflake DDL",
+  "description": "Convert pg_dump --schema-only output to Snowflake DDL: strips the pg_dump plumbing, drops the public. schema qualifier and the Postgres-only ALTER TABLE ONLY keyword, and maps types (timestamp with time zone -> TIMESTAMP_TZ, text -> VARCHAR, text[] -> ARRAY, numeric(p,s) -> NUMBER(p,s), now() -> CURRENT_TIMESTAMP()). Not a semantic transpiler; unmapped cases are flagged inline as TODO(mog). Validated by executing the result in a real Snowflake engine (fakesnow).",
+  "tags": ["sql", "postgres", "snowflake", "warehouse", "convert", "migration"],
+  "dependencies": ["strip-pgdump-noise"],
+  "steps": [
+    { "section": "Strip export noise", "action": "run_mog",
+      "description": "Remove pg_dump plumbing, keep CREATE/ALTER.",
+      "options": { "file": "strip-pgdump-noise.mog" } },
+    { "section": "Identifiers", "action": "replace",
+      "description": "Drop the public. schema qualifier.",
+      "options": { "find": "public.", "replace_with": "" } },
+    { "section": "Statement", "action": "replace",
+      "description": "Postgres ALTER TABLE ONLY -> ALTER TABLE (Snowflake has no ONLY).",
+      "options": { "find": "ALTER TABLE ONLY ", "replace_with": "ALTER TABLE " } },
+    { "section": "Types", "action": "replace_regex",
+      "description": "timestamp with time zone -> TIMESTAMP_TZ.",
+      "options": { "find": "(?i)\\btimestamp with time zone\\b", "replace_with": "TIMESTAMP_TZ" } },
+    { "section": "Types", "action": "replace_regex",
+      "description": "Postgres text[] array -> Snowflake ARRAY.",
+      "options": { "find": "(?i)\\btext\\[\\]", "replace_with": "ARRAY" } },
+    { "section": "Types", "action": "replace_regex",
+      "description": "text -> VARCHAR.",
+      "options": { "find": "(?i)\\btext\\b", "replace_with": "VARCHAR" } },
+    { "section": "Types", "action": "replace_regex",
+      "description": "numeric(p,s) -> NUMBER(p,s).",
+      "options": { "find": "(?i)\\bnumeric\\(", "replace_with": "NUMBER(" } },
+    { "section": "Functions", "action": "replace_regex",
+      "description": "now() -> CURRENT_TIMESTAMP().",
+      "options": { "find": "(?i)\\bnow\\(\\)", "replace_with": "CURRENT_TIMESTAMP()" } }
+  ]
+}
