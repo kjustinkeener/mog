@@ -1,7 +1,7 @@
 {
   "name": "Remove a key from JSON",
   "summary": "Delete the value at a dotted path in a JSON doc",
-  "description": "Remove the key (or element) at a dotted path in a JSON document, leaving the rest structurally intact. This recipe drops metadata.token, e.g. to strip a secret before sharing. Bounded structural edit, not a full jq.",
+  "description": "Remove the key (or element) at a dotted path in a JSON document, leaving the rest structurally intact. This mog drops metadata.token, e.g. to strip a secret before sharing. Bounded structural edit, not a full jq.",
   "tags": [
     "json",
     "strip",

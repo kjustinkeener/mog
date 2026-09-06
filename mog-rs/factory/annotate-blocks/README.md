@@ -1,8 +1,8 @@
 # Indent each delimited block
 
-Run a sub-recipe over every BEGIN..END block
+Run a sub-mog over every BEGIN..END block
 
-For each region between a '-- BEGIN' line and the next '-- END' line, run a sub-recipe over the whole block and replace it with the result. Demonstrates block-scoped composition: swap the run recipe to comment, renumber, or reformat each block. Delimiters are matched by regex.
+For each region between a '-- BEGIN' line and the next '-- END' line, run a sub-mog over the whole block and replace it with the result. Demonstrates block-scoped composition: swap the run mog to comment, renumber, or reformat each block. Delimiters are matched by regex.
 
 ## Run
 

@@ -2,7 +2,7 @@
 
 Scale each numeric token by a constant
 
-Apply a constant arithmetic operation to each number in scope. This recipe multiplies by 1.1 and formats to 2 decimals (a 10% uplift). Change the op/by/places via -D or by editing the step to add, subtract, or divide instead.
+Apply a constant arithmetic operation to each number in scope. This mog multiplies by 1.1 and formats to 2 decimals (a 10% uplift). Change the op/by/places via -D or by editing the step to add, subtract, or divide instead.
 
 ## Run
 

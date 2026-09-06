@@ -1,6 +1,6 @@
 {
   "name": "Mbox to CSV",
-  "description": "Convert an RFC 4155 mbox mailbox into a CSV index of its messages: one row per message with date,from,to,subject,message_id and a header row. Message bodies are dropped, folded headers are unfolded first so long subjects stay intact, header names are matched case-insensitively, and every field is RFC 4180 quoted so commas and quotes inside a subject are safe. A missing header yields an empty cell. RFC 2047 encoded words (=?UTF-8?B?...) are left exactly as they appear; this recipe does not decode them. Messages are split on the From_ separator line, so a body line that begins with an unescaped \"From \" at column 0 would be read as a new message.",
+  "description": "Convert an RFC 4155 mbox mailbox into a CSV index of its messages: one row per message with date,from,to,subject,message_id and a header row. Message bodies are dropped, folded headers are unfolded first so long subjects stay intact, header names are matched case-insensitively, and every field is RFC 4180 quoted so commas and quotes inside a subject are safe. A missing header yields an empty cell. RFC 2047 encoded words (=?UTF-8?B?...) are left exactly as they appear; this mog does not decode them. Messages are split on the From_ separator line, so a body line that begins with an unescaped \"From \" at column 0 would be read as a new message.",
   "summary": "Index an mbox mailbox as one CSV row per message",
   "tags": [
     "mbox",

@@ -13,7 +13,7 @@ mog -m MySQL-To-PGSQL.mog < dump.sql > schema.pgsql
 ```
 
 `mysqldump` output is UTF-8, so no encoding flag is needed. Worked example:
-this recipe's `tests/input.sql` converts to the committed `tests/expected.pgsql`
+this mog's `tests/input.sql` converts to the committed `tests/expected.pgsql`
 golden; a golden test (`mog-rs/tests/mysql_pgsql.rs`) guards it. The output parses as PostgreSQL (sqlglot) and **executes on PostgreSQL 16**,
 all four tables and eight hoisted indexes are created, apart from one generated
 column whose expression must be made immutable (see below).

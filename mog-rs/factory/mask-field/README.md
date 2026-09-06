@@ -2,7 +2,7 @@
 
 Hide the middle of a field, keeping the last 4
 
-Mask the middle of one delimited field, keeping a few leading and trailing characters. This recipe masks the 2nd comma-field keeping its last 4 characters, for redacting a card or account number in a CSV column.
+Mask the middle of one delimited field, keeping a few leading and trailing characters. This mog masks the 2nd comma-field keeping its last 4 characters, for redacting a card or account number in a CSV column.
 
 ## Run
 

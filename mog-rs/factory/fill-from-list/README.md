@@ -2,7 +2,7 @@
 
 Replace each marker with the next value from a list
 
-Replace each occurrence of a marker with the next value from a named list source, in order. This recipe fills each <NAME> from a bundled Names list. Use for stitching a column of values back into a template. on_exhausted=leave keeps extra markers if the list runs out.
+Replace each occurrence of a marker with the next value from a named list source, in order. This mog fills each <NAME> from a bundled Names list. Use for stitching a column of values back into a template. on_exhausted=leave keeps extra markers if the list runs out.
 
 ## Run
 

@@ -2,7 +2,7 @@
 
 Add a fixed suffix to the end of each line
 
-Append a fixed string to the end of every line. This recipe adds a semicolon; change the suffix via -D or by editing the step (e.g. a trailing comma for a list, or a Markdown line break).
+Append a fixed string to the end of every line. This mog adds a semicolon; change the suffix via -D or by editing the step (e.g. a trailing comma for a list, or a Markdown line break).
 
 ## Run
 

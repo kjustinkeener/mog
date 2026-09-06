@@ -1,7 +1,7 @@
 {
   "name": "Flag lines that look like PII",
   "summary": "Tag lines containing email/SSN/card-shaped data",
-  "description": "Flag each line that looks like it contains shaped PII (email, SSN, credit card, phone) by appending an inline comment tag. A non-destructive audit: it marks lines for review rather than redacting them. Pair with a redaction recipe to act on the hits.",
+  "description": "Flag each line that looks like it contains shaped PII (email, SSN, credit card, phone) by appending an inline comment tag. A non-destructive audit: it marks lines for review rather than redacting them. Pair with a redaction mog to act on the hits.",
   "tags": [
     "scan",
     "pii",

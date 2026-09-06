@@ -2,7 +2,7 @@
 
 Tag lines containing email/SSN/card-shaped data
 
-Flag each line that looks like it contains shaped PII (email, SSN, credit card, phone) by appending an inline comment tag. A non-destructive audit: it marks lines for review rather than redacting them. Pair with a redaction recipe to act on the hits.
+Flag each line that looks like it contains shaped PII (email, SSN, credit card, phone) by appending an inline comment tag. A non-destructive audit: it marks lines for review rather than redacting them. Pair with a redaction mog to act on the hits.
 
 ## Run
 

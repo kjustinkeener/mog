@@ -2,7 +2,7 @@
 
 Add a new line after every line matching a pattern
 
-Insert a fixed line of text immediately after every line matching a regex. This recipe stamps a comment after each line beginning with BEGIN; change the pattern/text to annotate any marker.
+Insert a fixed line of text immediately after every line matching a regex. This mog stamps a comment after each line beginning with BEGIN; change the pattern/text to annotate any marker.
 
 ## Run
 

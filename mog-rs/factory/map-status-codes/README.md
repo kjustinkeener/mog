@@ -2,7 +2,7 @@
 
 Replace matched codes with values from a table
 
-For each regex match, look the captured value up in a table and replace it with the mapped value; unmatched keys are left as-is. This recipe maps common HTTP status codes to their reason phrase. Edit the map for any code->label table.
+For each regex match, look the captured value up in a table and replace it with the mapped value; unmatched keys are left as-is. This mog maps common HTTP status codes to their reason phrase. Edit the map for any code->label table.
 
 ## Run
 

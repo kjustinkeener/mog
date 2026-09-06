@@ -2,7 +2,7 @@
 
 Find/replace that decodes Notepad++ escapes
 
-Literal find/replace that first decodes Notepad++-style escapes ( \t \n \r ) in both the find and replacement. This recipe turns tabs into a single space. Use it for escape-aware literal replacements without writing a regex.
+Literal find/replace that first decodes Notepad++-style escapes ( \t \n \r ) in both the find and replacement. This mog turns tabs into a single space. Use it for escape-aware literal replacements without writing a regex.
 
 ## Run
 

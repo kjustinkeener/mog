@@ -2,7 +2,7 @@
 
 Replace only the Nth occurrence of a pattern
 
-Replace ONLY the Nth occurrence (1-based) of the find pattern, leaving the others untouched. This recipe replaces the 2nd match. Positional replace for when you need to change one specific occurrence.
+Replace ONLY the Nth occurrence (1-based) of the find pattern, leaving the others untouched. This mog replaces the 2nd match. Positional replace for when you need to change one specific occurrence.
 
 ## Run
 

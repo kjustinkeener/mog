@@ -2,7 +2,7 @@
 
 Redact email addresses to [EMAIL]
 
-Replace every email address with [EMAIL] so a log, config, or message can be shared without exposing addresses. Matches the common local@domain.tld shape. For a broader PII sweep (keys, phone numbers, IPs too) use the redact-pii recipe.
+Replace every email address with [EMAIL] so a log, config, or message can be shared without exposing addresses. Matches the common local@domain.tld shape. For a broader PII sweep (keys, phone numbers, IPs too) use the redact-pii mog.
 
 ## Run
 
