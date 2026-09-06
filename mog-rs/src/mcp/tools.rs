@@ -142,16 +142,16 @@ fn with_temp_mog<F: FnOnce(&str) -> Value>(contents: &str, f: F) -> Value {
 }
 
 /// Resolve the script for a run: either inline `mog` JSON (written to a temp
-/// file) or an installed recipe named by `recipe`, which the engine resolves
+/// file) or an installed mog named by `mog`, which the engine resolves
 /// from the library itself. Exactly one of the two must be given.
 fn with_script<F: FnOnce(&str) -> Value>(input: &Value, f: F) -> Value {
     let mog = input.get("mog").and_then(Value::as_str).unwrap_or("");
-    let recipe = input
+    let mog_doc = input
         .get("recipe")
         .and_then(Value::as_str)
         .map(str::trim)
         .filter(|s| !s.is_empty());
-    match (mog.trim().is_empty(), recipe) {
+    match (mog.trim().is_empty(), mog_doc) {
         (true, Some(name)) => f(name),
         (false, None) => with_temp_mog(mog, f),
         (false, Some(_)) => text_result(
@@ -763,7 +763,7 @@ pub fn mog_check(input: &Value) -> Value {
     })
 }
 
-/// `mog_market`: search / list / show / install recipes.
+/// `mog_market`: search / list / show / install mogs.
 pub fn mog_market(input: &Value) -> Value {
     let op = input.get("op").and_then(Value::as_str);
     let name = input.get("name").and_then(Value::as_str);
@@ -824,7 +824,7 @@ pub fn mog_market(input: &Value) -> Value {
     }
 }
 
-/// `mog_update`: sync recipes (content-hash diff) + self-replace the engine.
+/// `mog_update`: sync mogs (content-hash diff) + self-replace the engine.
 pub fn mog_update(input: &Value) -> Value {
     let mut args: Vec<String> = vec!["update".into()];
     if input.get("check").and_then(Value::as_bool).unwrap_or(false) {

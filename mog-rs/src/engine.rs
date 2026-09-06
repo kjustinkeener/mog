@@ -347,7 +347,7 @@ pub fn execute_with_library_sources_observed(
 
 /// Optional resource bounds for one apply. All off by default, so a trusted
 /// large-file run is never interrupted; enable them for untrusted input (e.g. a
-/// sandboxed store apply, or reviewing a submitted recipe). Engine hardening
+/// sandboxed store apply, or reviewing a submitted mog). Engine hardening
 /// H2/H3 (store-marketplace-spec.md section 2.2).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct RunLimits {
@@ -1042,7 +1042,7 @@ fn run_mog(input: &str, step: &Step, ctx: &ExecCtx) -> Result<String> {
 }
 
 /// Parse a `run_mog` step's optional `with` map into constant overrides for the
-/// child recipe. Absent -> empty. A non-object `with`, or a non-scalar value,
+/// child mog. Absent -> empty. A non-object `with`, or a non-scalar value,
 /// is a hard error.
 fn with_defines(step: &Step) -> Result<std::collections::BTreeMap<String, String>> {
     let mut out = std::collections::BTreeMap::new();
@@ -1458,7 +1458,7 @@ mod uuid_seed_tests {
     #[test]
     fn pinned_seed_threads_from_exec_context_to_per_match_uuid() {
         // The seed the CLI pins (--pin-seed / mog --test) reaches the $uuid token
-        // through the exec context, so the same input+recipe is byte-identical.
+        // through the exec context, so the same input+mog is byte-identical.
         let json = r#"{"steps":[{"action":"replace_regex","options":{"find":"x","replace_with":"$uuid"}}]}"#;
         let a = run_seeded(json, "x x x", Some(0));
         let b = run_seeded(json, "x x x", Some(0));
@@ -1479,7 +1479,7 @@ mod uuid_seed_tests {
 
     #[test]
     fn seed_propagates_into_run_mog_children() {
-        // A nested recipe's $uuid is pinned by the parent run's seed too.
+        // A nested mog's $uuid is pinned by the parent run's seed too.
         let json = r#"{"steps":[{"action":"replace_regex","options":{"find":"x","replace_with":"$uuid"}}]}"#;
         let a = run_seeded(json, "x", Some(7));
         let b = run_seeded(json, "x", Some(7));

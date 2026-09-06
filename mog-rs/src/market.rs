@@ -57,7 +57,7 @@ pub struct Entry {
 /// omitted field default, matching `Mog`'s per-field defaults.
 #[derive(Default, Deserialize)]
 #[serde(default)]
-struct RecipeMeta {
+struct MogMeta {
     name: Option<String>,
     summary: Option<String>,
     description: Option<String>,
@@ -69,24 +69,24 @@ struct RecipeMeta {
 /// Read the descriptive metadata (name/summary/description/tags/task_phrases/tier)
 /// directly from a `.mog` file, without interpolating constants (so a script with
 /// unbound `{{placeholders}}` still lists). A read or parse failure yields empty
-/// metadata rather than dropping the entry (one broken recipe must not abort a
+/// metadata rather than dropping the entry (one broken mog must not abort a
 /// whole listing), but it warns on stderr so the failure is not silent.
-fn read_metadata(path: &Path) -> RecipeMeta {
+fn read_metadata(path: &Path) -> MogMeta {
     let text = match fs::read_to_string(path) {
         Ok(t) => t,
         Err(e) => {
             eprintln!("warning: cannot read '{}': {e}", path.display());
-            return RecipeMeta::default();
+            return MogMeta::default();
         }
     };
-    match serde_json::from_str::<RecipeMeta>(&text) {
+    match serde_json::from_str::<MogMeta>(&text) {
         Ok(m) => m,
         Err(e) => {
             eprintln!(
                 "warning: '{}' is not a valid .mog, listing it with empty metadata: {e}",
                 path.display()
             );
-            RecipeMeta::default()
+            MogMeta::default()
         }
     }
 }
@@ -127,7 +127,7 @@ fn entry_mtime_ns(e: &fs::DirEntry) -> u128 {
         .unwrap_or(0)
 }
 
-/// Whether a recipe has BOTH fixtures, from a SINGLE `read_dir` of its `tests/`
+/// Whether a mog has BOTH fixtures, from a SINGLE `read_dir` of its `tests/`
 /// directory (rather than the two `sibling` scans `has_fixture` would do). Only
 /// called on a cache miss while building entries: on a hit the flag comes from
 /// the cached entry, so this stays off the hot path.
@@ -166,8 +166,8 @@ struct Walked {
     mtime_ns: u128,
 }
 
-/// Non-recipe siblings at the flat root that the walk must never descend into or
-/// surface as recipes: derived caches, report templates/output, config, the
+/// Non-mog siblings at the flat root that the walk must never descend into or
+/// surface as mogs: derived caches, report templates/output, config, the
 /// install manifest. Any dotfile/dotdir is also skipped (handled in the walk).
 fn is_reserved_dir_name(name: &std::ffi::OsStr) -> bool {
     matches!(
@@ -185,7 +185,7 @@ fn is_reserved_dir_name(name: &std::ffi::OsStr) -> bool {
 /// directory and NONE per file (on Windows the entry's `file_type()`/`metadata()`
 /// come from the enumeration, not a fresh `stat`). This is what keeps the warm
 /// listing near process-startup: the fingerprint still stats nothing extra, so an
-/// in-place recipe edit is still caught by the newest-mtime half exactly as before.
+/// in-place mog edit is still caught by the newest-mtime half exactly as before.
 fn walk_sources(root: &Path) -> Vec<Walked> {
     let mut out: Vec<Walked> = Vec::new();
     collect_walked(root, root, &mut out);
@@ -199,7 +199,7 @@ fn walk_sources(root: &Path) -> Vec<Walked> {
 /// enumeration-derived mtime. Directories that cannot be read simply contribute
 /// nothing (a missing root, a permission error). Symlinked directories fall back
 /// to a path `is_dir()` check so symlinks keep working (rare, and the only place
-/// an extra `stat` is spent). At the flat root, reserved non-recipe siblings
+/// an extra `stat` is spent). At the flat root, reserved non-mog siblings
 /// (`.cache`, `templates`, `reports`) and any dotdir are skipped.
 fn collect_walked(root: &Path, dir: &Path, out: &mut Vec<Walked>) {
     let Ok(rd) = fs::read_dir(dir) else {
@@ -213,14 +213,14 @@ fn collect_walked(root: &Path, dir: &Path, out: &mut Vec<Walked>) {
         let name = e.file_name();
         let is_dir = ft.is_dir() || (ft.is_symlink() && path.is_dir());
         if is_dir {
-            // A recipe's fixtures live in its `tests/` dir (`input.*`/`expected.*`),
+            // A mog's fixtures live in its `tests/` dir (`input.*`/`expected.*`),
             // never a `.mog`; skipping that descent avoids ~one `read_dir` per
-            // recipe -- roughly halving the walk -- with no listing change.
+            // mog -- roughly halving the walk -- with no listing change.
             if name.eq_ignore_ascii_case("tests") {
                 continue;
             }
-            // Skip reserved non-recipe siblings and any dotdir (the flat root now
-            // holds recipes directly beside these, so they must not be walked).
+            // Skip reserved non-mog siblings and any dotdir (the flat root now
+            // holds mogs directly beside these, so they must not be walked).
             let name_str = name.to_string_lossy();
             if name_str.starts_with('.') || is_reserved_dir_name(&name) {
                 continue;
@@ -299,10 +299,10 @@ fn store_cache(root: &Path, count: usize, max_mtime_ns: u128, entries: &[Entry])
 /// Memoized: every call does a cheap stat-only walk to fingerprint the store
 /// (`.mog` count + newest mtime); when that matches the persisted
 /// `root/.cache/scan-index.json`, the built listing is reused without re-reading
-/// or re-parsing any `.mog`. Only a fingerprint miss (a recipe added, removed, or
+/// or re-parsing any `.mog`. Only a fingerprint miss (a mog added, removed, or
 /// edited) pays for the full read+parse pass, which then refreshes the cache.
 pub fn scan(root: &Path) -> Vec<Entry> {
-    // Recipes live under `<root>/mogs/market`; the scan cache stays at the outer
+    // Mogs live under `<root>/mogs/market`; the scan cache stays at the outer
     // `<root>/.cache`, so the walk root and the cache root differ.
     let market = library::market_dir(root);
     let walked = walk_sources(&market);
@@ -316,7 +316,7 @@ pub fn scan(root: &Path) -> Vec<Entry> {
     // Miss: read + parse each `.mog` for its metadata and refresh the cache.
     let mut entries: Vec<Entry> = Vec::with_capacity(count);
     for w in walked {
-        let RecipeMeta {
+        let MogMeta {
             name,
             summary,
             description,
@@ -610,7 +610,7 @@ pub fn show(lib_root: Option<&Path>, name: &Path, no_content: bool, json: bool) 
 
     let resolvable =
         locate_in_library(lib_root, &resolved).unwrap_or_else(|| resolved.display().to_string());
-    let RecipeMeta {
+    let MogMeta {
         name: mname,
         summary,
         description,
@@ -637,20 +637,17 @@ pub fn show(lib_root: Option<&Path>, name: &Path, no_content: bool, json: bool) 
     };
 
     if json {
-        // Prefer rendering the README on demand from the recipe itself, so it is
-        // populated even for a recipe served from the installed store (flat layout)
+        // Prefer rendering the README on demand from the mog itself, so it is
+        // populated even for a mog served from the installed store (flat layout)
         // or the embedded set, where no `README.md` file exists beside the script.
         // Fall back to a sibling `README.md` if one happens to be on disk; `null`
         // (not an error) when neither is available.
-        let readme: Option<String> =
-            crate::docgen::render_recipe_doc(&resolved)
-                .ok()
-                .or_else(|| {
-                    resolved
-                        .parent()
-                        .map(|p| p.join("README.md"))
-                        .and_then(|p| fs::read_to_string(p).ok())
-                });
+        let readme: Option<String> = crate::docgen::render_mog_doc(&resolved).ok().or_else(|| {
+            resolved
+                .parent()
+                .map(|p| p.join("README.md"))
+                .and_then(|p| fs::read_to_string(p).ok())
+        });
         let mut root = serde_json::json!({
             "resolvable": resolvable,
             "name": mname,
@@ -752,7 +749,7 @@ pub fn add(
     if !file.is_file() {
         bail!("source script not found: {}", file.display());
     }
-    // Installs land in the managed recipe dir (`<root>/mogs/market`).
+    // Installs land in the managed mog dir (`<root>/mogs/market`).
     let src_dir = library::market_dir(root);
 
     // Destination name: --as (a bare name or a relative subpath), else the source
@@ -771,7 +768,7 @@ pub fn add(
         ),
     };
     // `dest_mog` is the flat LOGICAL path (source/<...>/<stem>.mog), used only to
-    // derive the resolvable name; the recipe is written into its own directory.
+    // derive the resolvable name; the mog is written into its own directory.
     let dest_mog = src_dir.join(&dest_rel);
     let dest_stem = dest_mog
         .file_stem()
@@ -782,11 +779,11 @@ pub fn add(
         .parent()
         .ok_or_else(|| anyhow!("destination has no parent directory"))?
         .to_path_buf();
-    // One-directory-per-recipe: <dest_parent>/<stem>/<stem>.mog plus a tests/
+    // One-directory-per-mog: <dest_parent>/<stem>/<stem>.mog plus a tests/
     // subdir holding input.<ext> / expected.<ext>.
-    let recipe_dir = dest_parent.join(&dest_stem);
-    let tests_dir = recipe_dir.join("tests");
-    let final_mog = recipe_dir.join(format!("{dest_stem}.mog"));
+    let mog_dir = dest_parent.join(&dest_stem);
+    let tests_dir = mog_dir.join("tests");
+    let final_mog = mog_dir.join(format!("{dest_stem}.mog"));
 
     // Locate the source fixtures up front (both are required to verify).
     let src_input = testkit::sibling(file, "TestInput").ok_or_else(|| {
@@ -813,7 +810,7 @@ pub fn add(
     let dest_expected = tests_dir.join(format!("expected.{expected_ext}"));
 
     let new_mog_bytes = fs::read(file)?;
-    // Report the recipe by its actual installed path (<name>/<name>.mog),
+    // Report the mog by its actual installed path (<name>/<name>.mog),
     // consistent with what `scan` / `market list` / `show` surface.
     let resolvable = resolvable_name(&src_dir, &final_mog);
 
@@ -835,7 +832,7 @@ pub fn add(
     }
 
     fs::create_dir_all(&tests_dir)
-        .with_context(|| format!("failed to create recipe dir '{}'", recipe_dir.display()))?;
+        .with_context(|| format!("failed to create recipe dir '{}'", mog_dir.display()))?;
 
     // Stage all three writes so a failed verify rolls the market back exactly.
     let mut staged: Vec<Staged> = Vec::new();
@@ -904,7 +901,7 @@ fn add_report(
     Ok(0)
 }
 
-/// `mog rm <name>`: remove a stored recipe and its fixtures.
+/// `mog rm <name>`: remove a stored mog and its fixtures.
 pub fn rm(lib_root: Option<&Path>, name: &Path, json: bool) -> Result<i32> {
     let root =
         lib_root.ok_or_else(|| anyhow!("no library root: set MOG_HOME or pass --mog-dir"))?;
@@ -919,15 +916,15 @@ pub fn rm(lib_root: Option<&Path>, name: &Path, json: bool) -> Result<i32> {
         )
     })?;
 
-    // The recipe lives in its own directory (<name>/, holding the .mog
+    // The mog lives in its own directory (<name>/, holding the .mog
     // and its tests/ fixtures); remove the whole directory.
-    let recipe_dir = resolved
+    let mog_dir = resolved
         .parent()
         .ok_or_else(|| anyhow!("resolved script has no parent directory"))?
         .to_path_buf();
-    fs::remove_dir_all(&recipe_dir)
-        .with_context(|| format!("failed to remove '{}'", recipe_dir.display()))?;
-    let removed = vec![recipe_dir.display().to_string()];
+    fs::remove_dir_all(&mog_dir)
+        .with_context(|| format!("failed to remove '{}'", mog_dir.display()))?;
+    let removed = vec![mog_dir.display().to_string()];
 
     if json {
         let root = serde_json::json!({
@@ -967,7 +964,7 @@ pub fn bless(lib_root: Option<&Path>, name: &Path, yes: bool, json: bool) -> Res
         .with_context(|| format!("run '{}'", resolved.display()))?;
 
     // The golden path: the existing fixture, else derived from the input's ext,
-    // written into the recipe's tests/ directory.
+    // written into the mog's tests/ directory.
     let expected_path = testkit::sibling(&resolved, "TestExpectedOutput").unwrap_or_else(|| {
         let ext = input_path
             .extension()
@@ -993,8 +990,8 @@ pub fn bless(lib_root: Option<&Path>, name: &Path, yes: bool, json: bool) -> Res
         None
     };
 
-    // Ensure the recipe's tests/ directory exists before any write (it always
-    // does for an installed recipe; this only matters when blessing a brand-new
+    // Ensure the mog's tests/ directory exists before any write (it always
+    // does for an installed mog; this only matters when blessing a brand-new
     // golden whose fixture did not yet exist).
     if let Some(parent) = expected_path.parent() {
         fs::create_dir_all(parent)
@@ -1045,8 +1042,8 @@ mod cache_tests {
     use super::*;
     use tempfile::tempdir;
 
-    /// Write a minimal valid recipe at `<root>/mogs/market/<name>/<name>.mog`.
-    fn write_recipe(root: &Path, name: &str, summary: &str) {
+    /// Write a minimal valid mog at `<root>/mogs/market/<name>/<name>.mog`.
+    fn write_mog(root: &Path, name: &str, summary: &str) {
         let dir = library::market_dir(root).join(name);
         fs::create_dir_all(&dir).unwrap();
         fs::write(
@@ -1059,7 +1056,7 @@ mod cache_tests {
     #[test]
     fn scan_writes_and_reuses_the_index() {
         let root = tempdir().unwrap();
-        write_recipe(root.path(), "alpha", "one");
+        write_mog(root.path(), "alpha", "one");
         let first = scan(root.path());
         assert_eq!(first.len(), 1);
         assert!(
@@ -1075,11 +1072,11 @@ mod cache_tests {
     }
 
     #[test]
-    fn adding_a_recipe_invalidates_the_cache() {
+    fn adding_a_mog_invalidates_the_cache() {
         let root = tempdir().unwrap();
-        write_recipe(root.path(), "alpha", "one");
+        write_mog(root.path(), "alpha", "one");
         assert_eq!(scan(root.path()).len(), 1);
-        write_recipe(root.path(), "beta", "two");
+        write_mog(root.path(), "beta", "two");
         let names: Vec<String> = scan(root.path())
             .into_iter()
             .filter_map(|e| e.name)
@@ -1089,31 +1086,31 @@ mod cache_tests {
     }
 
     #[test]
-    fn removing_a_recipe_invalidates_the_cache() {
+    fn removing_a_mog_invalidates_the_cache() {
         let root = tempdir().unwrap();
-        write_recipe(root.path(), "alpha", "one");
-        write_recipe(root.path(), "beta", "two");
+        write_mog(root.path(), "alpha", "one");
+        write_mog(root.path(), "beta", "two");
         assert_eq!(scan(root.path()).len(), 2);
         fs::remove_dir_all(library::market_dir(root.path()).join("beta")).unwrap();
         assert_eq!(scan(root.path()).len(), 1);
     }
 
     #[test]
-    fn editing_a_recipe_in_place_is_reflected() {
+    fn editing_a_mog_in_place_is_reflected() {
         let root = tempdir().unwrap();
-        write_recipe(root.path(), "alpha", "one");
+        write_mog(root.path(), "alpha", "one");
         assert_eq!(scan(root.path())[0].summary.as_deref(), Some("one"));
         // Advance well past any filesystem mtime granularity, then edit in place
         // (count unchanged): the newest-mtime half of the fingerprint must catch it.
         std::thread::sleep(std::time::Duration::from_millis(1100));
-        write_recipe(root.path(), "alpha", "TWO");
+        write_mog(root.path(), "alpha", "TWO");
         assert_eq!(scan(root.path())[0].summary.as_deref(), Some("TWO"));
     }
 
     #[test]
     fn a_corrupt_index_is_ignored_and_rebuilt() {
         let root = tempdir().unwrap();
-        write_recipe(root.path(), "alpha", "one");
+        write_mog(root.path(), "alpha", "one");
         scan(root.path());
         fs::write(cache_path(root.path()), b"{ not valid json").unwrap();
         // A garbage index must never poison the scan; it recomputes and overwrites.
@@ -1130,7 +1127,7 @@ mod cache_tests {
     #[test]
     fn load_cache_matches_only_on_an_identical_fingerprint() {
         let root = tempdir().unwrap();
-        write_recipe(root.path(), "alpha", "one");
+        write_mog(root.path(), "alpha", "one");
         let entries = scan(root.path());
         store_cache(root.path(), entries.len(), 42, &entries);
         assert!(load_cache(root.path(), entries.len(), 42).is_some());

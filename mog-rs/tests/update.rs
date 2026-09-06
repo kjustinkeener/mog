@@ -19,7 +19,7 @@ fn env_lock() -> std::sync::MutexGuard<'static, ()> {
         .unwrap_or_else(|e| e.into_inner())
 }
 
-fn recipe_json(name: &str, desc: &str) -> String {
+fn mog_json(name: &str, desc: &str) -> String {
     format!(
         r#"{{
   "name": "{name}",
@@ -36,20 +36,14 @@ fn recipe_json(name: &str, desc: &str) -> String {
 /// Stand up a registry dir with the given `(stem, description)` recipes, build and
 /// sign `index.json`, and return `(registry_path, pubkey_b64)`.
 fn build_registry(registry: &Path, recipes: &[(&str, &str)]) -> String {
-    let recipe_root = registry.join("recipes");
+    let mog_root = registry.join("recipes");
     for (stem, desc) in recipes {
-        let dir = recipe_root.join(stem);
+        let dir = mog_root.join(stem);
         fs::create_dir_all(&dir).unwrap();
-        fs::write(dir.join(format!("{stem}.mog")), recipe_json(stem, desc)).unwrap();
+        fs::write(dir.join(format!("{stem}.mog")), mog_json(stem, desc)).unwrap();
     }
     // path_base = registry so entry.path is "recipes/<stem>/<stem>.mog".
-    let index = build_index(
-        &recipe_root,
-        registry,
-        &BTreeMap::new(),
-        Some("test".into()),
-    )
-    .unwrap();
+    let index = build_index(&mog_root, registry, &BTreeMap::new(), Some("test".into())).unwrap();
     let bytes = index.to_json_bytes().unwrap();
     let sk = market_index::generate_keypair();
     fs::write(registry.join("index.json"), &bytes).unwrap();
@@ -125,7 +119,7 @@ fn sync_check_writes_nothing() {
 /// different content). The install layout must give every recipe its own directory
 /// so their goldens never clobber under a shared `community/tests/`.
 #[test]
-fn sync_keeps_per_recipe_fixtures_from_colliding() {
+fn sync_keeps_per_mog_fixtures_from_colliding() {
     let _g = env_lock();
     let tmp = tempfile::tempdir().unwrap();
     let registry = tmp.path().join("registry");
@@ -134,21 +128,15 @@ fn sync_keeps_per_recipe_fixtures_from_colliding() {
 
     // Build a registry by hand so each recipe gets a sibling `tests/input.txt`
     // with distinct bytes (the shared key that used to collide).
-    let recipe_root = registry.join("recipes");
+    let mog_root = registry.join("recipes");
     for (stem, fixture) in [("alpha", "ALPHA INPUT\n"), ("beta", "BETA INPUT\n")] {
-        let dir = recipe_root.join(stem);
+        let dir = mog_root.join(stem);
         fs::create_dir_all(dir.join("tests")).unwrap();
-        fs::write(dir.join(format!("{stem}.mog")), recipe_json(stem, stem)).unwrap();
+        fs::write(dir.join(format!("{stem}.mog")), mog_json(stem, stem)).unwrap();
         fs::write(dir.join("tests/input.txt"), fixture).unwrap();
         fs::write(dir.join("tests/expected.txt"), fixture).unwrap();
     }
-    let index = build_index(
-        &recipe_root,
-        &registry,
-        &BTreeMap::new(),
-        Some("test".into()),
-    )
-    .unwrap();
+    let index = build_index(&mog_root, &registry, &BTreeMap::new(), Some("test".into())).unwrap();
     let bytes = index.to_json_bytes().unwrap();
     let sk = market_index::generate_keypair();
     fs::write(registry.join("index.json"), &bytes).unwrap();

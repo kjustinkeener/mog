@@ -42,7 +42,7 @@ fn drive(requests: &[Value]) -> Vec<Value> {
 
 /// Like `drive`, but seeds the temp library with one recipe first, so a call
 /// can name it instead of passing a script inline.
-fn drive_with_recipe(name: &str, script: &str, requests: &[Value]) -> Vec<Value> {
+fn drive_with_mog(name: &str, script: &str, requests: &[Value]) -> Vec<Value> {
     let exe = env!("CARGO_BIN_EXE_mog");
     let home = tempfile::tempdir().expect("temp MOG_HOME");
     let dir = home.path().join("mogs").join("market").join(name);
@@ -215,8 +215,8 @@ fn apply_refuses_bare_in_place() {
 }
 
 #[test]
-fn preview_accepts_an_installed_recipe_by_name() {
-    let resps = drive_with_recipe(
+fn preview_accepts_an_installed_mog_by_name() {
+    let resps = drive_with_mog(
         "shouty",
         "{\"steps\":[{\"action\":\"to_upper\"}]}",
         &[json!({

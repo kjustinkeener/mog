@@ -2,7 +2,7 @@
 //! then `install` / `update` / `list` / `show` / `search` against it.
 //!
 //! Trust flow (spec sections 9, 11-12): verify the index *signature* with the
-//! public key compiled into `mog`, then verify each downloaded recipe against the
+//! public key compiled into `mog`, then verify each downloaded mog against the
 //! `sha256` in the now-trusted index. Discovery is hybrid, work from a verified
 //! local cache, refresh from the registry when asked. The registry base can be an
 //! `http(s)` URL or a local directory path (the latter makes end-to-end testing
@@ -154,7 +154,7 @@ fn fetch_revocations(base: &str) -> Result<Revocations> {
 
 // --- install / update --------------------------------------------------------
 
-/// The install manifest lives in the managed recipe dir: `<root>/mogs/market/.installed.json`.
+/// The install manifest lives in the managed mog dir: `<root>/mogs/market/.installed.json`.
 fn manifest_path(root: &Path) -> PathBuf {
     crate::library::market_dir(root).join(".installed.json")
 }
@@ -174,7 +174,7 @@ fn write_installed(root: &Path, m: &BTreeMap<String, u32>) -> Result<()> {
     Ok(())
 }
 
-/// Download + verify a recipe (body and fixtures) and write it into the install
+/// Download + verify a mog (body and fixtures) and write it into the install
 /// source. Does not do collision/revocation checks; callers gate those.
 fn install_entry(root: &Path, base: &str, entry: &IndexEntry) -> Result<()> {
     let mog_bytes = fetch_bytes(base, &entry.path)?;
@@ -188,7 +188,7 @@ fn install_entry(root: &Path, base: &str, entry: &IndexEntry) -> Result<()> {
         );
     }
 
-    // Fixtures live beside the recipe in the registry.
+    // Fixtures live beside the mog in the registry.
     let dir = Path::new(&entry.path)
         .parent()
         .map(|p| p.to_string_lossy().replace('\\', "/"))
@@ -210,9 +210,9 @@ fn install_entry(root: &Path, base: &str, entry: &IndexEntry) -> Result<()> {
         fixtures.push((fname.clone(), fbytes));
     }
 
-    // Each recipe installs into its own directory (mirrors the one-dir-per-recipe
+    // Each mog installs into its own directory (mirrors the one-dir-per-mog
     // factory layout) so fixtures with identical keys (e.g. `tests/input.txt`) never
-    // clobber another recipe's goldens under a shared `community/tests/`.
+    // clobber another mog's goldens under a shared `community/tests/`.
     let dst = crate::library::market_dir(root).join(&entry.name);
     fs::create_dir_all(&dst).with_context(|| format!("create '{}'", dst.display()))?;
     fs::write(dst.join(format!("{}.mog", entry.name)), &mog_bytes)?;
@@ -232,7 +232,7 @@ fn install_entry(root: &Path, base: &str, entry: &IndexEntry) -> Result<()> {
 
 fn remove_installed(root: &Path, name: &str) -> Result<()> {
     let dst = crate::library::market_dir(root).join(name);
-    // Each recipe owns its directory (`<name>/`), so remove the whole tree.
+    // Each mog owns its directory (`<name>/`), so remove the whole tree.
     let _ = fs::remove_dir_all(&dst);
     let mut installed = read_installed(root);
     installed.remove(name);
@@ -288,7 +288,7 @@ pub fn install(root: Option<&Path>, base: &str, name: &str, json: bool) -> Resul
 }
 
 /// Install `name` and everything it depends on, transitively, dependencies
-/// first. Cycles are detected via `installing`; recipes already installed at the
+/// first. Cycles are detected via `installing`; mogs already installed at the
 /// same version are skipped.
 #[allow(clippy::too_many_arguments)]
 fn install_recursive(
@@ -330,12 +330,12 @@ fn install_recursive(
     Ok(())
 }
 
-/// The recipe diff `sync` computes against the catalog: which installed recipes
+/// The mog diff `sync` computes against the catalog: which installed mogs
 /// are new / content-changed / removed-by-revocation / orphaned. Content is keyed
-/// by SHA-256 (never a monotonic version integer), so a recipe re-published with
+/// by SHA-256 (never a monotonic version integer), so a mog re-published with
 /// no version bump still updates -- "pull whatever the catalog now says, replace
 /// what differs." Orphans (on disk, gone from the catalog) are reported but only
-/// removed under `prune`; revoked recipes are always removed.
+/// removed under `prune`; revoked mogs are always removed.
 #[derive(Serialize, Default, Debug)]
 pub struct SyncPlan {
     pub added: Vec<String>,
@@ -357,7 +357,7 @@ impl SyncPlan {
 /// Sync the local library to the catalog by content hash. When `check` is set
 /// nothing is written -- it just returns the plan (for `mog update --check` and
 /// the Studio badge). `prune` removes orphaned installs (present on disk, absent
-/// from the catalog); revoked recipes are removed regardless.
+/// from the catalog); revoked mogs are removed regardless.
 pub fn sync(root: &Path, base: &str, check: bool, prune: bool) -> Result<SyncPlan> {
     let index = fetch_and_verify_index(root, base)?; // always refresh
     let revs = fetch_revocations(base).unwrap_or_default();
@@ -420,14 +420,14 @@ pub fn sync(root: &Path, base: &str, check: bool, prune: bool) -> Result<SyncPla
 // --- discovery: list / search / show (local-first, catalog-augmented) --------
 //
 // The library on disk is just the already-installed slice of the marketplace, so
-// list/search/show present ONE unified view: local recipes (always, offline) plus
-// catalog recipes not yet installed (when a registry is configured and reachable).
+// list/search/show present ONE unified view: local mogs (always, offline) plus
+// catalog mogs not yet installed (when a registry is configured and reachable).
 
 #[derive(Serialize)]
 struct Row {
     name: String,
-    /// Short human browse blurb (from the recipe's `summary`). Additive: present
-    /// only when the recipe declares one; catalog-only entries have None. The
+    /// Short human browse blurb (from the mog's `summary`). Additive: present
+    /// only when the mog declares one; catalog-only entries have None. The
     /// human render prefers this, but the AI/`--json` channel still carries the
     /// full `description` below regardless.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -436,7 +436,7 @@ struct Row {
     description: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     tags: Vec<String>,
-    /// Natural-language discovery triggers from the recipe's `task_phrases`.
+    /// Natural-language discovery triggers from the mog's `task_phrases`.
     /// Weighted strongly by search; empty for catalog-only rows (the signed index
     /// does not yet carry the field).
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -451,22 +451,22 @@ struct Row {
     download_count: Option<u64>,
 }
 
-/// The recipe's unique name: the file stem of a resolvable like `user/foo.mog`.
-fn recipe_stem(resolvable: &str) -> String {
+/// The mog's unique name: the file stem of a resolvable like `user/foo.mog`.
+fn mog_stem(resolvable: &str) -> String {
     Path::new(resolvable)
         .file_stem()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default()
 }
 
-/// Seeded popularity for the shipped factory recipes: an editorial estimate of how
+/// Seeded popularity for the shipped factory mogs: an editorial estimate of how
 /// commonly each is likely to be reached for, so a fresh install with no live
 /// catalog still gets a sensible popularity-ordered no-query browse (spec §9.1
 /// makes popularity an advisory sort input, never a visibility gate). This is a
 /// BASELINE only: once real GitHub Release `download_count`s accumulate in the
 /// catalog, `popularity()` adds them on top of this seed rather than replacing it.
 const FACTORY_BASELINE: &[(&str, u64)] = &[
-    // DATA-ENG SPOTLIGHT: recipes touching current data-eng tech, seeded above the
+    // DATA-ENG SPOTLIGHT: mogs touching current data-eng tech, seeded above the
     // everyday-util tier so they lead the catalog. Ordered so adjacent entries are
     // DIFFERENT kinds of tool (warehouse-migration / reshape / format-interchange /
     // transform / schema / orchestration / IaC) -- the top few read as a varied
@@ -809,7 +809,7 @@ const FACTORY_BASELINE: &[(&str, u64)] = &[
     ("sql-colon-cast-to-cast", 84),
     // 2026-08-26 batch: warehouse-matrix holes (Snowflake/Redshift/Databricks
     // cross-pairs), schema translation, IaC + LLM/dataset formats, k8s Secret,
-    // and per-source paste-cleanup packs. Values track each recipe's cluster.
+    // and per-source paste-cleanup packs. Values track each mog's cluster.
     ("snowflake-tables-to-redshift", 331),
     ("redshift-tables-to-databricks", 327),
     ("redshift-tables-to-mysql", 329),
@@ -847,8 +847,8 @@ const FACTORY_BASELINE: &[(&str, u64)] = &[
     ("dedupe-by-first-field", 388),
     ("sort-records", 384),
     ("last-separator-to-and", 360),
-    // Action-coverage sweep: one recipe per engine action not previously exercised
-    // by a factory recipe (mostly thin single-action utilities).
+    // Action-coverage sweep: one mog per engine action not previously exercised
+    // by a factory mog (mostly thin single-action utilities).
     // Case.
     ("snake-to-camel", 470),
     ("snake-to-pascal", 468),
@@ -928,7 +928,7 @@ const FACTORY_BASELINE: &[(&str, u64)] = &[
     ("unwrap-email-quotes", 300),
 ];
 
-/// The seeded baseline for a factory recipe, if any (None for user-authored ones).
+/// The seeded baseline for a factory mog, if any (None for user-authored ones).
 fn factory_baseline(name: &str) -> Option<u64> {
     FACTORY_BASELINE
         .iter()
@@ -937,7 +937,7 @@ fn factory_baseline(name: &str) -> Option<u64> {
 }
 
 /// Effective popularity = seeded baseline + any real catalog download_count. None
-/// only when neither exists, so it stays omitted from JSON for uncounted recipes.
+/// only when neither exists, so it stays omitted from JSON for uncounted mogs.
 fn popularity(name: &str, catalog_count: Option<u64>) -> Option<u64> {
     match (factory_baseline(name), catalog_count) {
         (None, None) => None,
@@ -951,7 +951,7 @@ fn gather(root: &Path) -> Vec<Row> {
     let installed = read_installed(root);
     let mut local_by_name: BTreeMap<String, &crate::market::Entry> = BTreeMap::new();
     for e in &local {
-        local_by_name.entry(recipe_stem(&e.resolvable)).or_insert(e);
+        local_by_name.entry(mog_stem(&e.resolvable)).or_insert(e);
     }
 
     // The catalog is optional: list/search work offline against the local library.
@@ -1135,9 +1135,9 @@ pub fn search(root: Option<&Path>, query: &str, json: bool) -> Result<i32> {
 
 pub fn show(root: Option<&Path>, name: &str, no_content: bool, json: bool) -> Result<i32> {
     let root = root.ok_or_else(|| anyhow!("no library root (set MOG_HOME or --mog-dir)"))?;
-    // Local-first: if the name resolves to an installed recipe, show the full local
-    // detail (content + fixture). This is a targeted single-recipe resolve (reads one
-    // file, not the whole ~N-recipe store), matching how `-m` finds the same script.
+    // Local-first: if the name resolves to an installed mog, show the full local
+    // detail (content + fixture). This is a targeted single-mog resolve (reads one
+    // file, not the whole ~N-mog store), matching how `-m` finds the same script.
     // Resolve without a base dir so a bare market name never picks up a stray local
     // `.mog` in the cwd.
     if crate::library::resolve_script(Path::new(name), None, Some(root)).is_ok() {

@@ -70,7 +70,7 @@ compares (`diff`, `reconcile`, `intersect`, `subtract`) against a second source,
 external `sources`, and composing scripts with `run_mog`. A step can be scoped to
 a block, a line range, a delimited **field**, or a **character range**, and the
 pipeline can pin its own `output_encoding`. Browse
-[`mog-rs/factory/`](mog-rs/factory) for the bundled recipe library (each recipe
+[`mog-rs/factory/`](mog-rs/factory) for the bundled mog library (each mog
 is its own folder with a tested input/output example), including an MSSQL to
 PostgreSQL schema conversion, and run `mog --list-actions --json` for the full,
 current catalog.
@@ -80,7 +80,7 @@ current catalog.
 | Path | What it is |
 |------|------------|
 | `mog-rs/` | The Rust engine (`[lib]`) and batch CLI (`mog`). The product. |
-| `mog-rs/factory/` | The bundled recipe library: one folder per recipe (`<name>/<name>.mog` + a tested `tests/` example). |
+| `mog-rs/factory/` | The bundled mog library: one folder per mog (`<name>/<name>.mog` + a tested `tests/` example). |
 | `docs/` | The `.mog` format standard and the marketplace guide. |
 | `studio/` | The desktop authoring app (Tauri + Svelte) over the same engine. |
 
@@ -103,9 +103,9 @@ unless you pass its named override. mog is provided as-is, without warranty (see
 
 ## Contributing
 
-Recipes are the most welcome contribution, and each one self-verifies through a
+Mogs are the most welcome contribution, and each one self-verifies through a
 golden test fixture. See [CONTRIBUTING.md](CONTRIBUTING.md) for the two
-contribution lanes (recipes and the engine) and [ROADMAP.md](ROADMAP.md) for the
+contribution lanes (mogs and the engine) and [ROADMAP.md](ROADMAP.md) for the
 project's scope and non-goals.
 
 ## License

@@ -44,7 +44,7 @@
 
   <ul class="does">
     <li>Adds <code>mog</code> to your PATH and registers the MCP server</li>
-    <li>Seeds the recipe library</li>
+    <li>Seeds the mog library</li>
     <li>Creates a Start-Menu shortcut</li>
   </ul>
 

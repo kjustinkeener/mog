@@ -17,9 +17,9 @@ use tempfile::TempDir;
 /// remote-catalog path offline. The child command must receive both `MOG_MARKET_URL`
 /// (the returned base) and `MOG_MARKET_PUBKEY` (the returned key) via `.env()`.
 fn build_registry(registry: &Path, stems: &[&str]) -> (String, String) {
-    let recipe_root = registry.join("recipes");
+    let mog_root = registry.join("recipes");
     for stem in stems {
-        let dir = recipe_root.join(stem);
+        let dir = mog_root.join(stem);
         fs::create_dir_all(&dir).unwrap();
         fs::write(
             dir.join(format!("{stem}.mog")),
@@ -27,13 +27,7 @@ fn build_registry(registry: &Path, stems: &[&str]) -> (String, String) {
         )
         .unwrap();
     }
-    let index = build_index(
-        &recipe_root,
-        registry,
-        &BTreeMap::new(),
-        Some("test".into()),
-    )
-    .unwrap();
+    let index = build_index(&mog_root, registry, &BTreeMap::new(), Some("test".into())).unwrap();
     let bytes = index.to_json_bytes().unwrap();
     let sk = market_index::generate_keypair();
     fs::write(registry.join("index.json"), &bytes).unwrap();
@@ -74,22 +68,22 @@ fn market(home: &Path) -> PathBuf {
 /// `home`: `mogs/market/<stem>/<stem>.mog` plus `<stem>/tests/input.txt` and
 /// `expected.txt`.
 fn put_script(home: &Path, stem: &str, body: &str, input: &str, expected: &str) {
-    let recipe_dir = market(home).join(stem);
-    fs::create_dir_all(recipe_dir.join("tests")).unwrap();
-    fs::write(recipe_dir.join(format!("{stem}.mog")), body).unwrap();
-    fs::write(recipe_dir.join("tests/input.txt"), input).unwrap();
-    fs::write(recipe_dir.join("tests/expected.txt"), expected).unwrap();
+    let mog_dir = market(home).join(stem);
+    fs::create_dir_all(mog_dir.join("tests")).unwrap();
+    fs::write(mog_dir.join(format!("{stem}.mog")), body).unwrap();
+    fs::write(mog_dir.join("tests/input.txt"), input).unwrap();
+    fs::write(mog_dir.join("tests/expected.txt"), expected).unwrap();
 }
 
 /// Write a loose recipe directory in a scratch dir (an `add` source):
 /// `<stem>/<stem>.mog` + `<stem>/tests/{input,expected}.txt`.
 fn loose_script(dir: &Path, stem: &str, body: &str, input: &str, expected: &str) -> PathBuf {
-    let recipe_dir = dir.join(stem);
-    fs::create_dir_all(recipe_dir.join("tests")).unwrap();
-    fs::write(recipe_dir.join(format!("{stem}.mog")), body).unwrap();
-    fs::write(recipe_dir.join("tests/input.txt"), input).unwrap();
-    fs::write(recipe_dir.join("tests/expected.txt"), expected).unwrap();
-    recipe_dir.join(format!("{stem}.mog"))
+    let mog_dir = dir.join(stem);
+    fs::create_dir_all(mog_dir.join("tests")).unwrap();
+    fs::write(mog_dir.join(format!("{stem}.mog")), body).unwrap();
+    fs::write(mog_dir.join("tests/input.txt"), input).unwrap();
+    fs::write(mog_dir.join("tests/expected.txt"), expected).unwrap();
+    mog_dir.join(format!("{stem}.mog"))
 }
 
 fn stdout_json(assert: assert_cmd::assert::Assert) -> serde_json::Value {
@@ -131,7 +125,7 @@ fn list_empty_exits_zero() {
 }
 
 #[test]
-fn list_shows_local_recipe_json() {
+fn list_shows_local_mog_json() {
     let h = home();
     put_script(
         h.path(),
@@ -634,7 +628,7 @@ fn add_refuses_non_mog_source_file() {
 // ---- rm ----------------------------------------------------------------------
 
 #[test]
-fn rm_removes_recipe_and_fixtures() {
+fn rm_removes_mog_and_fixtures() {
     let h = home();
     put_script(h.path(), "gone", UPPER_MOG, "a\n", "A\n");
 

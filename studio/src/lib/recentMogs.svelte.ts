@@ -1,5 +1,5 @@
 // Tracks mogs that have been loaded into the Run or Edit tabs, with the last-loaded
-// time. Used to float recently-used recipes to the top of the Marketplace search
+// time. Used to float recently-used mogs to the top of the Marketplace search
 // results (most recently loaded first). Persisted to localStorage, mirroring
 // runParams.svelte.ts / theme.ts.
 
@@ -29,7 +29,7 @@ function load(): RecentMog[] {
 // Sorted most-recent-first. Never mutate in place; reassign so readers re-run.
 export const recentMogs: { list: RecentMog[] } = $state({ list: load() });
 
-/** Record that a recipe was just loaded into Run/Edit. Bumps it to the front. */
+/** Record that a mog was just loaded into Run/Edit. Bumps it to the front. */
 export function markMogLoaded(name: string): void {
   const next = recentMogs.list.filter((r) => r.name !== name);
   next.unshift({ name, at: Date.now() });

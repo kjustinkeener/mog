@@ -55,9 +55,9 @@ pub struct Mog {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
     /// Natural-language task phrases that describe, in a user's own words, the job
-    /// this recipe does ("strip ANSI colour codes from a log", "convert Oracle SQL
+    /// this mog does ("strip ANSI colour codes from a log", "convert Oracle SQL
     /// to Postgres"). Purely a discovery-index field: `mog market search` weights
-    /// these highly so a recipe surfaces for the phrasing a person (or an agent
+    /// these highly so a mog surfaces for the phrasing a person (or an agent
     /// relaying one) would actually type, without polluting the terse `summary` row
     /// or the agent-facing `description`. Optional and additive; an omitted or empty
     /// list is not written back out.
@@ -68,10 +68,10 @@ pub struct Mog {
     /// written back out. Used by `mog ls --tag` and the Studio filters.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
-    /// Other store recipe names this recipe composes (via `run_mog` /
+    /// Other store mog names this mog composes (via `run_mog` /
     /// `for_each_block`). `mog store install` resolves and installs these
     /// transitively. Names only, never paths (engine hardening H1 confines
-    /// composition), so a marketplace recipe stays portable.
+    /// composition), so a marketplace mog stays portable.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dependencies: Vec<String>,
     /// Store tier (`core` / `full`, default `full`). Author intent that travels
@@ -86,14 +86,14 @@ pub struct Mog {
     #[serde(default, skip_serializing_if = "Map::is_empty")]
     pub constants: Map<String, Value>,
     /// Named external data sources: `name -> path`. The CLI loads these (a
-    /// recipe-declared path is confined to the .mog's directory; `--source
+    /// mog-declared path is confined to the .mog's directory; `--source
     /// name=path` binds any path and overrides a same-named declaration). Consumed
     /// by source-aware actions such as `fill_from_list`.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub sources: BTreeMap<String, String>,
     /// Output encoding for this pipeline: "preserve" (match the input), "utf-8",
     /// "utf-8-bom", "utf-16le", "utf-16be", "ansi"/"windows-1252", or another
-    /// label. A recipe that must emit a specific encoding (e.g. a Windows tool that
+    /// label. A mog that must emit a specific encoding (e.g. a Windows tool that
     /// requires UTF-8 BOM) declares it here so callers need not remember the flag.
     /// The CLI `--output-encoding`, when given explicitly, overrides this.
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -3,30 +3,30 @@
 `mog market` is Mog's library and marketplace in one command. Your local library
 is simply the **already-installed slice of the marketplace**, so the same verbs
 browse what you have, search the catalog, and install more. Discovery is
-**local-first**: `list` and `search` work offline against your installed recipes
-and add catalog recipes on top when a registry is configured.
+**local-first**: `list` and `search` work offline against your installed mogs
+and add catalog mogs on top when a registry is configured.
 
 ## Trust model
 
-You never have to trust the host a recipe came from. The catalog (`index.json`)
+You never have to trust the host a mog came from. The catalog (`index.json`)
 is signed with an ed25519 key whose **public half is compiled into `mog`**;
-`install`/`update` verify that signature, then verify each downloaded recipe
-against the SHA-256 in the now-trusted catalog. A tampered index or recipe is
-refused. A signed revocation list lets a bad recipe be pulled after publication.
+`install`/`update` verify that signature, then verify each downloaded mog
+against the SHA-256 in the now-trusted catalog. A tampered index or mog is
+refused. A signed revocation list lets a bad mog be pulled after publication.
 
 ## Verbs
 
 | Command | What it does |
 |---|---|
-| `mog market search <query>` | Ranked, synonym-aware search over your installed recipes plus the catalog. Multi-word task phrasings work (e.g. `"strip color codes from output"`). |
+| `mog market search <query>` | Ranked, synonym-aware search over your installed mogs plus the catalog. Multi-word task phrasings work (e.g. `"strip color codes from output"`). |
 | `mog market list` | Browse, featured first. Each result is marked `installed`, `local` (authored by you, not in the catalog), or `available`. |
-| `mog market show <name>` | Detail for one recipe: local content + fixture status if installed, otherwise the catalog entry. |
-| `mog market install <name>` | Download, verify (signature + hash), and install a recipe and its dependencies. |
-| `mog market update` | Refresh the catalog and upgrade installed recipes (revisions are backward-compatible only). |
-| `mog market add <file.mog>` | Add a local recipe (with its two fixtures) to your library; the fixture is verified on install. |
-| `mog market rm <name>` | Remove a locally-authored (`user`) recipe. |
-| `mog market bless <name>` | Regenerate a local recipe's golden fixture from its `TestInput`. |
-| `mog market submit <file.mog>` | Submit a recipe for review (not available yet). |
+| `mog market show <name>` | Detail for one mog: local content + fixture status if installed, otherwise the catalog entry. |
+| `mog market install <name>` | Download, verify (signature + hash), and install a mog and its dependencies. |
+| `mog market update` | Refresh the catalog and upgrade installed mogs (revisions are backward-compatible only). |
+| `mog market add <file.mog>` | Add a local mog (with its two fixtures) to your library; the fixture is verified on install. |
+| `mog market rm <name>` | Remove a locally-authored (`user`) mog. |
+| `mog market bless <name>` | Regenerate a local mog's golden fixture from its `TestInput`. |
+| `mog market submit <file.mog>` | Submit a mog for review (not available yet). |
 
 Add `--json` to any of these for machine-readable output.
 
@@ -52,11 +52,11 @@ you omit `op`:
 - `mog_market { op: "install", name }` -> download + verify + install
 - `mog_market { op: "update" }` -> refresh + upgrade
 
-Authoring a new recipe from scratch goes through the other tools instead:
+Authoring a new mog from scratch goes through the other tools instead:
 `mog_actions` (find actions) -> `mog_validate` -> `mog_preview` -> `mog_apply`.
 
 ## Publishing
 
-The catalog lives in the companion registry repo. Recipes are submitted as pull
+The catalog lives in the companion registry repo. Mogs are submitted as pull
 requests, reviewed (LLM-assisted human), and merged; a CI job then regenerates
 and re-signs the index. See that repo's README for the maintainer/go-live steps.

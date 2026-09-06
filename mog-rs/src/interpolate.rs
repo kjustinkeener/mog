@@ -130,7 +130,7 @@ pub fn interpolate(mog: &mut Mog, overrides: &BTreeMap<String, String>) -> Resul
     }
     // Non-`@` (user) constants are what gate typo-checking of user placeholders.
     // Built-ins alone (all keys `@`-prefixed) do NOT engage user expansion, so a
-    // recipe with no constants still expands {{@today}} while leaving literal
+    // mog with no constants still expands {{@today}} while leaving literal
     // {{mustache}} placeholders untouched.
     let user_engaged = mog.constants.keys().any(|k| !k.starts_with('@'))
         || overrides.keys().any(|k| !k.starts_with('@'));

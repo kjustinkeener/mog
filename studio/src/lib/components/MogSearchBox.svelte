@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { marketSearch, type RecipeHit } from '../api';
+  import { marketSearch, type MogHit } from '../api';
   import Icon from './Icon.svelte';
 
   // Controlled typeahead over the recipe library (mog market search/list).
@@ -14,12 +14,12 @@
   }: {
     value: string;
     oninput: (v: string) => void;
-    onpick: (hit: RecipeHit) => void;
+    onpick: (hit: MogHit) => void;
     onbrowse?: () => void;
     placeholder?: string;
   } = $props();
 
-  let results = $state<RecipeHit[]>([]);
+  let results = $state<MogHit[]>([]);
   let open = $state(false);
   let active = $state(0);
   let loading = $state(false);
@@ -58,7 +58,7 @@
     else open = true;
   }
 
-  function choose(h: RecipeHit): void {
+  function choose(h: MogHit): void {
     open = false;
     results = [];
     onpick(h);

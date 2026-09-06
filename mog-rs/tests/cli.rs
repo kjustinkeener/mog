@@ -556,11 +556,11 @@ fn write_test_fixtures(
     input: &str,
     expected: &str,
 ) -> String {
-    let recipe_dir = dir.join(stem);
-    fs::create_dir_all(recipe_dir.join("tests")).expect("create recipe tests dir");
-    let mog_path = write_file(&recipe_dir, &format!("{stem}.mog"), script);
-    write_file(&recipe_dir.join("tests"), "input.txt", input);
-    write_file(&recipe_dir.join("tests"), "expected.txt", expected);
+    let mog_dir = dir.join(stem);
+    fs::create_dir_all(mog_dir.join("tests")).expect("create recipe tests dir");
+    let mog_path = write_file(&mog_dir, &format!("{stem}.mog"), script);
+    write_file(&mog_dir.join("tests"), "input.txt", input);
+    write_file(&mog_dir.join("tests"), "expected.txt", expected);
     mog_path
 }
 
@@ -1359,7 +1359,7 @@ fn sample_refuses_in_place() {
 }
 
 #[test]
-fn recipe_output_encoding_property_is_honored() {
+fn mog_output_encoding_property_is_honored() {
     // A recipe may declare `output_encoding`; here it forces a UTF-8 BOM prefix
     // without the caller passing --output-encoding.
     let dir = tempdir().unwrap();
@@ -1377,7 +1377,7 @@ fn recipe_output_encoding_property_is_honored() {
 }
 
 #[test]
-fn explicit_output_encoding_flag_overrides_recipe_property() {
+fn explicit_output_encoding_flag_overrides_mog_property() {
     // An explicit --output-encoding wins over the recipe's output_encoding.
     let dir = tempdir().unwrap();
     let script = write_file(

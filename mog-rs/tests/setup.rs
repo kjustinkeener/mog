@@ -25,7 +25,7 @@ fn exists(root: &Path, rel: &str) -> bool {
 }
 
 #[test]
-fn setup_writes_recipes_into_market_dir() {
+fn setup_writes_mogs_into_market_dir() {
     let h = home();
     mog()
         .args(["--mog-dir", h.path().to_str().unwrap(), "setup", "--no-mcp"])
@@ -151,8 +151,8 @@ fn rerun_is_idempotent_and_leaves_user_untouched() {
     assert!(exists(h.path(), "mogs/market/tidy-list/tidy-list.mog"));
 
     // A user recipe under mogs/user must survive a re-run untouched.
-    let user_recipe = h.path().join("mogs").join("user").join("mine.mog");
-    fs::write(&user_recipe, r#"{ "steps": [] }"#).unwrap();
+    let user_mog = h.path().join("mogs").join("user").join("mine.mog");
+    fs::write(&user_mog, r#"{ "steps": [] }"#).unwrap();
 
     // Second run: idempotent; the market set is rewritten, the user dir is left intact.
     mog()
@@ -161,7 +161,7 @@ fn rerun_is_idempotent_and_leaves_user_untouched() {
         .success();
 
     assert!(exists(h.path(), "mogs/market/tidy-list/tidy-list.mog"));
-    assert!(user_recipe.exists(), "user recipe left untouched");
+    assert!(user_mog.exists(), "user recipe left untouched");
 }
 
 #[test]

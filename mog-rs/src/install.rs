@@ -4,7 +4,7 @@
 //! `mog install` makes a downloaded, loose `mog.exe` into a real install:
 //!   1. copy this binary into the per-user install dir (`%LOCALAPPDATA%\mog`),
 //!   2. put that dir on the user PATH (so `mog` works in every new shell),
-//!   3. seed the recipe library and register the MCP server (by re-running the
+//!   3. seed the mog library and register the MCP server (by re-running the
 //!      *installed* binary's `mog setup`, so MCP points at the installed path),
 //!   4. write an Add/Remove Programs entry whose uninstall calls `mog uninstall`.
 //!
@@ -15,7 +15,7 @@
 //! `mog uninstall` reverses all of it: PATH entry, Add/Remove key, MCP
 //! registration, shortcuts, and finally the install dir itself (via a detached
 //! command, since the running binary usually lives inside the dir it deletes).
-//! The recipe library under `%APPDATA%\mog` is user data and is left in place.
+//! The mog library under `%APPDATA%\mog` is user data and is left in place.
 //!
 //! The registry mechanics reuse the App-Patterns Self-Installer shapes: install
 //! dir = `%LOCALAPPDATA%\<App>` (per-user, no UAC), shortcuts via WScript.Shell,
@@ -221,7 +221,7 @@ pub fn install_studio(print: bool, json_out: bool) -> Result<i32> {
 
 /// `mog uninstall`: reverse the install. Removes PATH entry, ARP key, MCP
 /// registration, shortcuts, then deletes the install dir via a detached command.
-/// Leaves the recipe library under `%APPDATA%\mog` (user data) intact.
+/// Leaves the mog library under `%APPDATA%\mog` (user data) intact.
 pub fn uninstall(print: bool, json_out: bool) -> Result<i32> {
     let dir = install_dir()
         .ok_or_else(|| anyhow!("could not determine an install dir (LOCALAPPDATA unset)"))?;

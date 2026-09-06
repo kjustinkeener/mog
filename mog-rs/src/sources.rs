@@ -1,11 +1,11 @@
 //! Loading external data `sources` (name -> lines) for source-aware actions
-//! (`fill_from_list`, and the two-input `compare` family). Recipe-declared source
+//! (`fill_from_list`, and the two-input `compare` family). Mog-declared source
 //! paths are confined to the .mog's directory; the CLI `--source NAME=PATH` binds
 //! any path and overrides a same-named declaration.
 //!
-//! This is the ONE place the confined recipe-source loading lives, shared by the
+//! This is the ONE place the confined mog-source loading lives, shared by the
 //! CLI (`main.rs`) and the torture harness (`testkit`), so `mog --test` threads a
-//! recipe's declared sources exactly as a real run would.
+//! mog's declared sources exactly as a real run would.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -27,15 +27,15 @@ pub fn read_source_lines(path: &Path, name: &str) -> Result<Vec<String>> {
     Ok(text.lines().map(|l| l.to_string()).collect())
 }
 
-/// Load a recipe's own declared `sources` (name -> relative path), each confined
+/// Load a mog's own declared `sources` (name -> relative path), each confined
 /// to `base_dir` (the .mog's directory) and read into its list of lines. No CLI
 /// overrides are applied here; callers that support `--source` layer those on top.
-pub fn load_recipe_sources(
-    recipe: &BTreeMap<String, String>,
+pub fn load_mog_sources(
+    mog: &BTreeMap<String, String>,
     base_dir: Option<&Path>,
 ) -> Result<BTreeMap<String, Vec<String>>> {
     let mut out = BTreeMap::new();
-    for (name, path) in recipe {
+    for (name, path) in mog {
         let p = Path::new(path);
         if !is_confined(p) {
             bail!(

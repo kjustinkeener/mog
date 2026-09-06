@@ -7,7 +7,7 @@
 
 use std::path::PathBuf;
 
-use mog::docgen::render_recipe_doc;
+use mog::docgen::render_mog_doc;
 use mog::testkit::find_mogs;
 
 fn norm(s: &str) -> String {
@@ -15,7 +15,7 @@ fn norm(s: &str) -> String {
 }
 
 #[test]
-fn recipe_readmes_are_up_to_date() {
+fn mog_readmes_are_up_to_date() {
     let factory = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("factory");
     let mogs = find_mogs(&factory);
     assert!(
@@ -25,7 +25,7 @@ fn recipe_readmes_are_up_to_date() {
 
     let mut drifted = Vec::new();
     for mog in &mogs {
-        let expected = render_recipe_doc(mog).expect("render recipe doc");
+        let expected = render_mog_doc(mog).expect("render recipe doc");
         let readme = mog.parent().unwrap().join("README.md");
         let actual = std::fs::read_to_string(&readme).unwrap_or_default();
         if norm(&actual) != norm(&expected) {

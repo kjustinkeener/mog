@@ -105,7 +105,7 @@ struct Cli {
 
     // ---- Determinism pins (`--pin-*`) -----------------------------------------
     // These fix a source of non-determinism so a run is reproducible (and so a
-    // recipe that uses {{@now}}/{{@uuid}} can have a stable golden fixture). Named
+    // mog that uses {{@now}}/{{@uuid}} can have a stable golden fixture). Named
     // with a shared `--pin-` prefix to make their purpose obvious.
     /// Determinism pin: fix the clock for the built-in {{@now}} / {{@today}} /
     /// {{@year}} / {{@epoch}} / {{@date}} placeholders. Accepts epoch seconds or an
@@ -325,24 +325,24 @@ enum Command {
         #[command(subcommand)]
         action: ConfigAction,
     },
-    /// The marketplace: search, install, and browse reusable recipes.
+    /// The marketplace: search, install, and browse reusable mogs.
     Market {
         #[command(subcommand)]
         action: MarketAction,
     },
-    /// Bring this machine current with the registry: sync recipes (by content
+    /// Bring this machine current with the registry: sync mogs (by content
     /// hash) and self-replace the engine binary if a newer signed build exists.
     Update {
         /// Report what would change; write nothing.
         #[arg(long)]
         check: bool,
-        /// Skip the recipe sync (engine binary only).
+        /// Skip the mog sync (engine binary only).
         #[arg(long = "no-recipes")]
         no_recipes: bool,
-        /// Skip the engine binary swap (recipes only).
+        /// Skip the engine binary swap (mogs only).
         #[arg(long = "no-engine")]
         no_engine: bool,
-        /// Remove recipes on disk that are gone from the catalog (off by default).
+        /// Remove mogs on disk that are gone from the catalog (off by default).
         #[arg(long)]
         prune: bool,
     },
@@ -369,8 +369,8 @@ enum Command {
         print: bool,
     },
     /// Reverse `mog install`: remove the PATH entry, Add/Remove Programs key, MCP
-    /// registration, and shortcuts, then delete the install dir. The recipe
-    /// library under %APPDATA%\mog (your recipes) is left in place.
+    /// registration, and shortcuts, then delete the install dir. The mog
+    /// library under %APPDATA%\mog (your mogs) is left in place.
     Uninstall {
         /// Dry run: report every action, change nothing.
         #[arg(long)]
@@ -423,20 +423,20 @@ enum MarketAction {
     },
     /// Browse the catalog (featured first).
     List,
-    /// Show one recipe's detail (local content + fixture, or the catalog entry).
+    /// Show one mog's detail (local content + fixture, or the catalog entry).
     Show {
         #[arg(value_name = "NAME")]
         name: String,
-        /// Print metadata only, no script body (for a local recipe).
+        /// Print metadata only, no script body (for a local mog).
         #[arg(long = "no-content")]
         no_content: bool,
     },
-    /// Download, verify (signature + hash), and install a recipe.
+    /// Download, verify (signature + hash), and install a mog.
     Install {
         #[arg(value_name = "NAME")]
         name: String,
     },
-    /// Author a local recipe: install a .mog (+ its fixtures) into your library.
+    /// Author a local mog: install a .mog (+ its fixtures) into your library.
     Add {
         #[arg(value_name = "FILE")]
         file: PathBuf,
@@ -447,12 +447,12 @@ enum MarketAction {
         #[arg(long)]
         force: bool,
     },
-    /// Remove a locally-authored recipe (user source only).
+    /// Remove a locally-authored mog (user source only).
     Rm {
         #[arg(value_name = "NAME")]
         name: String,
     },
-    /// Regenerate a local recipe's golden fixture from its TestInput.
+    /// Regenerate a local mog's golden fixture from its TestInput.
     Bless {
         #[arg(value_name = "NAME")]
         name: String,
@@ -460,12 +460,12 @@ enum MarketAction {
         #[arg(long)]
         yes: bool,
     },
-    /// Submit a recipe for review (not yet available).
+    /// Submit a mog for review (not yet available).
     Submit {
         #[arg(value_name = "FILE")]
         file: PathBuf,
     },
-    /// Generate a README.md beside every recipe under DIR from its metadata and
+    /// Generate a README.md beside every mog under DIR from its metadata and
     /// golden fixture. `--check` writes nothing and fails if any committed doc is
     /// out of date (for CI).
     GenDocs {
@@ -509,7 +509,7 @@ enum OutputMode {
 fn main() {
     use clap::{CommandFactory, FromArgMatches};
     // Parse via ArgMatches so we can tell whether --output-encoding was given
-    // explicitly (it has a default value, so a recipe's `output_encoding` should
+    // explicitly (it has a default value, so a mog's `output_encoding` should
     // apply only when the flag was NOT passed on the command line).
     let matches = Cli::command().get_matches();
     let cli = match Cli::from_arg_matches(&matches) {
@@ -537,7 +537,7 @@ fn main() {
 /// Run the CLI, returning the process exit code (0 = success). Errors bubble up
 /// to `main`, which renders them (as JSON under --json) and exits nonzero.
 fn run(cli: &Cli, out_enc_explicit: bool) -> Result<i32> {
-    // Own a mutable copy so the recipe's `output_encoding` can be folded into
+    // Own a mutable copy so the mog's `output_encoding` can be folded into
     // `cli.output_encoding` before any encode step reads it (see below). Cheap;
     // `main` keeps the original for error rendering.
     let mut cli = cli.clone();
@@ -606,7 +606,7 @@ fn run(cli: &Cli, out_enc_explicit: bool) -> Result<i32> {
     let mog = load_mog_file_with_defines(&script_path, &defines)?;
 
     // Output encoding precedence: an explicit --output-encoding wins; otherwise a
-    // recipe-declared `output_encoding` applies; otherwise the "preserve" default.
+    // mog-declared `output_encoding` applies; otherwise the "preserve" default.
     // Fold the resolved value into `cli` so every downstream encode reads it.
     if !out_enc_explicit {
         if let Some(enc) = &mog.output_encoding {
@@ -628,7 +628,7 @@ fn run(cli: &Cli, out_enc_explicit: bool) -> Result<i32> {
     // fall back to the library).
     let base_dir = script_path.parent();
 
-    // External data sources for source-aware actions (recipe-declared paths are
+    // External data sources for source-aware actions (mog-declared paths are
     // confined to the .mog's directory; --source binds any path and overrides).
     let sources = load_sources(&mog.sources, &cli.source, base_dir)?;
 
@@ -1335,18 +1335,18 @@ fn parse_defines(defs: &[String]) -> Result<BTreeMap<String, String>> {
     Ok(map)
 }
 
-/// Load external data sources for source-aware actions. Recipe-declared paths
+/// Load external data sources for source-aware actions. Mog-declared paths
 /// (from the .mog's `sources`) are confined to the .mog's directory; `--source
 /// NAME=PATH` binds any path and overrides a same-named declaration. Each source
 /// becomes its list of lines.
 fn load_sources(
-    recipe: &BTreeMap<String, String>,
+    mog: &BTreeMap<String, String>,
     cli_sources: &[String],
     base_dir: Option<&Path>,
 ) -> Result<Arc<BTreeMap<String, Vec<String>>>> {
-    // Recipe-declared sources are confined to the .mog's directory (shared with
+    // Mog-declared sources are confined to the .mog's directory (shared with
     // the `mog --test` harness so a golden threads sources exactly as a run does).
-    let mut out = mog::sources::load_recipe_sources(recipe, base_dir)?;
+    let mut out = mog::sources::load_mog_sources(mog, base_dir)?;
     // CLI `--source NAME=PATH` binds any path and overrides a same-named declaration.
     for entry in cli_sources {
         let (k, v) = entry

@@ -1,7 +1,7 @@
 //! True semantic SQL dialect transpilation via the pure-Rust `polyglot-sql` crate
 //! (a from-scratch port of sqlglot). This is the correctness tier beside the regex
 //! converters: it PARSES and REGENERATES the SQL, so it handles semantics the regex
-//! recipes cannot (function/type/quoting rules across dialects) but REFORMATS the
+//! mogs cannot (function/type/quoting rules across dialects) but REFORMATS the
 //! output (not minimal-diff, comments may move). In the default build.
 //!
 //! Also hosts `sql_lint`: parse-validate SQL against a dialect and annotate problems

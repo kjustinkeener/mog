@@ -18,7 +18,7 @@ fn factory_root() -> PathBuf {
 }
 
 #[test]
-fn every_factory_recipe_matches_its_golden() {
+fn every_factory_mog_matches_its_golden() {
     let root = factory_root();
     let mogs = find_mogs(&root);
     assert!(

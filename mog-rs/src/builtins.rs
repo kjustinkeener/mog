@@ -3,7 +3,7 @@
 //! engine itself never reads the clock or RNG; these values are injected as
 //! constant overrides before any action runs, so `--pin-now` / `--pin-seed` make a
 //! run reproducible. `mog --test` pins to the fixed [`TEST_NOW`] / [`TEST_SEED`] by
-//! default so a recipe using these placeholders can still have a stable golden.
+//! default so a mog using these placeholders can still have a stable golden.
 
 use std::collections::BTreeMap;
 
@@ -11,7 +11,7 @@ use anyhow::Result;
 
 /// The fixed clock `mog --test` pins by default (overridable with `--pin-now`).
 /// This is Go's reference time; keep it STABLE -- changing it rewrites the goldens
-/// of every recipe that reads {{@now}}/{{@today}}/{{@year}}/{{@epoch}}/{{@date}}.
+/// of every mog that reads {{@now}}/{{@today}}/{{@year}}/{{@epoch}}/{{@date}}.
 pub const TEST_NOW: &str = "2006-01-02T15:04:05";
 /// The fixed RNG seed `mog --test` pins by default (overridable with `--pin-seed`).
 pub const TEST_SEED: u64 = 0;

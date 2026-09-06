@@ -1,11 +1,11 @@
 //! The marketplace trust contract: the signed `index.json` catalog format,
 //! plus the SHA-256 hashing and ed25519 signing/verification that let the client
-//! trust a downloaded recipe without trusting the host it came from.
+//! trust a downloaded mog without trusting the host it came from.
 //!
 //! One signature over the whole
-//! index, plus a per-entry content hash, transitively protects every recipe:
+//! index, plus a per-entry content hash, transitively protects every mog:
 //! `install`/`update` verify the index signature with the public key compiled
-//! into `mog`, then verify each downloaded recipe against the hash in the
+//! into `mog`, then verify each downloaded mog against the hash in the
 //! now-trusted index.
 
 use std::collections::BTreeMap;
@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 /// Current `index.json` schema version. Bumped only on a breaking format change
-/// (distinct from a recipe's own `version`).
+/// (distinct from a mog's own `version`).
 pub const INDEX_SCHEMA: u32 = 1;
 
 /// The marketplace public signing key (base64 of the 32-byte ed25519 verifying key),
@@ -32,7 +32,7 @@ fn is_false(b: &bool) -> bool {
     !*b
 }
 
-/// One recipe in the catalog. The author-authored searchable fields (`name`,
+/// One mog in the catalog. The author-authored searchable fields (`name`,
 /// `description`, `tags`) are copied here so search works offline against the
 /// cached index; the curatorial fields (`category`, `featured`, `version`, the
 /// hashes, `download_count`) are set by the registry, never by the submitter.
@@ -43,7 +43,7 @@ pub struct IndexEntry {
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
-    /// Names of other marketplace recipes this recipe composes; installed transitively.
+    /// Names of other marketplace mogs this mog composes; installed transitively.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dependencies: Vec<String>,
     /// Reviewer-assigned hierarchical path, e.g. `sql/dialect-conversion`.
@@ -53,11 +53,11 @@ pub struct IndexEntry {
     /// default. Never a hard visibility gate.
     #[serde(default, skip_serializing_if = "is_false")]
     pub featured: bool,
-    /// Monotonic recipe version; a backward-compatible revision bumps it.
+    /// Monotonic mog version; a backward-compatible revision bumps it.
     pub version: u32,
-    /// Registry-relative path to the recipe `.mog` (its download location).
+    /// Registry-relative path to the mog `.mog` (its download location).
     pub path: String,
-    /// SHA-256 (hex) of the recipe `.mog` bytes.
+    /// SHA-256 (hex) of the mog `.mog` bytes.
     pub sha256: String,
     /// SHA-256 (hex) of each sibling fixture, keyed by file name. Sorted (BTree)
     /// so the serialized index is deterministic, hence signable.
@@ -73,7 +73,7 @@ pub struct IndexEntry {
 }
 
 /// The full catalog. Signed as a whole (its exact JSON bytes), so a single
-/// signature plus each entry's `sha256` protects every recipe transitively.
+/// signature plus each entry's `sha256` protects every mog transitively.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Index {
     pub schema: u32,
@@ -94,7 +94,7 @@ impl Index {
         }
     }
 
-    /// Look up a single recipe by its (globally unique) name.
+    /// Look up a single mog by its (globally unique) name.
     pub fn get(&self, name: &str) -> Option<&IndexEntry> {
         self.entries.iter().find(|e| e.name == name)
     }
@@ -120,7 +120,7 @@ impl Default for Index {
     }
 }
 
-/// The signed deny list: recipes pulled after publication (malicious, legal
+/// The signed deny list: mogs pulled after publication (malicious, legal
 /// takedown, unfixable break). The client removes/blocks these on `update`, and
 /// refuses to `install` them. Published and signed alongside the index.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -238,7 +238,7 @@ fn default_version() -> u32 {
     1
 }
 
-/// Reviewer-assigned curation for one recipe, read from the registry's
+/// Reviewer-assigned curation for one mog, read from the registry's
 /// `curation.json` sidecar (spec section 4: the submitter cannot set these).
 #[derive(Debug, Clone, Deserialize)]
 pub struct CurationEntry {
@@ -260,7 +260,7 @@ impl Default for CurationEntry {
     }
 }
 
-/// `name -> curation`. Recipes absent from the map default to no category, not
+/// `name -> curation`. Mogs absent from the map default to no category, not
 /// featured, version 1.
 pub type Curation = BTreeMap<String, CurationEntry>;
 
@@ -291,9 +291,9 @@ fn rel_slash(root: &Path, path: &Path) -> String {
         .replace('\\', "/")
 }
 
-/// Hash a recipe's fixtures under its `tests/` directory: `input.*` and
-/// `expected.*`. Keys are the fixture path relative to the recipe directory
-/// (e.g. `tests/input.txt`) so the manifest is unambiguous. A recipe with no
+/// Hash a mog's fixtures under its `tests/` directory: `input.*` and
+/// `expected.*`. Keys are the fixture path relative to the mog directory
+/// (e.g. `tests/input.txt`) so the manifest is unambiguous. A mog with no
 /// `tests/` directory contributes an empty map.
 fn fixture_hashes(mog_path: &Path) -> Result<BTreeMap<String, String>> {
     let mut map = BTreeMap::new();
@@ -315,18 +315,18 @@ fn fixture_hashes(mog_path: &Path) -> Result<BTreeMap<String, String>> {
 }
 
 /// Walk `recipe_root` for `.mog` files and build the catalog: author fields
-/// (`description`, `tags`) copied from each recipe, curatorial fields from
-/// `curation`, content hashes computed over the recipe and its fixtures. Entries
+/// (`description`, `tags`) copied from each mog, curatorial fields from
+/// `curation`, content hashes computed over the mog and its fixtures. Entries
 /// are sorted by name so the output, and therefore its signature, is
 /// deterministic.
 pub fn build_index(
-    recipe_root: &Path,
+    mog_root: &Path,
     path_base: &Path,
     curation: &Curation,
     generated_at: Option<String>,
 ) -> Result<Index> {
     let mut mog_files = Vec::new();
-    collect_mog_files(recipe_root, &mut mog_files)?;
+    collect_mog_files(mog_root, &mut mog_files)?;
 
     let mut entries = Vec::new();
     for mog_path in mog_files {
@@ -472,16 +472,16 @@ mod tests {
     fn build_index_from_dir() {
         let dir = tempfile::tempdir().unwrap();
         let root = dir.path();
-        // One directory per recipe: <name>/<name>.mog + <name>/tests/{input,expected}.
-        let recipe_dir = root.join("tidy-list");
-        std::fs::create_dir_all(recipe_dir.join("tests")).unwrap();
+        // One directory per mog: <name>/<name>.mog + <name>/tests/{input,expected}.
+        let mog_dir = root.join("tidy-list");
+        std::fs::create_dir_all(mog_dir.join("tests")).unwrap();
         std::fs::write(
-            recipe_dir.join("tidy-list.mog"),
+            mog_dir.join("tidy-list.mog"),
             br#"{"name":"Tidy List","description":"clean a list","tags":["list"],"steps":[{"action":"sort_lines"}]}"#,
         )
         .unwrap();
-        std::fs::write(recipe_dir.join("tests/input.txt"), b"b\na\n").unwrap();
-        std::fs::write(recipe_dir.join("tests/expected.txt"), b"a\nb\n").unwrap();
+        std::fs::write(mog_dir.join("tests/input.txt"), b"b\na\n").unwrap();
+        std::fs::write(mog_dir.join("tests/expected.txt"), b"a\nb\n").unwrap();
 
         let mut cur = Curation::new();
         cur.insert(

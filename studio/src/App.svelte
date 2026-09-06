@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
-  import { listActions, listCategories, logPath, userRecipePath, type RecipeDetail } from './lib/api';
+  import { listActions, listCategories, logPath, userMogPath, type MogDetail } from './lib/api';
   import { addStep, loadMog, newPipeline, serializeMog, setCategories, setDescriptors, setTab, studio } from './lib/store.svelte';
   import { setRunSubtab } from './lib/runParams.svelte';
   import { markMogLoaded } from './lib/recentMogs.svelte';
@@ -16,7 +16,7 @@
   import TestPanel from './lib/components/TestPanel.svelte';
   import CheckPanel from './lib/components/CheckPanel.svelte';
   import ImpactPanel from './lib/components/ImpactPanel.svelte';
-  import RecipeBrowser from './lib/components/RecipeBrowser.svelte';
+  import MogBrowser from './lib/components/MogBrowser.svelte';
   import RegexPopover from './lib/components/RegexPopover.svelte';
   import Icon from './lib/components/Icon.svelte';
 
@@ -38,7 +38,7 @@
 
   // Load a recipe's steps into the editor, and its fixture TestInput into the
   // preview so it's ready to Transform. Fresh, untitled pipeline.
-  function applyRecipe(detail: RecipeDetail): void {
+  function applyMog(detail: MogDetail): void {
     try {
       const doc = JSON.parse(detail.content);
       loadMog(doc, null);
@@ -53,16 +53,16 @@
 
   // Open a recipe chosen in the Browse tab (its detail is already loaded), then
   // jump to Edit to work on it.
-  function openRecipeDetail(detail: RecipeDetail): void {
+  function openMogDetail(detail: MogDetail): void {
     if (!confirmDiscard()) return;
-    applyRecipe(detail);
+    applyMog(detail);
     setTab('edit');
   }
 
   // Load a recipe and jump straight to the Run tab to apply it across files.
-  function runRecipeDetail(detail: RecipeDetail): void {
+  function runMogDetail(detail: MogDetail): void {
     if (!confirmDiscard()) return;
-    applyRecipe(detail);
+    applyMog(detail);
     setTab('run');
   }
 
@@ -215,7 +215,7 @@
     if (!defaultPath) {
       const file = `${slugify(studio.mog.name ?? '') || 'untitled'}.mog`;
       try {
-        defaultPath = (await userRecipePath(file)) ?? file;
+        defaultPath = (await userMogPath(file)) ?? file;
       } catch {
         defaultPath = file;
       }
@@ -302,12 +302,12 @@
 
   {#if studio.tab === 'browse'}
     <div class="browse-wrap">
-      <RecipeBrowser
+      <MogBrowser
         inline
         initialQuery=""
         onclose={() => setTab('edit')}
-        onopen={openRecipeDetail}
-        onrun={runRecipeDetail}
+        onopen={openMogDetail}
+        onrun={runMogDetail}
         oninsert={insertRunMog}
       />
     </div>

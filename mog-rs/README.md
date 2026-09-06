@@ -107,7 +107,7 @@ git diff --name-only | mog -m fix.mog --in-place   --files-from -   # apply
 
 Exit codes: `0` clean, `1` would-change or a flag/assert fired, `2` error. See
 [`packaging/`](../packaging) for a Dockerfile, a GitHub Action, and a GitLab
-template. `mog --explain -m recipe.mog` prints a plain-language summary of a
+template. `mog --explain -m example.mog` prints a plain-language summary of a
 pipeline.
 
 ### Guardrails always have an override
@@ -191,7 +191,7 @@ the `description` field on the pipeline and on each step for human annotation.
 A pipeline may also carry an optional top-level `summary`: a short, one-line
 human blurb, kept distinct from the longer `description` (which stays the full,
 agent-facing explanation). `mog market list` / `market search` show the `summary`
-in their human output (falling back to a truncated `description` when a recipe has
+in their human output (falling back to a truncated `description` when a mog has
 none), while `--json` (and therefore the MCP server and Mog Studio) returns the
 full `description` and now also includes `summary`.
 
@@ -315,7 +315,7 @@ three tokens that expand per match, alongside the usual `$1` / `${name}` backref
 | `$uuid` | a fresh RFC-4122 v4 UUID, unique per match |
 
 `$uuid` is deterministic under `--pin-seed` (and `mog --test`, which pins the
-clock and RNG) so recipes that stamp UUIDs get stable goldens; without a pinned
+clock and RNG) so mogs that stamp UUIDs get stable goldens; without a pinned
 seed it is random. Double the leading `$` to keep any of these literal, e.g.
 `$$uuid` emits the text `$uuid`.
 
@@ -511,7 +511,7 @@ snowflake`). They are **best-effort, minimal-diff** rewrites in mog's regex +
 composition lane: identifier requoting, type-keyword maps, safe function renames,
 and dialect-specific cleanups (e.g. stripping Redshift `DISTKEY`/`SORTKEY`). They
 are deliberately NOT a semantic transpiler, so they never silently reshape
-arguments; each recipe's description states its limits, and you review the diff.
+arguments; each mog's description states its limits, and you review the diff.
 That reviewable, comment-preserving minimal diff is the point.
 
 For full semantic transpilation (function/type/quoting semantics across dialects),

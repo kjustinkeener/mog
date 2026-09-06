@@ -385,7 +385,7 @@ pub fn ipynb_to_python(input: &str, step: &Step) -> Result<String> {
 }
 
 /// `json_unescape`: decode JSON string escapes (`\n \t \r \b \f \/ \" \\ \uXXXX`)
-/// in the input text. The inverse of the json-escape recipe.
+/// in the input text. The inverse of the json-escape mog.
 pub fn json_unescape(input: &str, _step: &Step) -> Result<String> {
     let mut out = String::with_capacity(input.len());
     let mut chars = input.chars().peekable();

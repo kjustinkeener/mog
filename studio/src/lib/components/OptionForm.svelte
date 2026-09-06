@@ -7,7 +7,7 @@
 
   // The run_mog `file` field gets the recipe-library typeahead (free text still
   // works for paths); everything else uses the generic schema-driven inputs.
-  function isRecipePicker(p: ParamSpec): boolean {
+  function isMogPicker(p: ParamSpec): boolean {
     return desc.name === 'run_mog' && p.key === 'file';
   }
 
@@ -69,7 +69,7 @@
           {#if p.required}<span class="req">*</span>{/if}
         </label>
 
-        {#if isRecipePicker(p)}
+        {#if isMogPicker(p)}
           <MogSearchBox
             value={strVal(p)}
             oninput={(v) => set(p, v)}

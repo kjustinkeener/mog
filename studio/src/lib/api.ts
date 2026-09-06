@@ -78,7 +78,7 @@ export interface TestOutcome {
 }
 
 /** Run the current recipe + input + expected output as a `mog --test` case. */
-export function runRecipeTest(
+export function runMogTest(
   pipeline: string,
   input: string,
   expected: string,
@@ -138,7 +138,7 @@ export function diffFile(pipeline: string, path: string): Promise<string> {
 }
 
 // One recipe as returned by `mog market search/list --json`.
-export interface RecipeHit {
+export interface MogHit {
   name: string;
   description: string;
   tags: string[];
@@ -151,16 +151,16 @@ export interface RecipeHit {
 
 interface MarketSearchResult {
   count: number;
-  results: RecipeHit[];
+  results: MogHit[];
 }
 
 /** Ranked recipe search; empty query lists the whole catalog (featured first). */
-export async function marketSearch(query: string): Promise<RecipeHit[]> {
+export async function marketSearch(query: string): Promise<MogHit[]> {
   const r = await invoke<MarketSearchResult>('market_search', { query });
   return r.results ?? [];
 }
 
-export interface RecipeDetail {
+export interface MogDetail {
   name: string;
   /** The recipe's .mog document, as a JSON string. */
   content: string;
@@ -178,8 +178,8 @@ export interface RecipeDetail {
 }
 
 /** One recipe's full detail, including its `.mog` content. */
-export function marketShow(name: string): Promise<RecipeDetail> {
-  return invoke<RecipeDetail>('market_show', { name });
+export function marketShow(name: string): Promise<MogDetail> {
+  return invoke<MogDetail>('market_show', { name });
 }
 
 // One recipe change reported by `mog update`.
@@ -211,6 +211,6 @@ export function mogUpdate(
 /** Full path to save `filename` into the user's mog library (the Save As default).
  *  Resolves null when no library root exists, or rejects on engines/builds without
  *  the command; callers fall back to the bare filename. */
-export function userRecipePath(filename: string): Promise<string | null> {
+export function userMogPath(filename: string): Promise<string | null> {
   return invoke<string | null>('user_recipe_path', { filename });
 }

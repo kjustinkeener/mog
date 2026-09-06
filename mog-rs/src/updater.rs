@@ -1,9 +1,9 @@
 //! `mog update`: one command that brings a machine current with the registry --
-//! recipes and the engine binary both. It is the single implementation the CLI,
+//! mogs and the engine binary both. It is the single implementation the CLI,
 //! the MCP server, and Studio all drive (the latter two shell out to it), so the
 //! update logic lives in exactly one place.
 //!
-//! Recipes sync by content hash (see [`crate::market_client::sync`]); the engine
+//! Mogs sync by content hash (see [`crate::market_client::sync`]); the engine
 //! self-replaces from a signed manifest (see [`crate::selfupdate`]). Either track
 //! can be skipped. `--check` reports what would change without touching anything.
 
@@ -14,9 +14,9 @@ use serde::Serialize;
 
 /// What to do this run.
 pub struct Options {
-    /// Report only; write nothing (recipes and engine both).
+    /// Report only; write nothing (mogs and engine both).
     pub check: bool,
-    /// Skip the recipe sync.
+    /// Skip the mog sync.
     pub no_recipes: bool,
     /// Skip the engine binary swap.
     pub no_engine: bool,
@@ -38,7 +38,7 @@ pub fn run(root: Option<&Path>, opts: &Options) -> Result<i32> {
     let root = root.ok_or_else(|| anyhow!("no library root (set MOG_HOME or --mog-dir)"))?;
     let base = crate::market_client::market_base_url()?;
 
-    // --- recipes ---
+    // --- mogs ---
     let plan = if opts.no_recipes {
         None
     } else {

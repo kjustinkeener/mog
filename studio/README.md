@@ -8,22 +8,22 @@ across many files.
 handling are all Windows-specific, and rendering uses the Edge WebView2 runtime
 that ships with Windows.
 
-![Mog Studio browsing the recipe marketplace](docs/screenshot.png)
+![Mog Studio browsing the mog marketplace](docs/screenshot.png)
 
 ## What it does
 
-- **Build a recipe without memorising the format.** Every action renders as a
+- **Build a mog without memorising the format.** Every action renders as a
   form generated from its schema, so the available options and their types come
   from the engine rather than from documentation that can drift.
 - **See the change before making it.** A live diff shows exactly what a step
   would do to the current input, updated as you edit.
 - **Run across many files at once**, with an impact summary per file before
   anything is written.
-- **Test recipes against their goldens** and check that a recipe would leave a
+- **Test mogs against their goldens** and check that a mog would leave a
   set of files unchanged.
-- **Browse and install shared recipes** from the Mog marketplace.
+- **Browse and install shared mogs** from the Mog marketplace.
 - **A regex tester in the engine's exact flavour**, so a pattern that works in
-  the tester works in a recipe.
+  the tester works in a mog.
 
 Built with Tauri v2 (Rust) and Svelte 5 (runes) + TypeScript + Vite.
 
@@ -49,7 +49,7 @@ download.
 
 On first launch from outside its install directory, Studio shows an installer
 card: it copies itself into a per-user location, extracts the engine next to it,
-and lets the engine register itself (PATH, recipe library, MCP server, and the
+and lets the engine register itself (PATH, mog library, MCP server, and the
 Add/Remove Programs entry). Everything is per-user, so no administrator rights
 are needed.
 

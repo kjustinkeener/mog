@@ -39,7 +39,7 @@
     "licenseFile": "../../LICENSE",
     "category": "DeveloperTool",
     "shortDescription": "Desktop workbench for the Mog text-transform engine.",
-    "longDescription": "Build, preview and run Mog recipes with a schema-driven form for every action, a live diff, and batch runs across many files. Bundles the Mog engine.",
+    "longDescription": "Build, preview and run Mog mogs with a schema-driven form for every action, a live diff, and batch runs across many files. Bundles the Mog engine.",
     "android": {
       "debugApplicationIdSuffix": ".debug"
     }

@@ -8,18 +8,18 @@
 // queries the engine live (see RecipeBrowser). A recipe saved mid-session won't appear
 // until restart.
 
-import { marketSearch, type RecipeHit } from './api';
+import { marketSearch, type MogHit } from './api';
 
-let cache: RecipeHit[] | null = null;
-let inflight: Promise<RecipeHit[]> | null = null;
+let cache: MogHit[] | null = null;
+let inflight: Promise<MogHit[]> | null = null;
 
 /** The cached catalog if already loaded, else null (no fetch). */
-export function cachedCatalog(): RecipeHit[] | null {
+export function cachedCatalog(): MogHit[] | null {
   return cache;
 }
 
 /** Load the catalog once, reusing an in-flight or completed fetch. */
-export function loadCatalog(): Promise<RecipeHit[]> {
+export function loadCatalog(): Promise<MogHit[]> {
   if (cache) return Promise.resolve(cache);
   if (inflight) return inflight;
   inflight = marketSearch('')

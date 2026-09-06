@@ -13,9 +13,9 @@ use mog::{execute, load_mog_file};
 /// byte). The rest of the mappings are covered by the golden fixture.
 #[test]
 fn paste_cleanup_converts_em_dash() {
-    let recipe =
+    let mog_doc =
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("factory/paste-cleanup/paste-cleanup.mog");
-    let mog = load_mog_file(&recipe).expect("recipe loads");
+    let mog = load_mog_file(&mog_doc).expect("recipe loads");
     let input = "a\u{2014}b, then c\u{2014}\u{2014}d";
     let out = execute(&mog, input).expect("recipe runs");
     assert_eq!(out, "a--b, then c----d");
@@ -26,9 +26,9 @@ fn paste_cleanup_converts_em_dash() {
 /// dash itself here via a Rust `\u{}` escape.
 #[test]
 fn emdash_cleanup_converts_em_dash() {
-    let recipe =
+    let mog_doc =
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("factory/emdash-cleanup/emdash-cleanup.mog");
-    let mog = load_mog_file(&recipe).expect("recipe loads");
+    let mog = load_mog_file(&mog_doc).expect("recipe loads");
     let input = "a\u{2014}b\n\u{2014} lead\ntrail \u{2014}\nrun a \u{2014}\u{2014} b";
     let out = execute(&mog, input).expect("recipe runs");
     assert_eq!(out, "a - b\n- lead\ntrail\nrun a - b");

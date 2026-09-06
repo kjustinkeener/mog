@@ -19,7 +19,7 @@ use include_dir::{include_dir, Dir};
 use serde::Serialize;
 
 /// Report-template precedence subdirectories under `MOG_HOME/templates/`. This is
-/// the template lookup order and is independent of the (now flat) recipe store;
+/// the template lookup order and is independent of the (now flat) mog store;
 /// see `load_template`.
 const TEMPLATE_SOURCES: [&str; 3] = ["user", "community", "factory"];
 

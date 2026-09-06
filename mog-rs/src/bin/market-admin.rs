@@ -24,9 +24,9 @@ enum Cmd {
     /// Generate a fresh ed25519 keypair. Save the signing key as a CI secret and
     /// paste the verifying key into `MARKET_PUBLIC_KEY_B64`.
     Keygen,
-    /// Build and sign `index.json` from a directory of recipes.
+    /// Build and sign `index.json` from a directory of mogs.
     Index {
-        /// Directory of `.mog` recipes (with sibling fixtures).
+        /// Directory of `.mog` mogs (with sibling fixtures).
         #[arg(long)]
         recipes: PathBuf,
         /// Optional `curation.json`: name -> {category, featured, version}.
@@ -35,7 +35,7 @@ enum Cmd {
         /// Signing key: base64, or `@path` to a file containing it.
         #[arg(long)]
         sign_key: String,
-        /// Output dir for `index.json` + `index.json.sig` (default: --recipes).
+        /// Output dir for `index.json` + `index.json.sig` (default: --mogs).
         #[arg(long)]
         out: Option<PathBuf>,
         /// Value for the index's `generated_at` field (e.g. an ISO timestamp).
@@ -175,7 +175,7 @@ fn main() -> Result<()> {
             let sk = read_sign_key(&sign_key)?;
             let out_dir = out.unwrap_or_else(|| recipes.clone());
             // Paths in the index are relative to the output dir (where index.json
-            // lives), so recipes may sit in a `recipes/` subdir and the client
+            // lives), so mogs may sit in a `recipes/` subdir and the client
             // still fetches base/<path> correctly.
             let index = build_index(&recipes, &out_dir, &cur, generated_at)?;
             let bytes = index.to_json_bytes()?;

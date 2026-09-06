@@ -3,13 +3,13 @@
 //! Setup does two independent jobs and prints one caveat:
 //!
 //! 1. **Store bootstrap** (the core): ensure the store root exists, then populate
-//!    the managed recipe dir `<root>/mogs/market` from the recipe set embedded in
+//!    the managed mog dir `<root>/mogs/market` from the mog set embedded in
 //!    the binary at build time. The managed set is always overwritten (one
-//!    directory per recipe). The user's own recipe dir `<root>/mogs/user` is
+//!    directory per mog). The user's own mog dir `<root>/mogs/user` is
 //!    ensured to exist but NEVER written into or cleared. Nothing is preserved in
 //!    market; stale layouts are deleted so their contents are not surfaced as
-//!    recipes: the old `user/` / `community/` / `factory/` source subfolders, and
-//!    any recipe dir the prior flat refactor left directly under `<root>`.
+//!    mogs: the old `user/` / `community/` / `factory/` source subfolders, and
+//!    any mog dir the prior flat refactor left directly under `<root>`.
 //! 2. **MCP registration** (a helper): register the in-engine MCP server with
 //!    Claude Code via `claude mcp add -s user mog -- <this-exe> mcp` (the server
 //!    is a subcommand of this binary now, so there is no Node entry point or
@@ -25,7 +25,7 @@ use anyhow::{anyhow, Context, Result};
 use include_dir::{include_dir, Dir};
 use serde_json::{json, Value};
 
-/// The recipe set embedded at build time (scripts + their fixture siblings),
+/// The mog set embedded at build time (scripts + their fixture siblings),
 /// assembled under `mog-rs/factory/` in the repo tree. Written out to
 /// `<root>/mogs/market/` on setup (the repo dir name is kept to minimize churn).
 static FACTORY_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/factory");
@@ -92,7 +92,7 @@ pub fn run(opts: &SetupOptions) -> Result<i32> {
 }
 
 /// Part A: ensure the store root and the two `mogs/` subdirs exist, then (re)write
-/// the embedded recipe set into `<root>/mogs/market`, overwriting. The user dir
+/// the embedded mog set into `<root>/mogs/market`, overwriting. The user dir
 /// `<root>/mogs/user` is ensured but never written into.
 fn bootstrap_store(opts: &SetupOptions) -> Result<Value> {
     let root = resolve_root(opts)?;

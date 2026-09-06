@@ -1,10 +1,10 @@
 //! The engine track of `mog update`: replace the running `mog` binary in place
-//! with a newer signed build published in the registry, alongside the recipe
+//! with a newer signed build published in the registry, alongside the mog
 //! sync in [`crate::market_client::sync`].
 //!
 //! Trust mirrors the catalog: a signed `engine.json` manifest lists, per
 //! platform, the download path and the SHA-256 of the binary. The manifest
-//! signature is checked with the same key that verifies the recipe index, then
+//! signature is checked with the same key that verifies the mog index, then
 //! the downloaded bytes are checked against the now-trusted hash before the swap.
 //!
 //! The swap uses `self_replace`, which handles the Windows case where a running

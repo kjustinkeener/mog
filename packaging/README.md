@@ -11,7 +11,7 @@ change files (nonzero exit fails the build), and `--in-place` applies it.
 
 | File | What it is |
 | --- | --- |
-| `../Dockerfile` | Multi-stage build producing a small `mog` image. Recipes are embedded in the binary. |
+| `../Dockerfile` | Multi-stage build producing a small `mog` image. Mogs are embedded in the binary. |
 | `../action.yml` | A Docker-based GitHub Action wrapper (`uses: kjustinkeener/mog@v1`). |
 | `gitlab-ci.example.yml` | Example GitLab CI jobs (whole-repo and changed-files). |
 
@@ -48,7 +48,7 @@ git diff --name-only origin/main...HEAD | mog -m recipes/fix.mog --check --files
 
 - `0` clean (no change / all checks passed)
 - `1` a file would change, or a flag/assert fired (`--check`)
-- `2` an error (bad recipe, unreadable input, ...)
+- `2` an error (bad mog, unreadable input, ...)
 
 ## Validation checklist (do before tagging a release)
 

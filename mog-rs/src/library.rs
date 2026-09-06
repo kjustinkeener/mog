@@ -9,10 +9,10 @@
 //!
 //! The store root is the default `%APPDATA%\mog` on Windows or `~/.mog`
 //! elsewhere, overridable via `MOG_HOME` or the `--mog-dir` flag. The managed
-//! recipe set lives under `<root>/mogs/market/`, one directory per recipe
+//! mog set lives under `<root>/mogs/market/`, one directory per mog
 //! (`<root>/mogs/market/<name>/<name>.mog`); there are no source subfolders.
-//! The user's own recipes live under `<root>/mogs/user/`, which the engine never
-//! scans, surfaces, overrides, or overwrites. Non-recipe siblings (`.cache`,
+//! The user's own mogs live under `<root>/mogs/user/`, which the engine never
+//! scans, surfaces, overrides, or overwrites. Non-mog siblings (`.cache`,
 //! `templates`, `reports`, `config.toml`) stay at the outer root.
 //!
 //! mog only ever resolves and reads `.mog` files. Before any of the above steps
@@ -42,16 +42,16 @@ pub fn default_root() -> Option<PathBuf> {
     }
 }
 
-/// The managed-recipe directory under a store `root`: `<root>/mogs/market`. This
+/// The managed-mog directory under a store `root`: `<root>/mogs/market`. This
 /// is the ONE place the engine reads, scans, resolves, installs, and removes
-/// recipes; it holds the embedded factory set and market installs, and is what
-/// `setup` overwrites wholesale. Every recipe path composes from this helper so
+/// mogs; it holds the embedded factory set and market installs, and is what
+/// `setup` overwrites wholesale. Every mog path composes from this helper so
 /// the `mogs/market` join is never scattered across the codebase.
 pub fn market_dir(root: &Path) -> PathBuf {
     root.join("mogs").join("market")
 }
 
-/// The user's own recipe directory under a store `root`: `<root>/mogs/user`. The
+/// The user's own mog directory under a store `root`: `<root>/mogs/user`. The
 /// engine never scans, surfaces, overrides, or overwrites it; `setup` only
 /// ensures it exists. It is Studio's default save-dialog location.
 pub fn user_dir(root: &Path) -> PathBuf {
@@ -85,9 +85,9 @@ pub fn resolve_script(
         }
     }
 
-    // 3. Library lookup. The managed recipe set lives under `<root>/mogs/market`,
-    //    so search there when it exists. Otherwise `lib_root` already IS a recipe
-    //    directory (the torture harness passes a recipe's enclosing dir, and the
+    // 3. Library lookup. The managed mog set lives under `<root>/mogs/market`,
+    //    so search there when it exists. Otherwise `lib_root` already IS a mog
+    //    directory (the torture harness passes a mog's enclosing dir, and the
     //    repo `factory/` tree is searched directly), so fall back to it verbatim.
     if let Some(root) = lib_root {
         let market = market_dir(root);
@@ -132,7 +132,7 @@ pub fn resolve_script(
 }
 
 /// Reject a composition target that would escape the resolution roots: absolute
-/// paths, rooted paths, and any `..` traversal. Store recipes reference their
+/// paths, rooted paths, and any `..` traversal. Store mogs reference their
 /// children by name only, so a `run_mog` / `for_each_block` target must stay
 /// within the base directory or the library. Top-level `mog -m <path>` is
 /// unaffected; only child (composed) resolution is confined. Engine hardening H1
@@ -261,7 +261,7 @@ mod tests {
     use std::fs;
     use tempfile::tempdir;
 
-    /// Build a store root whose managed recipe dir (`<root>/mogs/market`) holds
+    /// Build a store root whose managed mog dir (`<root>/mogs/market`) holds
     /// the given relpath files (content `{}`). The library lookup resolves against
     /// `market_dir(root)`, so callers pass `root.path()` and expect matches under
     /// `market_dir(root.path())`.
@@ -292,8 +292,8 @@ mod tests {
     }
 
     #[test]
-    fn recipe_resolves_from_its_own_directory() {
-        // One directory per recipe: <root>/<name>/<name>.mog resolves by bare name.
+    fn mog_resolves_from_its_own_directory() {
+        // One directory per mog: <root>/<name>/<name>.mog resolves by bare name.
         let root = lib_with(&["x/x.mog"]);
         let got = resolve_script(Path::new("x.mog"), None, Some(root.path())).unwrap();
         assert_eq!(got, market_dir(root.path()).join("x").join("x.mog"));

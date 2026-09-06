@@ -21,7 +21,7 @@
 //! `--silent` does all of that headlessly (scripted installs). `--uninstall`
 //! removes the Studio shortcut + ARP entry, then runs `mog.exe uninstall`, which
 //! tears down the engine and deletes the whole install dir (Studio included). The
-//! recipe library under `%APPDATA%\mog` is user data and is left in place.
+//! mog library under `%APPDATA%\mog` is user data and is left in place.
 
 use std::path::{Path, PathBuf};
 
@@ -225,7 +225,7 @@ fn extract_engine(dir: &Path) -> Result<PathBuf, String> {
 }
 
 /// Run `<install_dir>\mog.exe install` windowless, so the engine provisions PATH,
-/// the recipe library, MCP registration, and its own Add/Remove entry.
+/// the mog library, MCP registration, and its own Add/Remove entry.
 fn run_engine_install(engine: &Path) -> Result<(), String> {
     let mut c = std::process::Command::new(engine);
     c.arg("install");

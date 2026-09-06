@@ -1,8 +1,8 @@
 //! Shared discovery + comparison for a mogfile's torture fixtures.
 //!
-//! Each recipe lives in its own directory: `<recipe>/<recipe>.mog` ships a
-//! `<recipe>/tests/input.<ext>` (an edge-heavy input) and a
-//! `<recipe>/tests/expected.<ext>` golden. Running the script over the input must
+//! Each mog lives in its own directory: `<mog>/<mog>.mog` ships a
+//! `<mog>/tests/input.<ext>` (an edge-heavy input) and a
+//! `<mog>/tests/expected.<ext>` golden. Running the script over the input must
 //! reproduce the golden (EOL-normalized). This module is the ONE source of truth
 //! for that discovery + comparison, shared by the `tests/torture_standard.rs`
 //! suite and the `mog --test` CLI verb. See docs/mogfile-standard.md.
@@ -20,17 +20,17 @@ pub fn lf(s: &str) -> String {
     s.replace("\r\n", "\n").replace('\r', "\n")
 }
 
-/// Find a recipe's fixture, if any. `infix` is the fixture role (`TestInput` /
-/// `TestExpectedOutput`). The one-directory-per-recipe layout keeps fixtures in a
+/// Find a mog's fixture, if any. `infix` is the fixture role (`TestInput` /
+/// `TestExpectedOutput`). The one-directory-per-mog layout keeps fixtures in a
 /// `tests/` subdir under new stems (`input` / `expected`), i.e.
-/// `<recipe>/tests/input.<ext>` and `<recipe>/tests/expected.<ext>`; that is
+/// `<mog>/tests/input.<ext>` and `<mog>/tests/expected.<ext>`; that is
 /// tried first. For backward compatibility with the older flat layout (a library
-/// authored before the per-recipe-directory move), a `<stem>.<infix>.<ext>` file
+/// authored before the per-mog-directory move), a `<stem>.<infix>.<ext>` file
 /// beside the `.mog` is used as a fallback. Returns the first matching file (any ext).
 pub fn sibling(mog: &Path, infix: &str) -> Option<PathBuf> {
     let dir = mog.parent()?;
 
-    // Preferred: <recipe>/tests/input.* or <recipe>/tests/expected.*
+    // Preferred: <mog>/tests/input.* or <mog>/tests/expected.*
     let tests_stem = match infix {
         "TestInput" => "input",
         "TestExpectedOutput" => "expected",
@@ -104,7 +104,7 @@ pub struct TestOutcome {
 /// error becomes a failing [`TestOutcome`] with a `message`.
 /// Run one mogfile's torture fixtures. `now`/`seed` override the fixed test pins
 /// ([`crate::builtins::TEST_NOW`] / [`TEST_SEED`]) that make {{@now}}/{{@uuid}}
-/// recipes deterministic in their goldens.
+/// mogs deterministic in their goldens.
 pub fn run_mog_test(mog: &Path, now: Option<&str>, seed: Option<u64>) -> TestOutcome {
     match run_inner(mog, now, seed) {
         Ok(None) => TestOutcome {
@@ -129,20 +129,20 @@ pub fn run_mog_test(mog: &Path, now: Option<&str>, seed: Option<u64>) -> TestOut
 }
 
 /// Derive the enclosing library root for `mog` in the flat store layout
-/// (`<root>/<name>/<name>.mog`): the recipe directory's parent (the `.mog`'s
+/// (`<root>/<name>/<name>.mog`): the mog directory's parent (the `.mog`'s
 /// grandparent). Returns `None` only when no such ancestor exists.
 ///
-/// With one directory per recipe, a composed recipe's `run_mog` fragment is no
-/// longer a filesystem sibling; it is another recipe elsewhere in the same
+/// With one directory per mog, a composed mog's `run_mog` fragment is no
+/// longer a filesystem sibling; it is another mog elsewhere in the same
 /// library. Providing this root lets [`crate::library::resolve_script`] find it
-/// by name, matching how the same recipe resolves when run from an installed
+/// by name, matching how the same mog resolves when run from an installed
 /// library.
 fn enclosing_library_root(mog: &Path) -> Option<PathBuf> {
     // Work from an absolute path. With a relative input (e.g. `foo/foo.mog`, the
-    // natural `mog --test foo` form) the recipe dir's parent would be an empty
+    // natural `mog --test foo` form) the mog dir's parent would be an empty
     // path, yielding an empty library root and breaking `run_mog` /
     // `for_each_block` fragment resolution. Joining onto the current dir first
-    // gives the recipe directory a real parent.
+    // gives the mog directory a real parent.
     let abs;
     let start = if mog.is_absolute() {
         mog
@@ -150,8 +150,8 @@ fn enclosing_library_root(mog: &Path) -> Option<PathBuf> {
         abs = std::env::current_dir().ok()?.join(mog);
         abs.as_path()
     };
-    // Flat layout, one directory per recipe: `<root>/<name>/<name>.mog`, so the
-    // enclosing library root is the recipe directory's parent (the .mog's
+    // Flat layout, one directory per mog: `<root>/<name>/<name>.mog`, so the
+    // enclosing library root is the mog directory's parent (the .mog's
     // grandparent). Fragments then resolve by a recursive search of that root.
     start
         .parent()
@@ -172,7 +172,7 @@ fn run_inner(mog: &Path, now: Option<&str>, seed: Option<u64>) -> Result<Option<
         .with_context(|| format!("failed to read '{}'", input_path.display()))?;
     let expected = fs::read_to_string(&expected_path)
         .with_context(|| format!("failed to read '{}'", expected_path.display()))?;
-    // Pin the clock/RNG to the fixed test reference (overridable) so recipes that
+    // Pin the clock/RNG to the fixed test reference (overridable) so mogs that
     // read {{@now}}/{{@year}}/{{@uuid}} produce a stable golden.
     let mut defines = std::collections::BTreeMap::new();
     crate::builtins::inject_builtins(
@@ -186,17 +186,17 @@ fn run_inner(mog: &Path, now: Option<&str>, seed: Option<u64>) -> Result<Option<
     // `$uuid` replacement token (resolved at execution time, not load time) is
     // reproducible in a golden too.
     let pin = Some(seed.unwrap_or(crate::builtins::TEST_SEED));
-    // A recipe may declare `sources` (confined to its own directory) for
+    // A mog may declare `sources` (confined to its own directory) for
     // source-aware actions (fill_from_list, the two-input compare family); load
     // them relative to the .mog so a golden exercises the real threaded path.
     let sources = if parsed.sources.is_empty() {
         std::collections::BTreeMap::new()
     } else {
-        crate::sources::load_recipe_sources(&parsed.sources, mog.parent())
+        crate::sources::load_mog_sources(&parsed.sources, mog.parent())
             .with_context(|| format!("load sources for '{}'", mog.display()))?
     };
-    // Composed recipes reference their `run_mog` fragments by name; with one
-    // directory per recipe those fragments are no longer filesystem siblings, so
+    // Composed mogs reference their `run_mog` fragments by name; with one
+    // directory per mog those fragments are no longer filesystem siblings, so
     // resolution falls back to the enclosing library (factory/user/community).
     let lib_root = enclosing_library_root(mog);
     let out = execute_with_library_sources_observed(

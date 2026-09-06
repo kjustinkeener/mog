@@ -5,8 +5,8 @@
     marketSearch,
     marketShow,
     listActions,
-    type RecipeHit,
-    type RecipeDetail,
+    type MogHit,
+    type MogDetail,
   } from '../api';
   import { renderMarkdown } from '../markdown';
   import { loadRank, recentMogs } from '../recentMogs.svelte';
@@ -22,8 +22,8 @@
     inline = false,
   }: {
     onclose: () => void;
-    onopen: (detail: RecipeDetail) => void;
-    onrun: (detail: RecipeDetail) => void;
+    onopen: (detail: MogDetail) => void;
+    onrun: (detail: MogDetail) => void;
     oninsert: (name: string) => void;
     initialQuery?: string;
     /** Render as a filled panel (inside the Browse tab) rather than a fixed overlay. */
@@ -100,13 +100,13 @@
   ];
 
   let query = $state(untrack(() => initialQuery));
-  let catalog = $state<RecipeHit[]>([]); // full list, for the tag facet options
-  let results = $state<RecipeHit[]>([]); // ranked results for the current query
+  let catalog = $state<MogHit[]>([]); // full list, for the tag facet options
+  let results = $state<MogHit[]>([]); // ranked results for the current query
   let selectedTags = $state<Set<string>>(new Set());
   let listError = $state('');
 
   let selectedName = $state<string | null>(null);
-  let detail = $state<RecipeDetail | null>(null);
+  let detail = $state<MogDetail | null>(null);
   let detailLoading = $state(false);
   let detailError = $state('');
 
@@ -211,7 +211,7 @@
 
   // Popular-first: seeded download_count descending. Applied when browsing (no
   // query); a text search keeps the engine's relevance ranking.
-  const byPopularity = (a: RecipeHit, b: RecipeHit): number => b.download_count - a.download_count;
+  const byPopularity = (a: MogHit, b: MogHit): number => b.download_count - a.download_count;
 
   // The engine's README repeats the recipe's title + description, which the detail
   // header already shows. Drop everything before the first "## " section so only the
@@ -225,17 +225,17 @@
   // Float recently-loaded mogs to the top, most-recently-loaded first, preserving the
   // existing relative order of everything else (relevance for a query, popularity for
   // a browse). Reads recentMogs.list so the order updates live after a load.
-  function recentsFirst(list: RecipeHit[]): RecipeHit[] {
+  function recentsFirst(list: MogHit[]): MogHit[] {
     void recentMogs.list; // reactive dependency
-    const recent: RecipeHit[] = [];
-    const rest: RecipeHit[] = [];
+    const recent: MogHit[] = [];
+    const rest: MogHit[] = [];
     for (const r of list) (loadRank(r.name) === Infinity ? rest : recent).push(r);
     recent.sort((a, b) => loadRank(a.name) - loadRank(b.name));
     return [...recent, ...rest];
   }
 
   // Strict intersection: ALL selected tags present. Popular-first when browsing.
-  const andMatches = $derived.by<RecipeHit[]>(() => {
+  const andMatches = $derived.by<MogHit[]>(() => {
     const list = results.filter((r) => {
       for (const t of selectedTags) if (!r.tags.includes(t)) return false;
       return true;
@@ -246,7 +246,7 @@
 
   // Near-misses: match ANY selected tag but not ALL. Only meaningful with 2+ tags;
   // shown below a separator so the exact matches stay on top.
-  const orExtras = $derived.by<RecipeHit[]>(() => {
+  const orExtras = $derived.by<MogHit[]>(() => {
     if (selectedTags.size < 2) return [];
     const inAnd = new Set(andMatches.map((r) => r.name));
     const list = results.filter((r) => {
@@ -262,7 +262,7 @@
   // Landing page (shown until a mog is selected): headline stats + a few
   // popular picks so the empty detail pane invites a click instead of sitting blank.
   const totalTags = $derived(allTags.size);
-  const featured = $derived.by<RecipeHit[]>(() => [...catalog].sort(byPopularity).slice(0, 6));
+  const featured = $derived.by<MogHit[]>(() => [...catalog].sort(byPopularity).slice(0, 6));
   let actionCount = $state(0); // engine transform primitives, for the landing stat
 
   function toggleTag(t: string): void {
@@ -345,7 +345,7 @@
       {/each}
     </aside>
 
-    {#snippet recipeRow(h: RecipeHit)}
+    {#snippet mogRow(h: MogHit)}
       <button
         class="row"
         class:sel={selectedName === h.name}
@@ -372,10 +372,10 @@
       {:else if shownCount === 0}
         <div class="msg">No mogs match.</div>
       {:else}
-        {#each andMatches as h (h.name)}{@render recipeRow(h)}{/each}
+        {#each andMatches as h (h.name)}{@render mogRow(h)}{/each}
         {#if orExtras.length > 0}
           <div class="or-sep">matching any selected tag</div>
-          {#each orExtras as h (h.name)}{@render recipeRow(h)}{/each}
+          {#each orExtras as h (h.name)}{@render mogRow(h)}{/each}
         {/if}
       {/if}
     </div>

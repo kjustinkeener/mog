@@ -9,7 +9,7 @@
   let plan = $state<UpdateResult | null>(null);
   let error = $state<string | null>(null);
 
-  function recipeCount(r: UpdateResult | null): number {
+  function mogCount(r: UpdateResult | null): number {
     if (!r?.recipes) return 0;
     const p = r.recipes;
     return p.added.length + p.changed.length + p.revoked.length;
@@ -48,7 +48,7 @@
   {#if error}
     <span class="err">{error}</span>
   {:else if plan}
-    {@const rc = recipeCount(plan)}
+    {@const rc = mogCount(plan)}
     {@const eng = plan.engine?.update_available ?? false}
     {#if plan.check}
       {#if rc === 0 && !eng}

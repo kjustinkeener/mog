@@ -1,10 +1,10 @@
-//! Generate a per-recipe `README.md` from the recipe itself: its metadata
+//! Generate a per-mog `README.md` from the mog itself: its metadata
 //! (name / summary / description / tags / steps) plus a real input -> output
 //! example pulled from its golden fixture. The output is deterministic (derived
 //! only from committed files, no clock or RNG), so a drift test can assert the
-//! committed docs stay in sync with the recipes, exactly like a golden.
+//! committed docs stay in sync with the mogs, exactly like a golden.
 //!
-//! A recipe folder may also carry a hand-authored `GUIDE.md` for deeper reference
+//! A mog folder may also carry a hand-authored `GUIDE.md` for deeper reference
 //! (mapping tables, caveats) that cannot come from metadata; when present, the
 //! generated README links to it.
 
@@ -59,11 +59,11 @@ fn code_block(out: &mut String, body: &str) {
     out.push('\n');
 }
 
-/// Render the `README.md` markdown for one recipe `.mog` at `mog_path`.
-pub fn render_recipe_doc(mog_path: &Path) -> Result<String> {
+/// Render the `README.md` markdown for one mog `.mog` at `mog_path`.
+pub fn render_mog_doc(mog_path: &Path) -> Result<String> {
     let text = std::fs::read_to_string(mog_path)
         .with_context(|| format!("read '{}'", mog_path.display()))?;
-    // Parse without interpolating constants, so a recipe with unbound
+    // Parse without interpolating constants, so a mog with unbound
     // `{{placeholders}}` still documents (mirrors the listing path).
     let mog: Mog =
         serde_json::from_str(&text).with_context(|| format!("parse '{}'", mog_path.display()))?;
@@ -140,7 +140,7 @@ pub fn render_recipe_doc(mog_path: &Path) -> Result<String> {
         md.push_str("\n\n");
     }
 
-    // Link to a hand-authored deep guide, if the recipe ships one.
+    // Link to a hand-authored deep guide, if the mog ships one.
     if mog_path
         .parent()
         .is_some_and(|p| p.join("GUIDE.md").exists())
@@ -161,7 +161,7 @@ fn norm(s: &str) -> String {
 
 /// Generate (or, under `check`, verify) a `README.md` beside every `.mog` under
 /// `dir`. In check mode this writes nothing and returns an error listing the
-/// recipes whose committed doc drifted from what the recipe would generate.
+/// mogs whose committed doc drifted from what the mog would generate.
 pub fn gen_docs(dir: &Path, check: bool) -> Result<i32> {
     let mogs = testkit::find_mogs(dir);
     if mogs.is_empty() {
@@ -170,7 +170,7 @@ pub fn gen_docs(dir: &Path, check: bool) -> Result<i32> {
     let mut drifted = Vec::new();
     let mut wrote = 0usize;
     for mog in &mogs {
-        let content = render_recipe_doc(mog)?;
+        let content = render_mog_doc(mog)?;
         let readme = mog
             .parent()
             .with_context(|| format!("'{}' has no parent dir", mog.display()))?

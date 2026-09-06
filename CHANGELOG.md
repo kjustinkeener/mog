@@ -12,11 +12,11 @@ breaking under strict semver; those are called out explicitly.
 
 - `mog market list` and `mog market show` are now backed by a freshness-checked
   scan index cached at `<library>/.cache/scan-index.json`. A repeat listing reuses
-  the built index instead of re-reading and re-parsing every recipe, so on a
-  ~230-recipe library `list` drops from roughly 185ms to about 70ms and `show`
+  the built index instead of re-reading and re-parsing every mog, so on a
+  ~230-mog library `list` drops from roughly 185ms to about 70ms and `show`
   falls to the process-startup floor (about 30ms). The cache rebuilds
-  automatically whenever a recipe is added, removed, or edited (its fingerprint is
-  the recipe count plus the newest recipe mtime); a stale or corrupt index is
+  automatically whenever a mog is added, removed, or edited (its fingerprint is
+  the mog count plus the newest mog mtime); a stale or corrupt index is
   ignored and recomputed, and a read-only library simply runs uncached.
 
 ## [0.1.0] - 2026-08-26
@@ -40,8 +40,8 @@ First public release.
   named second source.
 - Detectors and redaction (`detect_secrets`, `detect_pii`), an `assert` gate,
   mail-merge from external `sources`, and script composition with `run_mog`.
-- A curated, tested recipe library, discoverable and runnable through the CLI.
-- Per-recipe `summary` and `task_phrases` metadata for human browsing and search.
+- A curated, tested mog library, discoverable and runnable through the CLI.
+- Per-mog `summary` and `task_phrases` metadata for human browsing and search.
 - Cross-platform CLI: in-place / out-dir / stdout writing, `--dry-run` and
   `--diff` preview, backups, parallel processing, and JSON output for tooling.
 - Prebuilt release binaries for Linux, macOS, and Windows (x64 and arm64) via CI.

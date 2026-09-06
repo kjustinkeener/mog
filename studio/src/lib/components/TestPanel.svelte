@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { runRecipeTest, runTransform, type TestOutcome } from '../api';
+  import { runMogTest, runTransform, type TestOutcome } from '../api';
   import { serializeMog, studio } from '../store.svelte';
   import Icon from './Icon.svelte';
 
@@ -33,7 +33,7 @@
     error = '';
     outcome = null;
     try {
-      outcome = await runRecipeTest(serializeMog(), studio.input, expected);
+      outcome = await runMogTest(serializeMog(), studio.input, expected);
     } catch (e) {
       error = String(e);
     } finally {
