@@ -165,7 +165,7 @@ fn norm(s: &str) -> String {
 pub fn gen_docs(dir: &Path, check: bool) -> Result<i32> {
     let mogs = testkit::find_mogs(dir);
     if mogs.is_empty() {
-        bail!("no recipes found under '{}'", dir.display());
+        bail!("no mogs found under '{}'", dir.display());
     }
     let mut drifted = Vec::new();
     let mut wrote = 0usize;
@@ -188,19 +188,19 @@ pub fn gen_docs(dir: &Path, check: bool) -> Result<i32> {
     }
     if check {
         if drifted.is_empty() {
-            println!("all {} recipe docs are up to date", mogs.len());
+            println!("all {} mog docs are up to date", mogs.len());
             Ok(0)
         } else {
             for d in &drifted {
                 println!("out of date: {}", d.display());
             }
             bail!(
-                "{} recipe doc(s) out of date; run `mog market gen-docs`",
+                "{} mog doc(s) out of date; run `mog market gen-docs`",
                 drifted.len()
             )
         }
     } else {
-        println!("wrote {wrote} recipe doc(s)");
+        println!("wrote {wrote} mog doc(s)");
         Ok(0)
     }
 }

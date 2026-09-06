@@ -341,7 +341,7 @@ fn print_human(summary: &Value, caveat: &str, opts: &SetupOptions) {
         }
         if let Some(files) = store["factory_files"].as_array() {
             let verb = if opts.print { "would write" } else { "wrote" };
-            println!("    recipes: {verb} {} file(s)", files.len());
+            println!("    mogs: {verb} {} file(s)", files.len());
         }
         if let Some(files) = store["template_files"].as_array() {
             let verb = if opts.print { "would write" } else { "wrote" };

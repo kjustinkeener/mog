@@ -285,7 +285,7 @@ pub fn uninstall(print: bool, json_out: bool) -> Result<i32> {
         );
         println!("  install dir: scheduled for deletion ({})", dir.display());
         println!(
-            "  recipe library kept at %APPDATA%\\mog (delete it by hand to remove your recipes)."
+            "  mog library kept at %APPDATA%\\mog (delete it by hand to remove your mogs)."
         );
     }
     Ok(0)
@@ -309,7 +309,7 @@ fn print_engine_human(dir: &Path, exe: &Path, path_added: bool, print: bool) {
     println!("  Add/Remove Programs: entry written (uninstall with `mog uninstall`)");
     println!();
     println!(
-        "Next: run `mog install studio` to add the GUI, or `mog market list` to browse recipes."
+        "Next: run `mog install studio` to add the GUI, or `mog market list` to browse mogs."
     );
 }
 

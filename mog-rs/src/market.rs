@@ -832,7 +832,7 @@ pub fn add(
     }
 
     fs::create_dir_all(&tests_dir)
-        .with_context(|| format!("failed to create recipe dir '{}'", mog_dir.display()))?;
+        .with_context(|| format!("failed to create mog dir '{}'", mog_dir.display()))?;
 
     // Stage all three writes so a failed verify rolls the market back exactly.
     let mut staged: Vec<Staged> = Vec::new();

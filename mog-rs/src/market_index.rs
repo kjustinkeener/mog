@@ -333,13 +333,13 @@ pub fn build_index(
         let stem = mog_path
             .file_stem()
             .and_then(|s| s.to_str())
-            .ok_or_else(|| anyhow!("bad recipe file name: {}", mog_path.display()))?
+            .ok_or_else(|| anyhow!("bad mog file name: {}", mog_path.display()))?
             .to_string();
         let bytes = std::fs::read(&mog_path)
-            .with_context(|| format!("read recipe '{}'", mog_path.display()))?;
+            .with_context(|| format!("read mog '{}'", mog_path.display()))?;
         // Author metadata only; the registry does full validation at review time.
         let meta: crate::model::Mog = serde_json::from_slice(&bytes)
-            .with_context(|| format!("parse recipe '{}'", mog_path.display()))?;
+            .with_context(|| format!("parse mog '{}'", mog_path.display()))?;
         let cur = curation.get(&stem).cloned().unwrap_or_default();
 
         entries.push(IndexEntry {

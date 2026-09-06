@@ -211,7 +211,7 @@ fn list_human_prefers_summary_and_prints_count_header() {
         .assert()
         .success()
         // Studio-style count header before the rows.
-        .stdout(predicate::str::contains("1 of 1 recipes"))
+        .stdout(predicate::str::contains("1 of 1 mogs"))
         // The human row shows the short summary, not the long description.
         .stdout(predicate::str::contains("Tidy a list fast"))
         .stdout(predicate::str::contains("verbose, agent-oriented").not())
@@ -498,7 +498,7 @@ fn show_not_found_errors() {
         .args(["market", "show", "nope"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("no recipe"));
+        .stderr(predicate::str::contains("no mog"));
 }
 
 // ---- add ---------------------------------------------------------------------

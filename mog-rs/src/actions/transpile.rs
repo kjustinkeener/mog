@@ -69,7 +69,7 @@ pub fn sql_transpile(input: &str, step: &Step) -> Result<String> {
 /// is on (default), query-quality warnings (W001 SELECT *, W002 aggregate without
 /// GROUP BY, W003 DISTINCT+ORDER BY, W004 LIMIT without ORDER BY). Clean input is
 /// returned unchanged, so a `mog --check` run exits non-zero exactly when there are
-/// findings. The natural tail of a transpile recipe: lint the OUTPUT against the
+/// findings. The natural tail of a transpile mog: lint the OUTPUT against the
 /// target dialect to surface whatever the transpiler + fixups could not fully carry.
 pub fn sql_lint(input: &str, step: &Step) -> Result<String> {
     let dialect = step

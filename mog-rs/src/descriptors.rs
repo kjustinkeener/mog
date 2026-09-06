@@ -1449,7 +1449,7 @@ pub fn descriptors() -> Vec<ActionDescriptor> {
           ])
           .example(r#"{"action":"sql_transpile","options":{"from":"snowflake","to":"bigquery"}}"#),
         d("sql_lint", &[], "data", "SQL lint (validate)",
-          "Parse-validate SQL against a target dialect (via polyglot-sql) and annotate problems in place as `-- LINT ...` comment lines above the offending statement: syntax errors with line/column, plus (when semantic is on) query-quality warnings like SELECT * or LIMIT without ORDER BY. Clean SQL is returned unchanged, so `mog --check` exits non-zero exactly when there are findings. Ideal as the tail of a transpile recipe -- lint the OUTPUT against the target dialect to surface whatever the transpiler could not carry. Dialect names are lowercase (snowflake, bigquery, redshift, postgres, ...).",
+          "Parse-validate SQL against a target dialect (via polyglot-sql) and annotate problems in place as `-- LINT ...` comment lines above the offending statement: syntax errors with line/column, plus (when semantic is on) query-quality warnings like SELECT * or LIMIT without ORDER BY. Clean SQL is returned unchanged, so `mog --check` exits non-zero exactly when there are findings. Ideal as the tail of a transpile mog -- lint the OUTPUT against the target dialect to surface whatever the transpiler could not carry. Dialect names are lowercase (snowflake, bigquery, redshift, postgres, ...).",
           vec![
             text_req("dialect", "Dialect", "SQL dialect to validate against, e.g. snowflake."),
             boolean("semantic", "Quality warnings", true, "Also report query-quality warnings (SELECT *, aggregate without GROUP BY, DISTINCT+ORDER BY, LIMIT without ORDER BY)."),

@@ -244,7 +244,7 @@ pub fn install(root: Option<&Path>, base: &str, name: &str, json: bool) -> Resul
     let root = root.ok_or_else(|| anyhow!("no library root (set MOG_HOME or --mog-dir)"))?;
     let index = ensure_index(root, base, false)?;
     if index.get(name).is_none() {
-        bail!("no recipe '{name}' in the marketplace");
+        bail!("no mog '{name}' in the marketplace");
     }
     let revs = fetch_revocations(base).unwrap_or_default();
 
@@ -1061,7 +1061,7 @@ fn print_rows(rows: &[Row], total: usize, json: bool) {
         return;
     }
     // Studio-style count header before the rows.
-    println!("{} of {} recipes", rows.len(), total);
+    println!("{} of {} mogs", rows.len(), total);
     for r in rows {
         let mark = match r.status {
             "installed" => "✓",
@@ -1145,12 +1145,12 @@ pub fn show(root: Option<&Path>, name: &str, no_content: bool, json: bool) -> Re
     }
     // Otherwise the catalog entry, if a marketplace is configured and reachable.
     let Ok(base) = market_base_url() else {
-        bail!("no recipe '{name}' installed (and no marketplace configured to search)");
+        bail!("no mog '{name}' installed (and no marketplace configured to search)");
     };
     let index = ensure_index(root, &base, false)?;
     let entry = index
         .get(name)
-        .ok_or_else(|| anyhow!("no recipe '{name}' installed or in the marketplace"))?;
+        .ok_or_else(|| anyhow!("no mog '{name}' installed or in the marketplace"))?;
 
     if json {
         println!(

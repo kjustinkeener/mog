@@ -87,7 +87,7 @@ pub fn run(root: Option<&Path>, opts: &Options) -> Result<i32> {
     if let Some(p) = &plan {
         let verb = if opts.check { "would " } else { "" };
         let quiet = p.is_empty();
-        println!("recipes: {} in catalog", p.catalog);
+        println!("mogs: {} in catalog", p.catalog);
         for n in &p.added {
             println!("  {verb}add {n}");
         }

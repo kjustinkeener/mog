@@ -39,7 +39,7 @@ pub fn load_mog_sources(
         let p = Path::new(path);
         if !is_confined(p) {
             bail!(
-                "source '{name}': recipe-declared path '{path}' must be relative and stay \
+                "source '{name}': mog-declared path '{path}' must be relative and stay \
                  within the .mog's directory (bind an outside path with --source {name}=...)"
             );
         }
