@@ -144,7 +144,7 @@ fn store_root() -> Option<PathBuf> {
 /// best-effort created so the dialog opens in it. Returns null if no store root
 /// can be resolved (caller falls back to the bare name).
 #[tauri::command]
-pub fn user_recipe_path(filename: String) -> Option<String> {
+pub fn user_mog_path(filename: String) -> Option<String> {
     let dir = store_root()?.join("mogs").join("user");
     let _ = std::fs::create_dir_all(&dir);
     Some(dir.join(filename).to_string_lossy().into_owned())
@@ -386,19 +386,19 @@ pub fn market_show(name: String) -> Result<Value, String> {
 }
 
 /// Bring the machine current with the registry: `mog update`. Syncs marketplace
-/// recipes by content hash and, unless `recipes_only`, self-replaces the engine
+/// recipes by content hash and, unless `market_only`, self-replaces the engine
 /// binary when a newer signed build exists. `check` reports without writing. The
 /// binary this Studio shells out to updates on disk immediately, but a running
 /// sidecar keeps its loaded image until the app restarts. Returns the CLI's
-/// `{recipes, engine, ...}` JSON verbatim.
+/// `{mogs, engine, ...}` JSON verbatim.
 #[tauri::command]
-pub fn mog_update(check: bool, recipes_only: bool, prune: bool) -> Result<Value, String> {
+pub fn mog_update(check: bool, market_only: bool, prune: bool) -> Result<Value, String> {
     let mut cmd = Command::new(mog_bin());
     cmd.arg("update");
     if check {
         cmd.arg("--check");
     }
-    if recipes_only {
+    if market_only {
         cmd.arg("--no-engine");
     }
     if prune {
@@ -429,7 +429,7 @@ pub struct TestOutcome {
 /// in a throwaway temp dir, and `mog --test <dir> --json` compares them. The clock
 /// and RNG are pinned by `--test`, so `{{@now}}`/`{{@uuid}}` recipes are stable.
 #[tauri::command]
-pub fn run_recipe_test(
+pub fn run_mog_test(
     pipeline: String,
     input: String,
     expected: String,

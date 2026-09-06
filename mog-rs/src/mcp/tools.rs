@@ -147,7 +147,7 @@ fn with_temp_mog<F: FnOnce(&str) -> Value>(contents: &str, f: F) -> Value {
 fn with_script<F: FnOnce(&str) -> Value>(input: &Value, f: F) -> Value {
     let mog = input.get("mog").and_then(Value::as_str).unwrap_or("");
     let mog_doc = input
-        .get("recipe")
+        .get("mogname")
         .and_then(Value::as_str)
         .map(str::trim)
         .filter(|s| !s.is_empty());
@@ -831,7 +831,7 @@ pub fn mog_update(input: &Value) -> Value {
         args.push("--check".into());
     }
     if input
-        .get("recipesOnly")
+        .get("marketOnly")
         .and_then(Value::as_bool)
         .unwrap_or(false)
     {

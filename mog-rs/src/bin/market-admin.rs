@@ -28,7 +28,7 @@ enum Cmd {
     Index {
         /// Directory of `.mog` mogs (with sibling fixtures).
         #[arg(long)]
-        recipes: PathBuf,
+        mogs: PathBuf,
         /// Optional `curation.json`: name -> {category, featured, version}.
         #[arg(long)]
         curation: Option<PathBuf>,
@@ -162,7 +162,7 @@ fn main() -> Result<()> {
             );
         }
         Cmd::Index {
-            recipes,
+            mogs,
             curation,
             sign_key,
             out,
@@ -173,11 +173,11 @@ fn main() -> Result<()> {
                 None => Curation::new(),
             };
             let sk = read_sign_key(&sign_key)?;
-            let out_dir = out.unwrap_or_else(|| recipes.clone());
+            let out_dir = out.unwrap_or_else(|| mogs.clone());
             // Paths in the index are relative to the output dir (where index.json
             // lives), so mogs may sit in a `recipes/` subdir and the client
             // still fetches base/<path> correctly.
-            let index = build_index(&recipes, &out_dir, &cur, generated_at)?;
+            let index = build_index(&mogs, &out_dir, &cur, generated_at)?;
             let bytes = index.to_json_bytes()?;
             let sig = sign(&sk, &bytes);
 

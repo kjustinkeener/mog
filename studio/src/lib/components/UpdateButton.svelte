@@ -10,8 +10,8 @@
   let error = $state<string | null>(null);
 
   function mogCount(r: UpdateResult | null): number {
-    if (!r?.recipes) return 0;
-    const p = r.recipes;
+    if (!r?.mogs) return 0;
+    const p = r.mogs;
     return p.added.length + p.changed.length + p.revoked.length;
   }
 

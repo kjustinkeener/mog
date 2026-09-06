@@ -17,7 +17,7 @@ pub struct Options {
     /// Report only; write nothing (mogs and engine both).
     pub check: bool,
     /// Skip the mog sync.
-    pub no_recipes: bool,
+    pub no_market: bool,
     /// Skip the engine binary swap.
     pub no_engine: bool,
     /// Remove orphaned installs (on disk, gone from the catalog). Off by default.
@@ -39,7 +39,7 @@ pub fn run(root: Option<&Path>, opts: &Options) -> Result<i32> {
     let base = crate::market_client::market_base_url()?;
 
     // --- mogs ---
-    let plan = if opts.no_recipes {
+    let plan = if opts.no_market {
         None
     } else {
         Some(crate::market_client::sync(
@@ -76,7 +76,7 @@ pub fn run(root: Option<&Path>, opts: &Options) -> Result<i32> {
             "{}",
             serde_json::json!({
                 "check": opts.check,
-                "recipes": plan,
+                "mogs": plan,
                 "engine": engine,
             })
         );

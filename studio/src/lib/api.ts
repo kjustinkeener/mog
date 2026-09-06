@@ -83,7 +83,7 @@ export function runMogTest(
   input: string,
   expected: string,
 ): Promise<TestOutcome> {
-  return invoke<TestOutcome>('run_recipe_test', { pipeline, input, expected });
+  return invoke<TestOutcome>('run_mog_test', { pipeline, input, expected });
 }
 
 export interface FlagRow {
@@ -193,24 +193,24 @@ export interface UpdatePlan {
 
 export interface UpdateResult {
   check: boolean;
-  recipes: UpdatePlan | null;
+  mogs: UpdatePlan | null;
   engine: { update_available: boolean; applied: boolean; version: string } | null;
 }
 
-/** Sync marketplace recipes (by content hash) and, unless recipesOnly, self-replace
+/** Sync marketplace recipes (by content hash) and, unless marketOnly, self-replace
  *  the engine binary. check=true reports without writing. The running sidecar keeps
  *  its loaded image until the app restarts, so an engine swap applies on next launch. */
 export function mogUpdate(
   check: boolean,
-  recipesOnly: boolean,
+  marketOnly: boolean,
   prune: boolean,
 ): Promise<UpdateResult> {
-  return invoke<UpdateResult>('mog_update', { check, recipes_only: recipesOnly, prune });
+  return invoke<UpdateResult>('mog_update', { check, market_only: marketOnly, prune });
 }
 
 /** Full path to save `filename` into the user's mog library (the Save As default).
  *  Resolves null when no library root exists, or rejects on engines/builds without
  *  the command; callers fall back to the bare filename. */
 export function userMogPath(filename: string): Promise<string | null> {
-  return invoke<string | null>('user_recipe_path', { filename });
+  return invoke<string | null>('user_mog_path', { filename });
 }

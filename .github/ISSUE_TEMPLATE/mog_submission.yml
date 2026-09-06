@@ -1,13 +1,13 @@
-name: Recipe idea
-description: Propose a recipe for the library (or offer to contribute one).
-labels: ["recipe"]
+name: Mog idea
+description: Propose a mog for the library (or offer to contribute one).
+labels: ["mog"]
 body:
   - type: markdown
     attributes:
       value: |
-        Recipes are the most welcome contribution. If you can, open a pull request
+        Mogs are the most welcome contribution. If you can, open a pull request
         with the `.mog` plus its `TestInput` / `TestExpectedOutput` fixture instead
-        of an issue. See CONTRIBUTING.md for the bar a recipe should meet.
+        of an issue. See CONTRIBUTING.md for the bar a mog should meet.
   - type: textarea
     id: job
     attributes:
@@ -20,7 +20,7 @@ body:
     attributes:
       label: What would the user do without it?
       description: >
-        A recipe earns a slot by beating the target user's best alternative. Is
+        A mog earns a slot by beating the target user's best alternative. Is
         this in the moat (block/region ops, dialect conversion, a fiddly tested
         pipeline), or an everyday cleanup whose win is preview + backup for a
         non-CLI user? A one-line sed/tr equivalent for a technical user is not a fit.

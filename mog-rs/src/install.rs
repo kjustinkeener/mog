@@ -284,9 +284,7 @@ pub fn uninstall(print: bool, json_out: bool) -> Result<i32> {
             if shortcut_removed { "removed" } else { "none" }
         );
         println!("  install dir: scheduled for deletion ({})", dir.display());
-        println!(
-            "  mog library kept at %APPDATA%\\mog (delete it by hand to remove your mogs)."
-        );
+        println!("  mog library kept at %APPDATA%\\mog (delete it by hand to remove your mogs).");
     }
     Ok(0)
 }
@@ -308,9 +306,7 @@ fn print_engine_human(dir: &Path, exe: &Path, path_added: bool, print: bool) {
     }
     println!("  Add/Remove Programs: entry written (uninstall with `mog uninstall`)");
     println!();
-    println!(
-        "Next: run `mog install studio` to add the GUI, or `mog market list` to browse mogs."
-    );
+    println!("Next: run `mog install studio` to add the GUI, or `mog market list` to browse mogs.");
 }
 
 // ---- The signed Studio manifest (mirrors selfupdate::EngineManifest) ----------

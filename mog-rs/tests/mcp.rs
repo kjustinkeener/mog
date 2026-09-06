@@ -222,7 +222,7 @@ fn preview_accepts_an_installed_mog_by_name() {
         &[json!({
             "jsonrpc": "2.0", "id": 1, "method": "tools/call",
             "params": { "name": "mog_preview", "arguments": {
-                "recipe": "shouty", "text": "hello", "report": false
+                "mogname": "shouty", "text": "hello", "report": false
             } }
         })],
     );
@@ -253,7 +253,7 @@ fn preview_refuses_both_script_forms() {
     let resps = drive(&[json!({
         "jsonrpc": "2.0", "id": 1, "method": "tools/call",
         "params": { "name": "mog_preview", "arguments": {
-            "recipe": "shouty",
+            "mogname": "shouty",
             "mog": "{\"steps\":[{\"action\":\"to_upper\"}]}",
             "text": "x", "report": false
         } }

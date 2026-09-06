@@ -70,7 +70,7 @@ pub fn render_mog_doc(mog_path: &Path) -> Result<String> {
     let stem = mog_path
         .file_stem()
         .and_then(|s| s.to_str())
-        .unwrap_or("recipe");
+        .unwrap_or("mog");
     let title = mog.name.clone().unwrap_or_else(|| stem.to_string());
 
     let mut md = String::new();

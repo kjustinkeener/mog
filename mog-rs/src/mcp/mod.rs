@@ -82,8 +82,8 @@ fn tool_definitions() -> Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "recipe": { "type": "string", "description": "An installed recipe name (from mog_market), resolved from the library. Use this instead of pasting a script you already have installed; give exactly one of recipe or mog." },
-                    "mog": { "type": "string", "description": "The .mog script as JSON text, for a recipe you are authoring. Omit when passing recipe." },
+                    "mogname": { "type": "string", "description": "An installed recipe name (from mog_market), resolved from the library. Use this instead of pasting a script you already have installed; give exactly one of mogname or mog." },
+                    "mog": { "type": "string", "description": "The .mog script as JSON text, for a recipe you are authoring. Omit when passing mogname." },
                     "inputs": { "type": "array", "items": { "type": "string" }, "description": "Files or glob patterns to preview against." },
                     "text": { "type": "string", "description": "Inline text to run through instead of files (stdin filter)." },
                     "report": { "type": "boolean", "description": "Emit an HTML dashboard (default on). false to skip. Overrides persisted config/MOG_REPORT." }
@@ -97,8 +97,8 @@ fn tool_definitions() -> Value {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "recipe": { "type": "string", "description": "An installed recipe name (from mog_market), resolved from the library. Use this instead of pasting a script you already have installed; give exactly one of recipe or mog." },
-                    "mog": { "type": "string", "description": "The .mog script as JSON text, for a recipe you are authoring. Omit when passing recipe." },
+                    "mogname": { "type": "string", "description": "An installed recipe name (from mog_market), resolved from the library. Use this instead of pasting a script you already have installed; give exactly one of mogname or mog." },
+                    "mog": { "type": "string", "description": "The .mog script as JSON text, for a recipe you are authoring. Omit when passing mogname." },
                     "inputs": { "type": "array", "items": { "type": "string" }, "minItems": 1, "description": "Files or glob patterns to transform." },
                     "report": { "type": "boolean", "description": "Emit an HTML dashboard (default on). false to skip. Overrides persisted config/MOG_REPORT." },
                     "output": {
@@ -174,12 +174,12 @@ fn tool_definitions() -> Value {
         },
         {
             "name": "mog_update",
-            "description": "Bring Mog current with the registry: pull new/changed marketplace recipes (diffed by content hash, so only what actually changed is fetched) into your library, and self-replace the mog engine binary if a newer signed build exists. Call with check:true first to see what would change without writing. recipesOnly:true skips the binary swap. prune:true removes recipes that are gone from the catalog. Recipe updates are picked up immediately on the next search; an engine swap takes effect when the server next restarts (engine.applied in the result says whether a swap happened).",
+            "description": "Bring Mog current with the registry: pull new/changed marketplace recipes (diffed by content hash, so only what actually changed is fetched) into your library, and self-replace the mog engine binary if a newer signed build exists. Call with check:true first to see what would change without writing. marketOnly:true skips the binary swap. prune:true removes recipes that are gone from the catalog. Recipe updates are picked up immediately on the next search; an engine swap takes effect when the server next restarts (engine.applied in the result says whether a swap happened).",
             "inputSchema": {
                 "type": "object",
                 "properties": {
                     "check": { "type": "boolean", "description": "Report what would change without writing anything." },
-                    "recipesOnly": { "type": "boolean", "description": "Only sync recipes; skip the engine binary swap." },
+                    "marketOnly": { "type": "boolean", "description": "Only sync recipes; skip the engine binary swap." },
                     "prune": { "type": "boolean", "description": "Remove recipes on disk that are gone from the catalog." }
                 }
             }

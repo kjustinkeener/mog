@@ -210,7 +210,7 @@
   async function doSaveAs(): Promise<void> {
     // Default into the user's mog library with a slugified filename. When a file is
     // already open, keep defaulting to its own path. Falls back to the bare name on
-    // builds without the user_recipe_path command (older engine binary / no library).
+    // builds without the user_mog_path command (older engine binary / no library).
     let defaultPath = studio.currentPath ?? '';
     if (!defaultPath) {
       const file = `${slugify(studio.mog.name ?? '') || 'untitled'}.mog`;

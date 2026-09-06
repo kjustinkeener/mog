@@ -337,8 +337,8 @@ enum Command {
         #[arg(long)]
         check: bool,
         /// Skip the mog sync (engine binary only).
-        #[arg(long = "no-recipes")]
-        no_recipes: bool,
+        #[arg(long = "no-market")]
+        no_market: bool,
         /// Skip the engine binary swap (mogs only).
         #[arg(long = "no-engine")]
         no_engine: bool,
@@ -980,14 +980,14 @@ fn run_subcommand(cmd: &Command, cli: &Cli) -> Result<i32> {
         }
         Command::Update {
             check,
-            no_recipes,
+            no_market,
             no_engine,
             prune,
         } => mog::updater::run(
             lib_root.as_deref(),
             &mog::updater::Options {
                 check: *check,
-                no_recipes: *no_recipes,
+                no_market: *no_market,
                 no_engine: *no_engine,
                 prune: *prune,
                 json,
