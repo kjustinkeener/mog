@@ -38,7 +38,7 @@ Output:
 unparsed line
 ```
 
-## Pipeline
+## Steps
 
 - `sort_ip`: Order lines by IP address value
 

@@ -31,7 +31,7 @@ Ada,Engineer
 Bo,Manager
 ```
 
-## Pipeline
+## Steps
 
 - `markdown_table_to_csv`: Parse the Markdown table into CSV rows.
 

@@ -28,7 +28,7 @@ Hello world. How are you? Fine, thanks.
 The cat sat. The dog ran.
 ```
 
-## Pipeline
+## Steps
 
 - `to_sentence`: Capitalize the first letter of each sentence
 

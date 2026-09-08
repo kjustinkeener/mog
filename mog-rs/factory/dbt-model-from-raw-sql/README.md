@@ -40,7 +40,7 @@ JOIN analytics.orders o ON o.user_id = u.id -- FIXME(mog): replace with ref() or
 WHERE u.active = true
 ```
 
-## Pipeline
+## Steps
 
 - `prepend`: Add the dbt config block
 - `flag_matching`: Flag hardcoded schema.table refs for ref()/source()

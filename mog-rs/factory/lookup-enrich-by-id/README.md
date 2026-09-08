@@ -32,7 +32,7 @@ order,user_id,name,region
 1003,9,,
 ```
 
-## Pipeline
+## Steps
 
 - `lookup`: Append name and region from the directory, matched by user_id -> id
 

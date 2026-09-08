@@ -28,7 +28,7 @@ Output:
 IN ('apple', 'banana', 'cherry')
 ```
 
-## Pipeline
+## Steps
 
 - `format_list`: Wrap the lines into a SQL IN-list
 

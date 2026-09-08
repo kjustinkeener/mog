@@ -34,7 +34,7 @@ log.level=debug
 feature.enabled=true
 ```
 
-## Pipeline
+## Steps
 
 - `to_lower`: Lowercase the key (left of =)
 - `replace`: Underscores to dots in the key

@@ -36,7 +36,7 @@ df.head()
 regular line stays
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: Remove a leading prompt marker
 

@@ -30,7 +30,7 @@ Output:
 2023-11-15T00:13:20Z,carol,login
 ```
 
-## Pipeline
+## Steps
 
 - `epoch_to_iso`: Column 1 epoch seconds -> ISO datetime (UTC)
 

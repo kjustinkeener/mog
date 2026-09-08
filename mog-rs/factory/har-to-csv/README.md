@@ -51,7 +51,7 @@ GET,https://cdn.example.com/img/hero.png,304,image/png,118,12.003
 GET,https://tracker.example.net/px?id=99&t=1755162723,404,text/plain,260,61.44
 ```
 
-## Pipeline
+## Steps
 
 - `json_minify`: Parse the HAR and re-serialize it on a single line.
 - `replace_regex`: Drop everything ahead of the log.entries array.

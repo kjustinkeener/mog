@@ -38,7 +38,7 @@ A new paragraph starts here. The end of the story was near.
 The End.
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Remove lines that are only a page number (optionally 'Page N').
 - `replace_regex`: Join a word split as prefix-<break>suffix across a line break.

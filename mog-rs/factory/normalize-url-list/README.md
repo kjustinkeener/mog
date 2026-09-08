@@ -30,7 +30,7 @@ http://host/x
 https://example.com/p?a=1&b=2
 ```
 
-## Pipeline
+## Steps
 
 - `normalize_url`: Lowercase host/scheme, drop default port, sort query
 - `sort_lines`: Sort so duplicates are adjacent

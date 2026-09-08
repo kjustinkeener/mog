@@ -28,7 +28,7 @@ Alice,************1234
 Bob,************5678
 ```
 
-## Pipeline
+## Steps
 
 - `mask_field`: Mask field 2, keep last 4
 

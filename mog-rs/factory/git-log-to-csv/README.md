@@ -33,7 +33,7 @@ a0b1c2d3e4f50617283940a1b2c3d4e5f6071829,Ken Thompson,ken@example.com,2026-08-12
 7c6b5a4938271605f4e3d2c1b0a99887766554433,Barbara Liskov,barbara@example.com,2026-08-11T22:31:40+00:00,"Revert ""Cache the resolver"" (it broke Windows paths)"
 ```
 
-## Pipeline
+## Steps
 
 - `remove_empty_lines`: Drop blank lines (a trailing newline from git log leaves one).
 - `flag_matching`: Flag any line that is not five unit-separated fields.

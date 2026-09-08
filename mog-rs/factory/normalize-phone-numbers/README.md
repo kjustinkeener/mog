@@ -44,7 +44,7 @@ Hana Sato,hana@example.com,
 Ivo Petrov,ivo@example.com,+33142685300
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Strip separators from the phone column
 - `replace_regex`: Leading 00 international prefix to a plus sign

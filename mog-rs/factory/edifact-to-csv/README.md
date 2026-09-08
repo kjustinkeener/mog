@@ -46,7 +46,7 @@ UNT,8,1
 UNZ,1,1
 ```
 
-## Pipeline
+## Steps
 
 - `replace`: Segment terminator ' -> newline
 - `change_delimiter`: Elements: + -> comma (quote-aware)

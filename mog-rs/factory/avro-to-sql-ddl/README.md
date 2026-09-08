@@ -42,7 +42,7 @@ CREATE TABLE users (
 );
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize line endings to LF so the per-line field regexes are reliable. Output stays LF (standard for SQL scripts).
 - `replace_regex_multiline`: Nullable union field ['null', T] -> a nullable column (no NOT NULL). The scalar type is tagged @T@ for the type map below.

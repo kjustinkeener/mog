@@ -34,7 +34,7 @@ Some text.
 ###### Deep
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: Prepend a # to heading lines up to H5
 

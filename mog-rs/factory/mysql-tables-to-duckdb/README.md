@@ -51,7 +51,7 @@ CREATE TABLE products (
 )
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`
 - `replace_regex`: tinyint(1) -> BOOLEAN.

@@ -54,7 +54,7 @@ Secret,,shop-prod,v1
 ,,,
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Drop the ... end-of-document markers.
 - `prepend`: Give the first document an explicit separator.

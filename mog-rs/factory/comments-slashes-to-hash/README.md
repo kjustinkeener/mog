@@ -34,7 +34,7 @@ port = 8080
 url = "http://example.com"
 ```
 
-## Pipeline
+## Steps
 
 - `convert_comment_style`: // -> # at the start of comment lines
 

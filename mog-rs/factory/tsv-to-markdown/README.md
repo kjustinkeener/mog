@@ -31,7 +31,7 @@ Output:
 | Bob | Eng | Data |
 ```
 
-## Pipeline
+## Steps
 
 - `csv_to_markdown`: Read the input as tab-delimited and emit a Markdown table
 

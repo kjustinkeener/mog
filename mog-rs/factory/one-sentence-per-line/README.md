@@ -29,7 +29,7 @@ Is it?
 Yes.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Break after sentence-ending punctuation followed by spaces
 

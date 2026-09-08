@@ -30,7 +30,7 @@ Output:
 42
 ```
 
-## Pipeline
+## Steps
 
 - `keep_chars`: Keep only digit characters
 

@@ -35,7 +35,7 @@ server:
   port: 8080
 ```
 
-## Pipeline
+## Steps
 
 - `toml_to_json`: Parse TOML into JSON
 - `json_to_yaml`: Serialize the JSON as YAML

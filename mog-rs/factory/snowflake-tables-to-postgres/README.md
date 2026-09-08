@@ -46,7 +46,7 @@ CREATE TABLE CUSTOMERS (
 -- TODO(mog): dropped Snowflake CLUSTER BY (REGION) (no direct Postgres table-DDL equivalent)
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF.
 - `replace`: Drop statement terminators.

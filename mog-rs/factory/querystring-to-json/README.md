@@ -33,7 +33,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `querystring_to_json`: Parse the query string into a JSON object.
 

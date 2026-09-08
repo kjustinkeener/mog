@@ -46,7 +46,7 @@ version [IP] build
 just a normal line with no secrets
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Emails
 - `replace_regex`: IPv4 addresses

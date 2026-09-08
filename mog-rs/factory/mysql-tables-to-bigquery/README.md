@@ -38,7 +38,7 @@ CREATE TABLE `users` (
 );
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Drop AUTO_INCREMENT (with its leading space)
 - `replace_map`

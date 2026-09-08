@@ -38,7 +38,7 @@ Hello world
 Second line
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Drop the WEBVTT header line
 - `replace_regex`: Drop the leading blank line(s) left by the header

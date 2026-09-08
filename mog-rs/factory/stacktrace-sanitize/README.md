@@ -32,7 +32,7 @@ Error: boom
     handle at 0xADDR
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Redact hex memory addresses.
 - `replace_regex`: Normalize :line:col positions.

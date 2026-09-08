@@ -43,7 +43,7 @@ Elderberry
 Fig
 ```
 
-## Pipeline
+## Steps
 
 - `trim_whitespace`: Trim spaces around each line
 - `remove_empty_lines`: Drop blank lines

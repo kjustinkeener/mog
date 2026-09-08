@@ -60,7 +60,7 @@ CREATE TABLE my2ch_orders (
 ORDER BY (id)
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`: Remove MySQL SHOW CREATE rendering: backticks, ENGINE/CHARSET/COLLATE, DEFAULT NULL, and flag+drop ON UPDATE.
 - `flag_matching`: Flag AUTO_INCREMENT before dropping it: ClickHouse has no autoincrement.

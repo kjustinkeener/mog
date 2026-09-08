@@ -28,7 +28,7 @@ Client [IP] connected to [IP] at port 8080.
 Gateway is [IP].
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Replace dotted-quad addresses with a placeholder
 

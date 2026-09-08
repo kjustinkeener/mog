@@ -34,7 +34,7 @@ run_server --port 8080
 echo "done"
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Drop full-line # comments
 - `squeeze_blank_lines`: Collapse the blank runs left behind

@@ -51,7 +51,7 @@ create,aws_s3_bucket.logs,aws_s3_bucket,logs,registry.terraform.io/hashicorp/aws
 no-op,random_pet.suffix,random_pet,suffix,registry.terraform.io/hashicorp/random
 ```
 
-## Pipeline
+## Steps
 
 - `json_minify`: Collapse the pretty-printed plan document to a single line so the JSON readers below see one record.
 - `json_extract`: Emit one compact JSON object per entry of the top-level resource_changes array; everything else in the plan document is dropped.

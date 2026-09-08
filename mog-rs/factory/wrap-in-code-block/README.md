@@ -30,7 +30,7 @@ def hello():
 ```
 ````
 
-## Pipeline
+## Steps
 
 - `prepend`: Opening fence
 - `append`: Closing fence

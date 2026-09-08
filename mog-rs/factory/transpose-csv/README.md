@@ -31,7 +31,7 @@ q2,135,3
 q3,150,5
 ```
 
-## Pipeline
+## Steps
 
 - `transpose`: Rows become columns and vice versa
 

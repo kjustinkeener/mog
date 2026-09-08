@@ -42,7 +42,7 @@ CREATE TABLE users (
 );
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize line endings to LF so the per-line property regexes are reliable. Output stays LF (standard for SQL scripts).
 - `replace_regex_multiline`: Nullable union property (['type', 'null']) -> a nullable column (no NOT NULL). The JSON type is tagged @T@ for the type map below.

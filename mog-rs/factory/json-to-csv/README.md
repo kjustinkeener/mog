@@ -31,7 +31,7 @@ id,name,city
 3,Cy,LA
 ```
 
-## Pipeline
+## Steps
 
 - `json_to_csv`: Flatten the JSON objects into CSV rows.
 

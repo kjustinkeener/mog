@@ -28,7 +28,7 @@ if (a &lt; b &amp;&amp; c &gt; d) return &quot;x&quot;;
 Tom &amp; Jerry &lt;tag&gt;
 ```
 
-## Pipeline
+## Steps
 
 - `html_encode`: Escape HTML special characters
 

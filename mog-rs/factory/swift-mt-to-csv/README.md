@@ -47,7 +47,7 @@ Output:
 71A,"SHA"
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Drop brace-framed header/opener lines ({1:..., {4:, {5:...)
 - `remove_lines_matching`: Drop the block-4 trailer line (-})

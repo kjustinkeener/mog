@@ -42,7 +42,7 @@ host = "localhost"
 port = 8080
 ```
 
-## Pipeline
+## Steps
 
 - `yaml_to_json`: Parse YAML into JSON
 - `json_to_toml`: Serialize the JSON as TOML

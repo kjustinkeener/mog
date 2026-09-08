@@ -48,7 +48,7 @@ CREATE TABLE CUSTOMERS
   )
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`
 - `replace_regex`

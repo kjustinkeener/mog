@@ -28,7 +28,7 @@ Authorization: Bearer [JWT]
 plain header on this line
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Replace JWTs with a placeholder
 

@@ -30,7 +30,7 @@ range 3-4 and a non breaking space.
 zerowidthjoinedheregone.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_map`: Map smart typography to ASCII equivalents in a single pass
 

@@ -26,7 +26,7 @@ Output:
 col_a, COL_b, col_c, col_d
 ```
 
-## Pipeline
+## Steps
 
 - `replace_nth`: Replace the 2nd 'col' with 'COL'
 

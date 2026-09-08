@@ -27,7 +27,7 @@ Output:
 "He said \"hi\"\tand a \\ here\nline two\n"
 ```
 
-## Pipeline
+## Steps
 
 - `replace_map`: Escape backslash, quote, and control characters in one pass
 - `prepend`: Open the JSON string

@@ -29,7 +29,7 @@ ST,850,0001
 SE,2,0001
 ```
 
-## Pipeline
+## Steps
 
 - `replace`: Segment terminator ~ -> newline
 - `change_delimiter`: Elements: * -> comma

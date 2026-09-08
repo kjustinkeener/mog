@@ -64,7 +64,7 @@ SELECT
 
 _(... 1 more line(s))_
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Collapse ARRAY<...>/MAP<...>/STRUCT<...> to JSON (best-effort; non-nested).
 - `replace_regex`: Drop the USING <format> table clause (e.g. USING DELTA).

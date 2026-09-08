@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS "public"."customers"
 ;
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF.
 - `replace_regex`: Drop --DROP / --WARNING comment lines.

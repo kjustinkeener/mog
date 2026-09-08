@@ -30,7 +30,7 @@ plain value
 "has ""quotes"""
 ```
 
-## Pipeline
+## Steps
 
 - `escape_csv`: Quote each line as a CSV field
 

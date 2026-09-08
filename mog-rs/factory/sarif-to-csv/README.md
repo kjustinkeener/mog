@@ -50,7 +50,7 @@ generic.style.no-todo,informational,TODO left in shipped code,"src/ui/app,v2.tsx
 aws-access-token,,aws-access-token has detected a secret.,infra/terraform/main.tf,231
 ```
 
-## Pipeline
+## Steps
 
 - `json_minify`: Parse the report and re-serialize it on a single line.
 - `replace_regex`: Drop everything ahead of the runs array.

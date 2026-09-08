@@ -36,7 +36,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `ini_to_toml`: Parse INI into TOML
 - `toml_to_json`: Serialize as JSON

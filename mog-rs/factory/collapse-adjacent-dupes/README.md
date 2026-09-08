@@ -35,7 +35,7 @@ start
 done
 ```
 
-## Pipeline
+## Steps
 
 - `remove_consecutive_duplicate_lines`: Collapse adjacent duplicates
 

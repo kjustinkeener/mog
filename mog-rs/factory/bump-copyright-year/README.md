@@ -30,7 +30,7 @@ Copyright (c) 2015-2006 Bob
 No year on this line
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Replace the trailing year after Copyright with the current year.
 

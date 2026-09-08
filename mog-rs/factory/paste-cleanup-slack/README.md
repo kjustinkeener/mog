@@ -40,7 +40,7 @@ shipping it
 Follow-up note
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Remove 'New messages' dividers.
 - `remove_lines_matching`: Remove 'X replied to a thread' notice lines.

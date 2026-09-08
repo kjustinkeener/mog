@@ -30,7 +30,7 @@ Output:
 subtotal 21.99
 ```
 
-## Pipeline
+## Steps
 
 - `arithmetic`: Multiply each number by 1.1, 2 decimals
 

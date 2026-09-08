@@ -30,7 +30,7 @@ worker id 42
 retry after 10s
 ```
 
-## Pipeline
+## Steps
 
 - `increment_numbers`: Add 1 to each number
 

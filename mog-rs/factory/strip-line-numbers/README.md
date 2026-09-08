@@ -32,7 +32,7 @@ print("hi")
 no number here
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: Drop a leading number (and its separator) from each line
 

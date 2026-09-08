@@ -64,7 +64,7 @@ CREATE TABLE ch2pg_orders
 
 _(... 12 more line(s))_
 
-## Pipeline
+## Steps
 
 - `run_mog`: Remove ClickHouse engine/physical/identifier noise; ORDER BY and PARTITION BY become TODO comments.
 - `replace_regex`: Unwrap LowCardinality(Nullable(T)) -> Nullable(T): LowCardinality is a storage encoding with no Postgres analog; keep the nullability.

@@ -64,7 +64,7 @@ CREATE OR REPLACE TABLE ms2bq_orders(
 
 _(... 19 more line(s))_
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF first so every later newline-sensitive regex is reliable.
 - `run_mog`: Remove SSMS server/session/DROP scaffolding (object banners, SET options, CREATE/ALTER DATABASE, the guarded DROP phase, ALTER TABLE CHECK CONSTRAINT re-enables, and the sp_addextendedproperty description calls). Shared fragment; runs on the raw SSMS text while GO batches are intact.

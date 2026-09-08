@@ -42,7 +42,7 @@ It is 4.
 Thanks!
 ```
 
-## Pipeline
+## Steps
 
 - `json_filter`: Keep only user and assistant turns (drop system/meta lines).
 - `json_filter`: Keep only turns that carry prose (drops tool-only turns and tool results).

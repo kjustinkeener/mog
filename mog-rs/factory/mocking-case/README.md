@@ -26,7 +26,7 @@ Output:
 ThIs iS a nOrMAl seNtEnCE
 ```
 
-## Pipeline
+## Steps
 
 - `random_case`: Randomly recase each letter
 

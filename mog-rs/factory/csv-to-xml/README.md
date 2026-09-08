@@ -37,7 +37,7 @@ Output:
 </records>
 ```
 
-## Pipeline
+## Steps
 
 - `row_to_template`: Render each row as an XML record
 - `prepend`: Root open tag

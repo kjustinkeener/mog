@@ -33,7 +33,7 @@ Output:
 1 cherry
 ```
 
-## Pipeline
+## Steps
 
 - `unique_with_count`: Collapse duplicates and prefix a count
 

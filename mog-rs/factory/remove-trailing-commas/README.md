@@ -46,7 +46,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Drop a comma before a closing bracket
 

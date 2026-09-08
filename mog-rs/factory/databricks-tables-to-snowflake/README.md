@@ -54,7 +54,7 @@ COMMENT = 'customer master table'
 -- TODO(mog): dropped source LOCATION 's3://acme-lake/warehouse/sales.db/customers' (set target storage / external stage manually)
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`: Remove Delta/Spark boilerplate; flag dropped physical clauses.
 - `run_mog`: Spark `id` backticks to Snowflake "id" double quotes.

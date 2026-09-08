@@ -36,7 +36,7 @@ Output:
 </table>
 ```
 
-## Pipeline
+## Steps
 
 - `csv_to_html`: Render the CSV as an HTML table.
 

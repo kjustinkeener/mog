@@ -26,7 +26,7 @@ Output:
 hello%20world%20%26%20friends%3D100%25
 ```
 
-## Pipeline
+## Steps
 
 - `url_encode`: Percent-encode the whole text
 

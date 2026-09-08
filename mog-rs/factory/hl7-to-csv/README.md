@@ -30,7 +30,7 @@ PID,1,,12345^^^MRN,,Doe^John,,19800101,M
 PV1,1,I,ICU^101^A
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize CR segment separators to newlines
 - `change_delimiter`: Fields: | -> comma

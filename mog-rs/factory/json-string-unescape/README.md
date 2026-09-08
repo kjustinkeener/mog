@@ -28,7 +28,7 @@ Line two	Tabbed
 Unicode: AB
 ```
 
-## Pipeline
+## Steps
 
 - `json_unescape`: Decode JSON string escapes
 

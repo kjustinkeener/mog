@@ -28,7 +28,7 @@ Kickoff on 2023-03-16, review 2023-03-23, launch 2023-04-02.
 No dates on this line.
 ```
 
-## Pipeline
+## Steps
 
 - `shift_dates`: Shift dates back one year
 

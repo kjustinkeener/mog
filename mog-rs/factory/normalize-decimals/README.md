@@ -30,7 +30,7 @@ Unit price 12.50, qty 2024
 Subtotal 999.00
 ```
 
-## Pipeline
+## Steps
 
 - `decimal_separator_normalize`: EU number format to US number format
 

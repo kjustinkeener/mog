@@ -48,7 +48,7 @@ date,from,to,subject,message_id
 "Wed, 3 Sep 2025 07:05:44 +0000","Carol Diaz <carol@example.com>","team@example.com","Server maintenance window",""
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize line endings so the header and body rules see plain LF
 - `trim_whitespace_right`: Drop trailing whitespace so header values do not carry it into the CSV

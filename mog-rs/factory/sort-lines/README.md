@@ -32,7 +32,7 @@ banana
 cherry
 ```
 
-## Pipeline
+## Steps
 
 - `sort_lines`: Sort lines A-Z
 

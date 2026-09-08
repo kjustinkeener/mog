@@ -30,7 +30,7 @@ another-title-2024
 hello-world
 ```
 
-## Pipeline
+## Steps
 
 - `slugify`: Slugify each line
 

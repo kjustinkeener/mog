@@ -26,7 +26,7 @@ Output:
 q=hello%20world&page=2&tag=a&tag=b
 ```
 
-## Pipeline
+## Steps
 
 - `json_to_querystring`: Render the JSON object as a query string.
 

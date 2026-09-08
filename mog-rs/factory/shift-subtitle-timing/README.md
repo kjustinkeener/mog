@@ -54,7 +54,7 @@ And this one lands a minute earlier.
 An hour in, so the hour rolls back too.
 ```
 
-## Pipeline
+## Steps
 
 - `flag_matching`: A cue already past the day boundary cannot be shifted
 - `replace_regex`: WebVTT start stamp without hours gains an hours part

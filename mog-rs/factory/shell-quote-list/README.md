@@ -32,7 +32,7 @@ Output:
 '; rm -rf /'
 ```
 
-## Pipeline
+## Steps
 
 - `escape_shell`: Wrap each line as one safe shell word
 

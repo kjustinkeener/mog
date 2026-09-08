@@ -32,7 +32,7 @@ apple
 banana
 ```
 
-## Pipeline
+## Steps
 
 - `keep_duplicate_lines`: Keep only lines that occur more than once
 

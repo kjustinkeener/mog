@@ -40,7 +40,7 @@ charlie
 z-body
 ```
 
-## Pipeline
+## Steps
 
 - `sort_blocks`
 

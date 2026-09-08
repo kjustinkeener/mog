@@ -32,7 +32,7 @@ HttpResponse
 ParseJsonData
 ```
 
-## Pipeline
+## Steps
 
 - `to_pascal`: Recase each identifier to PascalCase
 

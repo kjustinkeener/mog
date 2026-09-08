@@ -26,7 +26,7 @@ Output:
 Tom & Jerry say "hi" for €5 ©2024
 ```
 
-## Pipeline
+## Steps
 
 - `html_decode`: Decode HTML entities to characters
 

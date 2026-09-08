@@ -30,7 +30,7 @@ Here is a logo: company logo.
 Plain text stays plain.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Images: ![alt](img) -> alt
 - `replace_regex`: Links: [label](url) -> label

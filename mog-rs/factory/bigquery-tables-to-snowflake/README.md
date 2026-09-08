@@ -58,7 +58,7 @@ CLUSTER BY (region, name)
 -- TODO(mog): dropped BigQuery table OPTIONS (labels / partition_expiration_days / require_partition_filter)
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF.
 - `replace_regex`: Drop the trailing table OPTIONS(...) block (labels/expiration/etc).

@@ -31,7 +31,7 @@ Output:
   name: Bo
 ```
 
-## Pipeline
+## Steps
 
 - `csv_to_json`: Read the CSV into a typed JSON array.
 - `json_to_yaml`: Render the JSON array as YAML.

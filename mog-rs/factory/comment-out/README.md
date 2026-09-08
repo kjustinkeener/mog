@@ -32,7 +32,7 @@ Output:
 # x = 2
 ```
 
-## Pipeline
+## Steps
 
 - `prefix_lines`: Prefix each line with the comment marker
 

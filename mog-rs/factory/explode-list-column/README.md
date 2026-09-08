@@ -33,7 +33,7 @@ Output:
 3,f
 ```
 
-## Pipeline
+## Steps
 
 - `explode_field`: Explode field 2's ';' list into rows
 

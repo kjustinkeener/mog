@@ -30,7 +30,7 @@ Output:
 3. Bake for 30 minutes
 ```
 
-## Pipeline
+## Steps
 
 - `remove_empty_lines`: Drop blank lines
 - `prefix_lines`: Prefix each line with a numbering marker

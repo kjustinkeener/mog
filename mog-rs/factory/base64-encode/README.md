@@ -27,7 +27,7 @@ Output:
 SGVsbG8sIE1vZyEKTGluZSB0d28uCg==
 ```
 
-## Pipeline
+## Steps
 
 - `base64_encode`: Encode the text as Base64
 

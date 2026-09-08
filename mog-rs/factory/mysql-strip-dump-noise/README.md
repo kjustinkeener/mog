@@ -50,7 +50,7 @@ CREATE TABLE `widget` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF so the block regexes below are reliable.
 - `replace_regex`: Remove DELIMITER blocks whole (triggers and stored routines -> PL/pgSQL, out of scope).

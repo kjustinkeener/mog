@@ -32,7 +32,7 @@ Mon,100,40
 Tue,120,55
 ```
 
-## Pipeline
+## Steps
 
 - `pivot`: Long (id, key, value) rows to a wide table
 

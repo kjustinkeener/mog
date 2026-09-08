@@ -28,7 +28,7 @@ Output:
 {"messages":[{"role":"user","content":"Translate to French.\n\nGood morning"},{"role":"assistant","content":"Bonjour"}]}
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: instruction/output only -> user/assistant turns
 - `replace_regex_multiline`: merge instruction + input into the user turn

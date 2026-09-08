@@ -32,7 +32,7 @@ Output:
 2025,Q3,40
 ```
 
-## Pipeline
+## Steps
 
 - `fill_down`: Carry the last non-blank value down each column
 

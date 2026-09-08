@@ -28,7 +28,7 @@ Output:
 1700003600,bob,logout
 ```
 
-## Pipeline
+## Steps
 
 - `iso_to_epoch`: Column 1 ISO datetime -> epoch seconds
 

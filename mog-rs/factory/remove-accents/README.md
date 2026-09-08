@@ -26,7 +26,7 @@ Output:
 cafe naive resume Zurich Sao Paulo
 ```
 
-## Pipeline
+## Steps
 
 - `normalize`: Fold accented letters to their base ASCII form
 

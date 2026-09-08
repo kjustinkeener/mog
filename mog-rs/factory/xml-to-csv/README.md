@@ -49,7 +49,7 @@ id,customer,city,note,total
 1004,Barbara Liskov,"Cambridge, MA",Fragile,77.05
 ```
 
-## Pipeline
+## Steps
 
 - `xml_to_json`: Parse the XML document into JSON (repeated tags become an array).
 - `json_minify`: Re-serialize it on a single line.

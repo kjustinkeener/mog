@@ -33,7 +33,7 @@ This is a paragraph that was hard-wrapped across three lines.
 And here is a second paragraph on two lines.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Protect blank-line paragraph breaks
 - `replace_regex`: Join the remaining line breaks with a space

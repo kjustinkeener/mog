@@ -64,7 +64,7 @@ CREATE TABLE ms2dd_orders(
 
 _(... 32 more line(s))_
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF first so every later CRLF-sensitive and GO-batch regex is reliable. Output stays LF (standard for SQL scripts).
 - `replace_regex`: sp_addextendedproperty 'MS_Description' on a COLUMN -> DuckDB COMMENT ON COLUMN table.column. Runs BEFORE the strip fragment (which would otherwise delete the extended-property calls) and before the TABLE rule so a column property is not mis-read as a table property. No trailing ';' -- the GO pass adds it.

@@ -33,7 +33,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `env_to_json`: Parse the .env into a JSON object.
 

@@ -28,7 +28,7 @@ Output:
 {"messages":[{"role":"user","content":"Say \"hi\""},{"role":"assistant","content":"hi"}]}
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: top-level system string -> leading system message
 

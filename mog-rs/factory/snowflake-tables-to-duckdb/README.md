@@ -46,7 +46,7 @@ CREATE OR REPLACE TABLE CUSTOMERS (
 -- TODO(mog): dropped Snowflake CLUSTER BY (REGION) (DuckDB has no clustering)
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF.
 - `replace`: Drop statement terminators (single-statement export).

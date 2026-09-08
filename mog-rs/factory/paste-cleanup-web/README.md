@@ -42,7 +42,7 @@ They became popular quickly.
 The end.
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Remove common ad / share / signup / cookie-banner lines (case-insensitive).
 - `replace_regex_multiline`: Remove [edit] and [12] citation/footnote markers left inline.

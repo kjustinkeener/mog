@@ -40,7 +40,7 @@ CREATE TABLE "events" (
 );
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`: `id` -> "id"
 - `replace_map`

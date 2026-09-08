@@ -30,7 +30,7 @@ id , name   , city
 2  , Robert , Paris
 ```
 
-## Pipeline
+## Steps
 
 - `align_columns`: Pad each column to its widest cell
 

@@ -34,7 +34,7 @@ Output:
 Thanks for the note. Here is my reply, which was also wrapped across a few lines and should join back into one paragraph.
 ```
 
-## Pipeline
+## Steps
 
 - `unwrap_text`: Join each paragraph's wrapped lines under its quote/comment prefix
 

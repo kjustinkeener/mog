@@ -54,7 +54,7 @@ COMMENT 'customer master table'
 -- TODO(mog): dropped source LOCATION 's3://acme-lake/warehouse/sales.db/customers' (set target storage / external stage manually)
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF so the block/line anchors below are reliable.
 - `replace_regex`: Drop the entire TBLPROPERTIES(delta.*) block (Delta engine internals).

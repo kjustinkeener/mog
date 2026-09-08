@@ -26,7 +26,7 @@ Output:
 48656c6c6f206d6f67
 ```
 
-## Pipeline
+## Steps
 
 - `hex_encode`: Hex-encode the input bytes
 

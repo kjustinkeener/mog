@@ -54,7 +54,7 @@ id,event,date
 14,ticket,2025-09-01
 ```
 
-## Pipeline
+## Steps
 
 - `flag_matching`: Flag slash dates that read both ways
 - `flag_matching`: Flag slash dates with a two-digit year

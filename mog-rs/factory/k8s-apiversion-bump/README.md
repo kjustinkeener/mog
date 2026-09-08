@@ -40,7 +40,7 @@ apiVersion: custom.io/v1alpha1 # FIXME(mog): deprecated apiVersion, review manua
 kind: Widget
 ```
 
-## Pipeline
+## Steps
 
 - `replace_map`: Rewrite deprecated apiVersions to current stable ones
 - `flag_matching`: Flag any remaining beta/alpha apiVersion for manual review

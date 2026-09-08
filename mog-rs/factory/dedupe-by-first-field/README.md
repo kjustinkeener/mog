@@ -32,7 +32,7 @@ beta,200
 gamma,300
 ```
 
-## Pipeline
+## Steps
 
 - `dedupe_by`
 

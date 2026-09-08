@@ -30,7 +30,7 @@ second
 first
 ```
 
-## Pipeline
+## Steps
 
 - `reverse_lines`: Reverse the line order
 

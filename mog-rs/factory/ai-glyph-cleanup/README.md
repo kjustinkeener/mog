@@ -32,7 +32,7 @@ Done - the "smart" bits...
 café - 3-4 <= 5 (TM)
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: En dash inside a word or number is a range: make it a tight hyphen
 - `replace_map`: Fold the remaining dash variants onto forms emdash-cleanup handles

@@ -28,7 +28,7 @@ Output:
 This ships *bold* fixes. See the <https://example.com/changes|changelog>.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Links [text](url) -> <url|text>
 - `replace_regex_multiline`: Headings -> *bold*

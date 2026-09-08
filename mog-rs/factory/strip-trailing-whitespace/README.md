@@ -36,7 +36,7 @@ internal  spaces  kept
 after blank
 ```
 
-## Pipeline
+## Steps
 
 - `trim_whitespace_right`: Remove trailing whitespace from each line
 

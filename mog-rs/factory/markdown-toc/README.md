@@ -40,7 +40,7 @@ Output:
   - [Endpoints & Errors](#endpoints-errors)
 ```
 
-## Pipeline
+## Steps
 
 - `keep_lines_matching`: Keep only ATX heading lines
 - `replace_regex_multiline`: Duplicate each title, tab-separated (anchor copy on the right)

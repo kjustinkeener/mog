@@ -64,7 +64,7 @@ CREATE OR REPLACE TABLE ms2sf_orders(
 
 _(... 26 more line(s))_
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF first so every later newline-sensitive regex is reliable. Output stays LF (standard for SQL scripts).
 - `replace_regex`: sp_addextendedproperty 'MS_Description' on a COLUMN -> Snowflake COMMENT ON COLUMN table.column. Runs BEFORE the strip fragment (which would otherwise delete the extended-property calls) and before the TABLE rule so a column property is not mis-read as a table property. Leaves the trailing GO for the finalize pass to turn into ';'.

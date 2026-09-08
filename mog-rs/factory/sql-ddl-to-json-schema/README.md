@@ -42,7 +42,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize line endings to LF so the per-line column regexes are reliable.
 - `replace_regex`: Parametrized character types VARCHAR(n)/CHAR(n)/NVARCHAR(n) -> tagged @string@.

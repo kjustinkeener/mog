@@ -64,7 +64,7 @@ public class CsgenOrders
 
 _(... 8 more line(s))_
 
-## Pipeline
+## Steps
 
 - `run_mog`: Remove SSMS server/session/DROP scaffolding (object banners, SET batches, CREATE/DROP DATABASE, the guarded DROP phase, extended properties). Runs while GO batches are intact.
 - `replace`: Strip T-SQL square-bracket quoting: opening bracket.

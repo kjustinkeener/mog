@@ -28,7 +28,7 @@ id,name,role
 id,name,active
 ```
 
-## Pipeline
+## Steps
 
 - `json_keys`: Emit each object's keys, comma-joined
 

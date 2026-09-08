@@ -26,7 +26,7 @@ Output:
 apples, oranges and pears
 ```
 
-## Pipeline
+## Steps
 
 - `replace_last`
 

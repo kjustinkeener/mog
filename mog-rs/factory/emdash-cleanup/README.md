@@ -36,7 +36,7 @@ long run a - b
 no dashes here
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Line-opening dash becomes a plain hyphen bullet
 - `replace_regex`: Trailing dash at end of line is dropped with its leading space

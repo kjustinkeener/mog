@@ -56,7 +56,7 @@ ALTER TABLE orders
     ADD CONSTRAINT orders_pkey PRIMARY KEY (id);
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`
 - `replace`

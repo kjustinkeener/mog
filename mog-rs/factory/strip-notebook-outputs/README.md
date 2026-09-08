@@ -53,7 +53,7 @@ Output:
 
 _(... 10 more line(s))_
 
-## Pipeline
+## Steps
 
 - `json_set`: Clear all cell outputs
 - `json_set`: Reset execution counts

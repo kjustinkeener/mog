@@ -64,7 +64,7 @@ ALTER TABLE [dbo].[Widget]  WITH CHECK ADD  CONSTRAINT [CK_Widget_Name] CHECK  (
 
 _(... 1 more line(s))_
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF so every GO-batch anchor below is reliable.
 - `replace_regex`: Drop SSMS object banner comment lines: /****** Object: ... Script Date: ... ******/.

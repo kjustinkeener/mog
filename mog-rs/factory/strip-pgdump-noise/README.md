@@ -56,7 +56,7 @@ ALTER TABLE ONLY public.orders
     ADD CONSTRAINT orders_pkey PRIMARY KEY (id);
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF.
 - `replace_regex`: Drop the psql \restrict / \unrestrict directives (pg_dump 16+).

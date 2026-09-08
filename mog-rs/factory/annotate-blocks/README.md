@@ -40,7 +40,7 @@ outside the block
     -- END
 ```
 
-## Pipeline
+## Steps
 
 - `for_each_block`: Indent every -- BEGIN..-- END block
 

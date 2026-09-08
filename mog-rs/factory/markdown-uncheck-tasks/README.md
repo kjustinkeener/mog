@@ -36,7 +36,7 @@ Output:
 Some note that is not a task.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: Turn a checked box into an empty one
 

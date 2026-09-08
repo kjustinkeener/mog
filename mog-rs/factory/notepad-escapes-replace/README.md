@@ -28,7 +28,7 @@ col1 col2 col3
 a b c
 ```
 
-## Pipeline
+## Steps
 
 - `replace_extended`: Replace each tab with a space
 

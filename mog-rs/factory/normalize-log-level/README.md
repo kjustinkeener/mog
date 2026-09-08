@@ -32,7 +32,7 @@ Output:
 [CRIT] out of memory
 ```
 
-## Pipeline
+## Steps
 
 - `replace_map`: Map level variants to a canonical form
 

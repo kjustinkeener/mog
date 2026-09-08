@@ -28,7 +28,7 @@ Output:
 [{"id":"1","name":"Ada","role":"Lead"},{"id":"2","name":"Bob","role":"Eng"}]
 ```
 
-## Pipeline
+## Steps
 
 - `csv_to_json`: Read tab-delimited rows into a JSON array of objects
 

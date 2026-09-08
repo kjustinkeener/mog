@@ -28,7 +28,7 @@ Hello & welcome
 Bold <tag>
 ```
 
-## Pipeline
+## Steps
 
 - `strip_html_tags`: Remove HTML/XML tags
 - `html_decode`: Decode HTML entities to characters

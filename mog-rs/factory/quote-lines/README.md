@@ -30,7 +30,7 @@ Output:
 "cherry"
 ```
 
-## Pipeline
+## Steps
 
 - `wrap_lines`: Add a double quote before and after each line
 

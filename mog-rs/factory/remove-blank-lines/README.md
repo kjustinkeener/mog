@@ -33,7 +33,7 @@ two
 three
 ```
 
-## Pipeline
+## Steps
 
 - `remove_empty_lines`: Drop empty lines
 

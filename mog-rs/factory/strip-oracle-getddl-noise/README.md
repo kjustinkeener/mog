@@ -48,7 +48,7 @@ CREATE TABLE CUSTOMERS
   )
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`
 - `replace_regex`: Trim leading whitespace/newlines.

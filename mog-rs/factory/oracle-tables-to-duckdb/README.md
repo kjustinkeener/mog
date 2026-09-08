@@ -64,7 +64,7 @@ CREATE TABLE ORA2DD_ORDERS
 
 _(... 8 more line(s))_
 
-## Pipeline
+## Steps
 
 - `flag_matching`: Flag Oracle inline IDENTITY (dropped below; DuckDB has no inline IDENTITY).
 - `replace_regex`: Drop the inline IDENTITY spec (MINVALUE..NOSCALE); keep the trailing NOT NULL. DuckDB has no inline IDENTITY. Runs before the fragment while the clause is intact.

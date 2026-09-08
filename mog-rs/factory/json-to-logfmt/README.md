@@ -28,7 +28,7 @@ level=info msg="server started" port=8080
 level=error msg="db timeout" retries=3 ok=false
 ```
 
-## Pipeline
+## Steps
 
 - `json_to_logfmt`: Render each JSON object as a logfmt line.
 

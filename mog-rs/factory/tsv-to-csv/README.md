@@ -30,7 +30,7 @@ Ada,"London, UK",first
 Bob,Paris,second
 ```
 
-## Pipeline
+## Steps
 
 - `change_delimiter`: Re-delimit each line from tab to comma (re-quoting as needed)
 

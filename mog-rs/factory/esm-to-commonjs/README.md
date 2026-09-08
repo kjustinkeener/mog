@@ -32,7 +32,7 @@ const { join, resolve } = require('path');
 module.exports = myApp;
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: Default import -> const require
 - `replace_regex_multiline`: Named import -> const destructure require

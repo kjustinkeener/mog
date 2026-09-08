@@ -26,7 +26,7 @@ Output:
 Hello mog
 ```
 
-## Pipeline
+## Steps
 
 - `hex_decode`: Decode each hex line back to text
 

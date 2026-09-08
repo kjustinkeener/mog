@@ -64,7 +64,7 @@ CREATE OR REPLACE TABLE default.ch2bq_orders
 
 _(... 9 more line(s))_
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF so every anchored regex below is reliable; SQL scripts stay LF.
 - `replace`: BigQuery export idiom: CREATE TABLE -> CREATE OR REPLACE TABLE (idempotent reload).

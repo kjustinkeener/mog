@@ -26,7 +26,7 @@ Output:
 SELECT orders.order_id AS order_id, customers.name AS name, orders.total AS total, customers.region AS region FROM orders JOIN customers ON orders.cust_id = customers.id;
 ```
 
-## Pipeline
+## Steps
 
 - `sql_qualify`: Prefix each column with its owning table; expand SELECT *
 

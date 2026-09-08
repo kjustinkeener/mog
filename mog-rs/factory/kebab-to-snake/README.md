@@ -32,7 +32,7 @@ a_b_c_d
 spaced - dash
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Hyphen between alphanumerics -> underscore (pass 1)
 - `replace_regex`: Again, to catch adjacent segments the first pass skipped

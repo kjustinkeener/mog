@@ -26,7 +26,7 @@ Output:
 She said "hello" and 'hi' - really... fine-ish.
 ```
 
-## Pipeline
+## Steps
 
 - `normalize`: Straighten quotes, dashes, and the ellipsis
 

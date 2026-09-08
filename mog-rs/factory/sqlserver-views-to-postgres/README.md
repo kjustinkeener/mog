@@ -60,7 +60,7 @@ ORDER BY order_date DESC
 LIMIT 100;
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF first so every later CRLF-sensitive regex (GO-batch anchors) is reliable. Output stays LF (standard for SQL scripts; psql reads it fine).
 - `run_mog`: Strip SQL Server server/session scaffolding first (object banner comment, SET ANSI_NULLS/QUOTED_IDENTIFIER batches, any CREATE/DROP DATABASE or DROP phase). Runs on the raw SSMS text while GO batches are intact. Reusable across object-kind converters.

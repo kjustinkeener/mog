@@ -30,7 +30,7 @@ tags:
 - b
 ```
 
-## Pipeline
+## Steps
 
 - `json_to_yaml`: Convert the JSON value to YAML.
 

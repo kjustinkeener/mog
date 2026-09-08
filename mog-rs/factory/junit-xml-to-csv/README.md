@@ -53,7 +53,7 @@ api.SearchTest,api.SearchTest,"sorts by price, then name",1.030,failed
 api.SearchTest,api.SearchTest,escapesQueryString,1.400,passed
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Fold the whole report onto a single line so no element is split across lines.
 - `replace_regex`: Start a new line at every <testsuite> and <testcase> element.

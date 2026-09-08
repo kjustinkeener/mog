@@ -30,7 +30,7 @@ a\.b\*c\+d\?
 price \$9\.99
 ```
 
-## Pipeline
+## Steps
 
 - `escape_regex`: Escape regex metacharacters
 

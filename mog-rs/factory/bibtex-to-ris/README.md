@@ -54,7 +54,7 @@ PY  - 2020
 ER  - 
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: @article -> JOUR
 - `replace_regex_multiline`: @book -> BOOK

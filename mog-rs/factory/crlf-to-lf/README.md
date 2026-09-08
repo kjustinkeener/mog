@@ -33,7 +33,7 @@ old-mac
 four
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Convert all line endings to LF
 

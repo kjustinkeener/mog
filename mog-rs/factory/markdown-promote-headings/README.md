@@ -32,7 +32,7 @@ Output:
 Body text.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: Drop one # from heading lines (H2 and deeper)
 

@@ -64,7 +64,7 @@ type Film struct {
 
 _(... 30 more line(s))_
 
-## Pipeline
+## Steps
 
 - `run_mog`: Strip mysqldump / SHOW CREATE noise (ENGINE, backtick quoting, AUTO_INCREMENT, unsigned).
 - `replace_regex`: Remove any leftover mog TODO markers from the strip fragment.

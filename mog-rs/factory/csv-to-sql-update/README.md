@@ -29,7 +29,7 @@ UPDATE users SET name = 'Ada' WHERE id = 1;
 UPDATE users SET name = 'Bob' WHERE id = 2;
 ```
 
-## Pipeline
+## Steps
 
 - `row_to_template`: One UPDATE per row
 

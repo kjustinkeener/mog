@@ -31,7 +31,7 @@ services:
       PORT: '8080'
 ```
 
-## Pipeline
+## Steps
 
 - `env_to_json`: Parse the .env into a JSON object.
 - `json_wrap`: Nest it under services.<service>.environment.

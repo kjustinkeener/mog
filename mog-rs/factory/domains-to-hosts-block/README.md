@@ -34,7 +34,7 @@ Output:
 0.0.0.0 analytics.example.io
 ```
 
-## Pipeline
+## Steps
 
 - `prefix_lines`: Prefix each domain line with 0.0.0.0
 

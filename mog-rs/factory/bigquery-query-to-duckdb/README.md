@@ -42,7 +42,7 @@ WHERE date_diff('DAY', created_at, shipped_at) > 3
 ORDER BY id;
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: DATE_ADD(expr, INTERVAL n part) -> (expr + INTERVAL n part). Simple args only.
 - `replace_regex`: DATE_DIFF(end, start, part) -> date_diff('part', start, end). Note reversed operands.

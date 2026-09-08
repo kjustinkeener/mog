@@ -30,7 +30,7 @@ FROM `sales schema`.`orders`
 WHERE `status` = 'active';
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: "identifier" -> `identifier`
 

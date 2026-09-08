@@ -48,7 +48,7 @@ create or replace TABLE CUSTOMERS (
 -- TODO(mog): dropped Snowflake CLUSTER BY (REGION) (set target clustering/partitioning manually)
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF.
 - `replace`: Drop statement terminators.

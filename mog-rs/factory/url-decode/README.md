@@ -26,7 +26,7 @@ Output:
 hello world & friends=100%
 ```
 
-## Pipeline
+## Steps
 
 - `url_decode`: Decode percent-encoding
 

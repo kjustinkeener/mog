@@ -30,7 +30,7 @@ Output:
 - cherries
 ```
 
-## Pipeline
+## Steps
 
 - `prefix_lines`: Prefix each line with '- '
 

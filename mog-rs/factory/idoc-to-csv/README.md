@@ -36,7 +36,7 @@ E1EDP19,"800000000000012345000004 001MATERIAL01"
 E1EDPT1,"800000000000012345000005 0001F"
 ```
 
-## Pipeline
+## Steps
 
 - `trim_whitespace_right`: Drop trailing pad spaces
 - `remove_empty_lines`: Drop blank lines

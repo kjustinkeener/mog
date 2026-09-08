@@ -34,7 +34,7 @@ West,feb,8
 West,mar,11
 ```
 
-## Pipeline
+## Steps
 
 - `unpivot`: Wide columns to (id, key, value) rows
 

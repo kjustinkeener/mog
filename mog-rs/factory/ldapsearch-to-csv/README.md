@@ -36,7 +36,7 @@ dn,uid,cn,mail
 "uid=bob,ou=people,dc=example,dc=com",bob,Bob Jones,bob@example.com
 ```
 
-## Pipeline
+## Steps
 
 - `records_to_columns`: Pivot each entry block into a CSV row
 

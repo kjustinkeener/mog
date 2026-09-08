@@ -64,7 +64,7 @@ CREATE TABLE ORA2SF_ORDERS
 
 _(... 4 more line(s))_
 
-## Pipeline
+## Steps
 
 - `run_mog`: Remove Oracle GET_DDL boilerplate (leading whitespace, "SCHEMA". qualifier, double-quote identifier quoting, ENABLE, CONSTRAINT USING INDEX clause, TIMESTAMP (n) spacing). Runs first; keeps the CREATE TABLE body.
 - `flag_matching`: Flag Oracle DATE columns: Oracle DATE stores date+time, so it is mapped below to a zoneless Snowflake timestamp rather than a date-only column. Flagged before the type map so the marker text is not itself rewritten.

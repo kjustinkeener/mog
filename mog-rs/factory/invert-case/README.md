@@ -28,7 +28,7 @@ hELLO wORLD
 mIXEDcase TEXT
 ```
 
-## Pipeline
+## Steps
 
 - `invert_case`: Swap the case of every letter
 

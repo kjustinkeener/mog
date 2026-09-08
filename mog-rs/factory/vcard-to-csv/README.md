@@ -38,7 +38,7 @@ Ada Lovelace,ada@example.com,555-0100
 Bob Stone,bob@example.com,
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Drop the BEGIN:VCARD and VERSION metadata lines
 - `replace_regex_multiline`: Turn each END:VCARD into a blank line (a record boundary)

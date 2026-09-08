@@ -28,7 +28,7 @@ Output:
 alpha beta gamma 
 ```
 
-## Pipeline
+## Steps
 
 - `eol_to_space`: Replace line endings with spaces
 

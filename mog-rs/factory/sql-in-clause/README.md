@@ -30,7 +30,7 @@ Output:
 IN ('apple', 'banana', 'O''Brien', 'cherry')
 ```
 
-## Pipeline
+## Steps
 
 - `trim_whitespace`: Trim surrounding whitespace from each value
 - `remove_empty_lines`: Drop blank lines

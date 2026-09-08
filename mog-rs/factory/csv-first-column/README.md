@@ -30,7 +30,7 @@ id
 2
 ```
 
-## Pipeline
+## Steps
 
 - `cut_fields`: Keep column 1
 

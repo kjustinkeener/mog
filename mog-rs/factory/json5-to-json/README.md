@@ -44,7 +44,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`: Strip comments
 - `run_mog`: Remove trailing commas

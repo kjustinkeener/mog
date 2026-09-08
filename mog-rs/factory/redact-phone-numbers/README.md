@@ -28,7 +28,7 @@ Call me at [PHONE] or [PHONE].
 Office: [PHONE]. No number on this line.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Replace phone-number-shaped sequences with a placeholder
 

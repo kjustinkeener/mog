@@ -28,7 +28,7 @@ Uryyb, Jbeyq! 123
 Gur dhvpx oebja sbk.
 ```
 
-## Pipeline
+## Steps
 
 - `rot13`
 

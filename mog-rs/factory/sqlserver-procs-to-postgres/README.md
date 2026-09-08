@@ -64,7 +64,7 @@ BEGIN
 
 _(... 8 more line(s))_
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF first so every later CRLF-sensitive regex is reliable. Output stays LF (standard for SQL scripts; psql reads it fine).
 - `run_mog`: Strip SQL Server server/session/DROP scaffolding first (object banners, SET ANSI_NULLS/QUOTED_IDENTIFIER, CREATE/DROP DATABASE, ALTER DATABASE, the DROP phase, extended properties). Runs on the raw SSMS text while GO batches are intact. Shared with the tables converter.

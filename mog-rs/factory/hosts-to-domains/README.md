@@ -32,7 +32,7 @@ tracker.net
 analytics.example.io
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: Strip a leading 0.0.0.0 / 127.0.0.1 and its whitespace
 

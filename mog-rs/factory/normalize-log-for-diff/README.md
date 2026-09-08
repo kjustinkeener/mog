@@ -32,7 +32,7 @@ allocated at <ADDR>
 plain line stays
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: ISO 8601 timestamps
 - `replace_regex`: UUIDs

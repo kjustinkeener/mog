@@ -31,7 +31,7 @@ id,name,role
 3,Cy,Eng
 ```
 
-## Pipeline
+## Steps
 
 - `jsonl_to_json`: Gather the JSONL objects into a JSON array
 - `json_to_csv`: Flatten the array of objects to CSV

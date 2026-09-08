@@ -28,7 +28,7 @@ Output:
 ('apple'),('banana'),('O''Brien')
 ```
 
-## Pipeline
+## Steps
 
 - `remove_empty_lines`: Drop blank lines
 - `escape_sql`: SQL-quote each value

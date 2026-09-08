@@ -58,7 +58,7 @@ provider "aws" {
 }
 ```
 
-## Pipeline
+## Steps
 
 - `replace`: registry.terraform.io -> registry.opentofu.org
 

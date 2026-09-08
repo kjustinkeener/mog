@@ -29,7 +29,7 @@ Output:
 [{"id":"1","name":"Ada","role":"Lead"},{"id":"2","name":"Bob","role":"Eng"}]
 ```
 
-## Pipeline
+## Steps
 
 - `markdown_table_to_csv`: Parse the Markdown table into CSV
 - `csv_to_json`: Turn the rows into a JSON array of objects

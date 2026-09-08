@@ -64,7 +64,7 @@ jobs:
 
 _(... 7 more line(s))_
 
-## Pipeline
+## Steps
 
 - `flag_matching`: uses: tracking a moving branch
 - `flag_matching`: Container action without a digest

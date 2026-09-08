@@ -40,7 +40,7 @@ CREATE TABLE `users` (
 SELECT CAST(score AS BIGINT) FROM `users`;
 ```
 
-## Pipeline
+## Steps
 
 - `replace_map`: Map BigQuery types to MySQL (whole-word, case-insensitive)
 - `replace_regex`: SAFE_CAST -> CAST

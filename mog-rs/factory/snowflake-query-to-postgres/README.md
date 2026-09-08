@@ -42,7 +42,7 @@ WHERE (created_at + INTERVAL '30 day') >= created_at
 ORDER BY id;
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: DATEADD(part, n, col) -> (col + INTERVAL 'n part'). Postgres needs the quoted interval.
 - `replace_regex`: NVL -> COALESCE.

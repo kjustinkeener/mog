@@ -27,7 +27,7 @@ Output:
 {"id":2,"name":"Bo"}
 ```
 
-## Pipeline
+## Steps
 
 - `json_to_jsonl`: Expand the JSON array into one value per line.
 

@@ -28,7 +28,7 @@ Output:
 {"conversations":[{"from":"system","value":"Be terse."},{"from":"human","value":"Hi"},{"from":"gpt","value":"Hello"}]}
 ```
 
-## Pipeline
+## Steps
 
 - `json_rename`: messages -> conversations
 - `json_rename`: role -> from

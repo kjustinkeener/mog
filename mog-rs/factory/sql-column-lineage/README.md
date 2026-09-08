@@ -29,7 +29,7 @@ total <- orders.total
 status <- (none)
 ```
 
-## Pipeline
+## Steps
 
 - `sql_lineage`: Emit 'output <- source.column' for each projected column
 

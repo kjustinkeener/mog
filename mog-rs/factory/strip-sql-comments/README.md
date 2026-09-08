@@ -30,7 +30,7 @@ SELECT id,
 FROM users;
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Remove /* ... */ block comments (dotall, non-greedy)
 - `replace_regex`: Remove -- line comments to end of line (with leading spaces/tabs)

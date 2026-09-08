@@ -32,7 +32,7 @@ Ada,Engineer
 Bo,Manager
 ```
 
-## Pipeline
+## Steps
 
 - `html_table_to_csv`: Extract the HTML table rows into CSV.
 

@@ -29,7 +29,7 @@ PORT=8080
 NOTE="a b"
 ```
 
-## Pipeline
+## Steps
 
 - `json_to_env`: Render the JSON object as .env lines.
 

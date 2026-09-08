@@ -30,7 +30,7 @@ Output:
 </order>
 ```
 
-## Pipeline
+## Steps
 
 - `json_to_xml`: Emit the JSON as XML.
 

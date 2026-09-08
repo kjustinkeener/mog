@@ -48,7 +48,7 @@ CREATE TABLE CUSTOMERS (
 -- TODO(mog): dropped Snowflake CLUSTER BY (REGION) (set target clustering/partitioning manually)
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`
 - `replace_regex`: Drop autoincrement (Trino has no identity columns).

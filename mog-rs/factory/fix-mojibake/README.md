@@ -26,7 +26,7 @@ Output:
 Café and résumé with a naïve soupçon.
 ```
 
-## Pipeline
+## Steps
 
 - `fix_mojibake`: Repair double-encoded UTF-8 sequences
 

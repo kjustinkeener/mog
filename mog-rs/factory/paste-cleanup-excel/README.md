@@ -32,7 +32,7 @@ Alice	30	Boston
 Bob	25	NYC
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Convert CRLF/CR to LF, stripping stray carriage returns.
 - `replace_regex_multiline`: Remove spaces padding either side of a tab delimiter.

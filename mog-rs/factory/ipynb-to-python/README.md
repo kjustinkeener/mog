@@ -44,7 +44,7 @@ print(math.pi)
 x = math.sqrt(2)
 ```
 
-## Pipeline
+## Steps
 
 - `ipynb_to_python`: Emit code cells after # %% markers; markdown cells as commented blocks
 

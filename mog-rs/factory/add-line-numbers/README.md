@@ -30,7 +30,7 @@ Output:
 3:     print(os.getcwd())
 ```
 
-## Pipeline
+## Steps
 
 - `number_lines`: Prefix each line with its number
 

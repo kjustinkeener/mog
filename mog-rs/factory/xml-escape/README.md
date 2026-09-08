@@ -28,7 +28,7 @@ a &lt; b &amp;&amp; c &gt; d
 say &quot;hi&quot; &amp; &apos;bye&apos;
 ```
 
-## Pipeline
+## Steps
 
 - `escape_xml`: Escape XML special characters
 

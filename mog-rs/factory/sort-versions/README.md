@@ -38,7 +38,7 @@ v1.10.0
 latest
 ```
 
-## Pipeline
+## Steps
 
 - `sort_versions`: Order lines by version value
 

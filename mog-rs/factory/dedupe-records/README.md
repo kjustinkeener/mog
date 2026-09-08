@@ -37,7 +37,7 @@ id: 2
 Bo
 ```
 
-## Pipeline
+## Steps
 
 - `dedupe_blocks`: Drop duplicate blocks, key on first line
 

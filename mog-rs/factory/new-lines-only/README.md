@@ -35,7 +35,7 @@ foxtrot
 hotel
 ```
 
-## Pipeline
+## Steps
 
 - `subtract`: Drop every line present in the baseline list; keep the rest
 

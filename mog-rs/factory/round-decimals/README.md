@@ -30,7 +30,7 @@ Output:
 total 20.00 units
 ```
 
-## Pipeline
+## Steps
 
 - `round_numbers`: Round each number to 2 decimals
 

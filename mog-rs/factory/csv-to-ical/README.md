@@ -41,7 +41,7 @@ END:VEVENT
 END:VCALENDAR
 ```
 
-## Pipeline
+## Steps
 
 - `row_to_template`: Render each row as a VEVENT
 - `prepend`: Calendar header

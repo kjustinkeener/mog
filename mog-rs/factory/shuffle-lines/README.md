@@ -36,7 +36,7 @@ six
 four
 ```
 
-## Pipeline
+## Steps
 
 - `shuffle_lines`: Reorder lines with a fixed seed
 

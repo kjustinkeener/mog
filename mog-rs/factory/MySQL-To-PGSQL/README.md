@@ -64,7 +64,7 @@ CREATE TABLE customers (
 
 _(... 44 more line(s))_
 
-## Pipeline
+## Steps
 
 - `run_mog`: Strip mysqldump scaffolding (comments, DELIMITER/LOCK/view blocks, SET/USE/DROP). Leaves CREATE TABLE blocks.
 - `replace`: Remove backtick identifier quoting.

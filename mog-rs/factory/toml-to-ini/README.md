@@ -36,7 +36,7 @@ host = localhost
 pool = 5
 ```
 
-## Pipeline
+## Steps
 
 - `toml_to_ini`: Convert the TOML config to INI.
 

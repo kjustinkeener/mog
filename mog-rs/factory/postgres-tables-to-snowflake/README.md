@@ -56,7 +56,7 @@ ALTER TABLE orders
     ADD CONSTRAINT orders_pkey PRIMARY KEY (id);
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`: Remove pg_dump plumbing, keep CREATE/ALTER.
 - `replace`: Drop the public. schema qualifier.

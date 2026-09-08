@@ -32,7 +32,7 @@ item-1000
 item-12345
 ```
 
-## Pipeline
+## Steps
 
 - `pad_numbers`
 

@@ -34,7 +34,7 @@ new line one
 new line two
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Drop the +++ file-header lines
 - `keep_lines_matching`: Keep only added (+) lines

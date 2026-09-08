@@ -34,7 +34,7 @@ Output:
   role: Eng
 ```
 
-## Pipeline
+## Steps
 
 - `markdown_table_to_csv`: Parse the table into CSV
 - `csv_to_json`: Rows to a JSON array of objects

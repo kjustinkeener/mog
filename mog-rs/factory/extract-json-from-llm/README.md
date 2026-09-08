@@ -36,7 +36,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `extract_json`: Extract and pretty-print the JSON
 

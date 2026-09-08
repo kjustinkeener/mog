@@ -32,7 +32,7 @@ user_id
 parse_jsondata
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Insert _ at each lowercase/digit -> uppercase boundary
 - `to_lower`: Lowercase the result

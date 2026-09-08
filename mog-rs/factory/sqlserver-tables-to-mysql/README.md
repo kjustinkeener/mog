@@ -58,7 +58,7 @@ CREATE TABLE Customers(
 -- TODO(mog): primary key folded into CREATE TABLE
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`
 - `replace_regex`: Drop USE [db] batch.

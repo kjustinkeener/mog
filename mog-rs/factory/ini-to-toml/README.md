@@ -38,7 +38,7 @@ host = "localhost"
 debug = true
 ```
 
-## Pipeline
+## Steps
 
 - `ini_to_toml`: Convert the INI config to TOML.
 

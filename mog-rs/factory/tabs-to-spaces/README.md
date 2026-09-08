@@ -30,7 +30,7 @@ col1    col2    col3
 no tabs here
 ```
 
-## Pipeline
+## Steps
 
 - `tabs_to_spaces`: Replace each tab with spaces
 

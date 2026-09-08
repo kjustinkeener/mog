@@ -38,7 +38,7 @@ body two
 END
 ```
 
-## Pipeline
+## Steps
 
 - `insert_after_matching`: Insert a comment after each BEGIN line
 

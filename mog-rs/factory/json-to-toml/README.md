@@ -31,7 +31,7 @@ host = "localhost"
 pool = 5
 ```
 
-## Pipeline
+## Steps
 
 - `json_to_toml`: Convert the JSON object to TOML.
 

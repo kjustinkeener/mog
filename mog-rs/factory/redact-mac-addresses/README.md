@@ -28,7 +28,7 @@ Device [MAC] joined the network.
 Gateway [MAC] seen. No MAC here.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Replace colon-separated MAC addresses with a placeholder
 

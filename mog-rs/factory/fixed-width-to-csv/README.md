@@ -28,7 +28,7 @@ Ada,Engineer,42
 Bo,Manager,7
 ```
 
-## Pipeline
+## Steps
 
 - `fixed_width_to_csv`: Split fixed-width columns into CSV.
 

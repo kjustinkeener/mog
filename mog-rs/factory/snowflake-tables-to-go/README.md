@@ -64,7 +64,7 @@ type SupplierAccount struct {
 
 _(... 18 more line(s))_
 
-## Pipeline
+## Steps
 
 - `run_mog`: Remove the Snowflake GET_DDL rendering: statement terminators, inline column COMMENT 'x', the glued table )COMMENT='x', and the cluster by clause.
 - `replace_regex`: Drop the SQL comment lines the strip fragment leaves behind (the CLUSTER BY note).

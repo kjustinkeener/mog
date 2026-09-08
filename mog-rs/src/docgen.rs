@@ -113,10 +113,10 @@ pub fn render_mog_doc(mog_path: &Path) -> Result<String> {
         md.push('\n');
     }
 
-    // Pipeline: the enabled steps in order.
+    // Steps: the enabled steps in order.
     let steps: Vec<&crate::model::Step> = mog.steps.iter().filter(|s| !s.disabled).collect();
     if !steps.is_empty() {
-        md.push_str("## Pipeline\n\n");
+        md.push_str("## Steps\n\n");
         for step in steps {
             let action = step.action.as_deref().unwrap_or("(no action)");
             match step.description.as_deref().filter(|d| !d.is_empty()) {

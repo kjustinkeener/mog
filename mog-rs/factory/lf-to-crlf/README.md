@@ -30,7 +30,7 @@ line two
 line three
 ```
 
-## Pipeline
+## Steps
 
 - `eol_crlf`: Convert line endings to CRLF
 

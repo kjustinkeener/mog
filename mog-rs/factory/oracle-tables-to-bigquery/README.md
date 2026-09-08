@@ -58,7 +58,7 @@ CREATE OR REPLACE TABLE CUSTOMERS
   )
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`
 - `replace_regex`: NUMBER(p,0) integer -> INT64 (BigQuery's 64-bit integer; covers NUMBER(1,0) flags too).

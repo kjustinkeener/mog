@@ -28,7 +28,7 @@ def f():
 	return 1
 ```
 
-## Pipeline
+## Steps
 
 - `spaces_to_tabs`: Leading spaces -> tabs
 

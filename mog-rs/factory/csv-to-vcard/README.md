@@ -39,7 +39,7 @@ TEL:555-0200
 END:VCARD
 ```
 
-## Pipeline
+## Steps
 
 - `row_to_template`: Render each row as a vCard card
 

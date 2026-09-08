@@ -37,7 +37,7 @@ CREATE TABLE public.orders (
 );
 ```
 
-## Pipeline
+## Steps
 
 - `squeeze_spaces`: Collapse the double spaces left by removing column/type markers (keeps indentation).
 - `replace_regex`: Tidy any space left before punctuation (tidy_chars selects which characters).

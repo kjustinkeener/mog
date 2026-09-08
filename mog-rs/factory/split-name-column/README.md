@@ -50,7 +50,7 @@ id,first,middle,last,suffix
 12,Ludwig,,van Beethoven,III
 ```
 
-## Pipeline
+## Steps
 
 - `replace`: Park the header out of the way
 - `replace_regex`: Quoted Last, First order becomes First Last

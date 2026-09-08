@@ -30,7 +30,7 @@ Output:
 "path C:\\Users\\me"
 ```
 
-## Pipeline
+## Steps
 
 - `escape_json`: Escape + quote each line as a JSON string
 

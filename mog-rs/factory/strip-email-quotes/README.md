@@ -32,7 +32,7 @@ a reply line
 not quoted at all
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: Remove leading > quote markers
 

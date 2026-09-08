@@ -32,7 +32,7 @@ Output:
 - [ ] Ship it
 ```
 
-## Pipeline
+## Steps
 
 - `prefix_lines`: Prefix each non-blank line with an empty checkbox
 

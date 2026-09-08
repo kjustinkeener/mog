@@ -50,7 +50,7 @@ CREATE TABLE products (
 )
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF.
 - `flag_matching`: Flag the MySQL-only ON UPDATE auto-refresh before removing it.

@@ -34,7 +34,7 @@ cherry
 date
 ```
 
-## Pipeline
+## Steps
 
 - `remove_duplicate_lines`: Keep the first occurrence, drop later duplicates
 

@@ -36,7 +36,7 @@ Output:
 <p>Also visible.</p>
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Delete <!-- ... --> comment spans (dotall, non-greedy)
 

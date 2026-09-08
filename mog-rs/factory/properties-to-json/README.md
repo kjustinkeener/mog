@@ -33,7 +33,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `properties_to_json`: Parse the .properties into a JSON object.
 

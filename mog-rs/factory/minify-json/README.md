@@ -36,7 +36,7 @@ Output:
 {"name":"demo","tags":["a","b"],"nested":{"x":1,"y":2}}
 ```
 
-## Pipeline
+## Steps
 
 - `json_minify`: Re-serialize compactly
 

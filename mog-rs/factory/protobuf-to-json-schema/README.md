@@ -44,7 +44,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize line endings to LF so the per-line field regexes are reliable.
 - `replace_regex_multiline`: Repeated field -> a JSON array property with an 'items' scalar. Runs before the scalar rule so 'repeated' is not misread as a type.

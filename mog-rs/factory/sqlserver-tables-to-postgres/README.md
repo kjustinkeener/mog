@@ -64,7 +64,7 @@ CREATE TABLE orders(
 
 _(... 35 more line(s))_
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF first so every later CRLF-sensitive regex is reliable. Output stays LF (standard for SQL scripts; psql reads it fine).
 - `replace_regex`: sp_addextendedproperty 'MS_Description' on a COLUMN -> COMMENT ON COLUMN. Runs BEFORE the server-noise strip (which deletes extended properties) and before the TABLE rule so a column property is not mis-read as a table property. No trailing ; (the GO pass adds it).

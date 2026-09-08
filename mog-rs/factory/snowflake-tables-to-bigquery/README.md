@@ -58,7 +58,7 @@ SELECT
 FROM `analytics`.`orders`;
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`: Rewrite expr::TYPE to CAST(expr AS TYPE) (BigQuery has no ::). Run before requoting so quoted operands still start with a quote.
 - `run_mog`: Snowflake "id" identifiers to BigQuery `id` backticks.

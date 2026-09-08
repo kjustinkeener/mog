@@ -30,7 +30,7 @@ TODO: b
 TODO: c
 ```
 
-## Pipeline
+## Steps
 
 - `replace_first`: Replace the first 'TODO' with 'DONE'
 

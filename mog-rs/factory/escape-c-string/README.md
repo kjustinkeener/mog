@@ -30,7 +30,7 @@ Output:
 "plain text"
 ```
 
-## Pipeline
+## Steps
 
 - `escape_c`: Escape and quote each line as a C string literal
 

@@ -28,7 +28,7 @@ Output:
 ["apple","banana","cherry pie"]
 ```
 
-## Pipeline
+## Steps
 
 - `remove_empty_lines`: Drop blank lines
 - `escape_json`: Escape + quote each line as a JSON string

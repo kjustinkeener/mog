@@ -32,7 +32,7 @@ isActiveFlag
 parseJsonData
 ```
 
-## Pipeline
+## Steps
 
 - `to_camel`: Recase each identifier to camelCase
 

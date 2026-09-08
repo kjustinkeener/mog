@@ -50,7 +50,7 @@ CREATE TABLE products (
 )
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`
 - `replace_regex`: tinyint(1) is MySQL's boolean -> BOOLEAN.

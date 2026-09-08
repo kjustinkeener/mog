@@ -38,7 +38,7 @@ BYTEA
 CHAR(1)
 ```
 
-## Pipeline
+## Steps
 
 - `sql_datatype_convert`: Convert each line's Oracle type to its Postgres equivalent
 

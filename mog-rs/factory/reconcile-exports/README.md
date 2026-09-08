@@ -35,7 +35,7 @@ SAME,5,Erin,editor
 REMOVED,3,Carol,viewer
 ```
 
-## Pipeline
+## Steps
 
 - `reconcile`: Annotate each row ADDED / CHANGED / SAME / REMOVED versus the previous export, keyed by id
 

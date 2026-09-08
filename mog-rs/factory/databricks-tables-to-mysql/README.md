@@ -54,7 +54,7 @@ CREATE TABLE customers (
 -- TODO(mog): dropped source LOCATION 's3://acme-lake/warehouse/sales.db/customers' (set target storage / external stage manually)
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`
 - `replace_regex`: Reduce catalog.schema.table to the bare table.

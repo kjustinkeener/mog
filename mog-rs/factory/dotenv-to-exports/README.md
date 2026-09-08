@@ -36,7 +36,7 @@ export HOST=localhost
 export DB_URL=postgres://localhost/app
 ```
 
-## Pipeline
+## Steps
 
 - `prefix_lines`: Prefix each KEY=VALUE line with 'export '
 

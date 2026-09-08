@@ -30,7 +30,7 @@ Output:
 117be1de-549d-4d43-a2c4-711f11efa0c5,charlie
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`
 

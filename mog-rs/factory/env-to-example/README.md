@@ -32,7 +32,7 @@ DB_PASSWORD=
 PORT=
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: Blank the value after the first = on each key line
 

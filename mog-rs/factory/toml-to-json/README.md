@@ -38,7 +38,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `toml_to_json`: Convert the TOML to JSON.
 

@@ -28,7 +28,7 @@ This is bold and italic and a snake_case name.
 Use strong words sparingly.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: **bold** -> bold
 - `replace_regex`: *italic* -> italic

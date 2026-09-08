@@ -34,7 +34,7 @@ stripe [secret]
 Bob Smith called
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: emails
 - `replace_regex`: US SSN

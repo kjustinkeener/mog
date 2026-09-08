@@ -33,7 +33,7 @@ Output:
   start server
 ```
 
-## Pipeline
+## Steps
 
 - `diff`: Emit a git-style +/-/space marker diff of the input against the baseline
 

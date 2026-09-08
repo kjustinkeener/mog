@@ -40,7 +40,7 @@ CREATE TABLE customers (
 );
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`
 - `replace_regex`

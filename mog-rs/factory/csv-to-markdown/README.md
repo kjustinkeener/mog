@@ -31,7 +31,7 @@ Output:
 | Bo, Jr | Manager |
 ```
 
-## Pipeline
+## Steps
 
 - `csv_to_markdown`: Render the CSV as a Markdown table.
 

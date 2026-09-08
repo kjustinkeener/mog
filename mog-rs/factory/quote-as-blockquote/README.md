@@ -28,7 +28,7 @@ Output:
 > Second line of the quote.
 ```
 
-## Pipeline
+## Steps
 
 - `prefix_lines`: Prefix each line with a blockquote marker
 

@@ -30,7 +30,7 @@ bell and esc here
 normal line
 ```
 
-## Pipeline
+## Steps
 
 - `strip_control_chars`: Delete control characters
 

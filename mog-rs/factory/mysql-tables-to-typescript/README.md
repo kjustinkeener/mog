@@ -64,7 +64,7 @@ export interface Film {
 
 _(... 30 more line(s))_
 
-## Pipeline
+## Steps
 
 - `run_mog`: Remove MySQL storage noise: backticks, ENGINE/CHARSET/COLLATE, DEFAULT NULL, ON UPDATE.
 - `replace_regex`: Drop the SQL-comment TODO the strip fragment stamped for ON UPDATE (not valid TS).

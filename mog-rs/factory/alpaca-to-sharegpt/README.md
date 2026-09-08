@@ -28,7 +28,7 @@ Output:
 {"conversations":[{"from":"human","value":"Translate to French.\n\nGood morning"},{"from":"gpt","value":"Bonjour"}]}
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: instruction/output only -> human/gpt turns
 - `replace_regex_multiline`: merge instruction + input into the human turn

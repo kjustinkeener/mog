@@ -29,7 +29,7 @@ INSERT INTO users (id, name, email) VALUES (1, 'Ada', 'ada@example.com');
 INSERT INTO users (id, name, email) VALUES (2, 'Bob', 'bob@example.com');
 ```
 
-## Pipeline
+## Steps
 
 - `row_to_template`: One INSERT per row, filling ${id}/${name}/${email} from the header
 

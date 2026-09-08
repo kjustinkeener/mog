@@ -28,7 +28,7 @@ Output:
 {"user":"bob","password":"[REDACTED]","token":"[REDACTED]","action":"logout"}
 ```
 
-## Pipeline
+## Steps
 
 - `json_set`: Redact password
 - `json_set`: Redact token

@@ -43,7 +43,7 @@ Body content here.
 A horizontal rule above stays.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Delete the opening ---...--- block at the start of the file
 

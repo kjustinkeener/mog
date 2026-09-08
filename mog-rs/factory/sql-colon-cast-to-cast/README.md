@@ -38,7 +38,7 @@ SELECT
 FROM orders;
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: (group)::TYPE -> CAST((group) AS TYPE)
 - `replace_regex`: identifier::TYPE (bare, dotted, or quoted/backticked) -> CAST(identifier AS TYPE)

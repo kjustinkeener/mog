@@ -28,7 +28,7 @@ foo bar baz
  spaced out 
 ```
 
-## Pipeline
+## Steps
 
 - `collapse_whitespace`: Collapse space/tab runs to a single space
 

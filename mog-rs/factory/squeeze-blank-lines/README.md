@@ -36,7 +36,7 @@ b
 c
 ```
 
-## Pipeline
+## Steps
 
 - `squeeze_blank_lines`: Collapse blank runs to one
 

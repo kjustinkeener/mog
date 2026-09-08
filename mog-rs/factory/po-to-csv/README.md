@@ -46,7 +46,7 @@ msgid,msgstr
 "Save","Enregistrer"
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Drop every comment line (#, #., #:, #~, #,)
 - `replace_regex_multiline`: Join each msgid line with the msgstr below it into one quoted CSV row

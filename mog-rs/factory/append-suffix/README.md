@@ -30,7 +30,7 @@ SELECT 2;
 SELECT 3;
 ```
 
-## Pipeline
+## Steps
 
 - `suffix_lines`: Append ';' to each line
 

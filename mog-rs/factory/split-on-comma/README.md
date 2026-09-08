@@ -34,7 +34,7 @@ three
 solo
 ```
 
-## Pipeline
+## Steps
 
 - `split_lines`: Split each line on commas, trimmed
 

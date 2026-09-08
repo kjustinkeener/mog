@@ -28,7 +28,7 @@ Output:
 line oneline twoline three
 ```
 
-## Pipeline
+## Steps
 
 - `eol_cr`: Convert line endings to CR
 

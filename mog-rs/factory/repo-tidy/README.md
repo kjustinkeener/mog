@@ -38,7 +38,7 @@ after blank run
 no final newline
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize line endings to LF
 - `trim_whitespace_right`: Strip trailing whitespace from every line

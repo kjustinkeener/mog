@@ -39,7 +39,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `xml_to_json`: Convert the XML document to JSON.
 

@@ -28,7 +28,7 @@ Output:
 alpha, beta, gamma
 ```
 
-## Pipeline
+## Steps
 
 - `remove_empty_lines`: Drop blank lines
 - `join_lines`: Join with a comma and space

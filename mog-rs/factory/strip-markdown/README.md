@@ -43,7 +43,7 @@ a quoted aside
 See the docs for details.
 ```
 
-## Pipeline
+## Steps
 
 - `strip_markdown`: Strip the Markdown syntax.
 

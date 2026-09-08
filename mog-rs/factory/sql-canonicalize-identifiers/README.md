@@ -26,7 +26,7 @@ Output:
 SELECT ID, NAME, TOTAL_AMOUNT FROM MYORDERS WHERE STATUS = 'Paid' ORDER BY ORDER_DATE;
 ```
 
-## Pipeline
+## Steps
 
 - `sql_canonicalize_identifiers`: Fold unquoted identifiers to Snowflake's upper-case storage form
 

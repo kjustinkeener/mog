@@ -40,7 +40,7 @@ msgid "Save"
 msgstr "Enregistrer"
 ```
 
-## Pipeline
+## Steps
 
 - `row_to_template`: Render each row as a PO entry
 - `prepend`: Add a minimal PO header entry

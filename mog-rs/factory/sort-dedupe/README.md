@@ -39,7 +39,7 @@ banana
 cherry
 ```
 
-## Pipeline
+## Steps
 
 - `trim_whitespace`: Trim leading/trailing whitespace
 - `remove_empty_lines`: Drop blank lines

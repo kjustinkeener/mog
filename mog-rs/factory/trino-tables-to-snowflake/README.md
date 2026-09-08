@@ -40,7 +40,7 @@ CREATE OR REPLACE TABLE customers (
 );
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`
 - `replace_regex`

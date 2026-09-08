@@ -38,7 +38,7 @@ import sys
 print("hi")
 ```
 
-## Pipeline
+## Steps
 
 - `sort_imports`: Alphabetize each consecutive import block
 

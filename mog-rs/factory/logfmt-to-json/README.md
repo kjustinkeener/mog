@@ -28,7 +28,7 @@ Output:
 {"level":"error","msg":"db timeout","retries":"3","ok":"false"}
 ```
 
-## Pipeline
+## Steps
 
 - `logfmt_to_json`: Parse each logfmt line into a JSON object.
 

@@ -30,7 +30,7 @@ db_host = localhost
 port = 5432
 ```
 
-## Pipeline
+## Steps
 
 - `detect_secrets`: Tag lines that look like secrets
 

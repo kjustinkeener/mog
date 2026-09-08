@@ -37,7 +37,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `yaml_to_json`: Convert the YAML document to JSON.
 

@@ -30,7 +30,7 @@ Output:
     line three
 ```
 
-## Pipeline
+## Steps
 
 - `indent`: Indent each line by 4 spaces
 

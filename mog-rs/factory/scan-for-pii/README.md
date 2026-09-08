@@ -30,7 +30,7 @@ just a normal line
 ssn 123-45-6789 on file # WARN(mog): possible PII (ssn)
 ```
 
-## Pipeline
+## Steps
 
 - `detect_pii`: Tag lines that look like PII
 

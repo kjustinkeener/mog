@@ -64,7 +64,7 @@ type BqgoStaff struct {
 
 _(... 24 more line(s))_
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Drop the export's leading '--' comment banners and per-table headers.
 - `replace_regex`: Drop CREATE SCHEMA / CREATE DATASET statements.

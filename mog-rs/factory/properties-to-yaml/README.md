@@ -29,7 +29,7 @@ app.name: MyApp
 app.port: '8080'
 ```
 
-## Pipeline
+## Steps
 
 - `properties_to_json`: Parse the .properties into JSON.
 - `json_to_yaml`: Render the JSON as YAML.

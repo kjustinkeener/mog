@@ -36,7 +36,7 @@ api.example.com
 mail.example.com
 ```
 
-## Pipeline
+## Steps
 
 - `intersect`: Keep only lines whose text is on the allowlist
 

@@ -27,7 +27,7 @@ Hello, Mog!
 Line two.
 ```
 
-## Pipeline
+## Steps
 
 - `base64_decode`: Decode the Base64 text
 

@@ -53,7 +53,7 @@ path,method,operation_id,summary,tags
 # WARN(mog): path entry produced no operation rows; it may be a $ref or an extension key
 ```
 
-## Pipeline
+## Steps
 
 - `yaml_to_json`: Parse the spec (YAML or JSON) and re-serialize it on a single line.
 - `replace_regex`: Drop everything ahead of the paths object.

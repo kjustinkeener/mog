@@ -30,7 +30,7 @@ Output:
   name: Bob
 ```
 
-## Pipeline
+## Steps
 
 - `jsonl_to_json`: Gather JSONL into a JSON array
 - `json_to_yaml`: Serialize as YAML

@@ -64,7 +64,7 @@ public class BqcsStaff
 
 _(... 30 more line(s))_
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Drop the export's leading '--' comment banners and per-table headers.
 - `replace_regex`: Drop CREATE SCHEMA / CREATE DATASET statements.

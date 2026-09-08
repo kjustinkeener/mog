@@ -34,7 +34,7 @@ range 3–4 stays tight. # NOTE(mog): range dash: dash-cleanup makes this a tigh
 no dashes here
 ```
 
-## Pipeline
+## Steps
 
 - `flag_matching`: Mid-sentence dash: needs a judgment call
 - `flag_matching`: En dash between word characters is a range: mechanical

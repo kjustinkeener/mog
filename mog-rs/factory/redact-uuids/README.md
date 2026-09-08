@@ -30,7 +30,7 @@ user [UUID] logged in
 no id on this line
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Replace UUIDs with a placeholder
 

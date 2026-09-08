@@ -31,7 +31,7 @@ Ada	Lead	Platform
 Bob	Eng	Data
 ```
 
-## Pipeline
+## Steps
 
 - `markdown_table_to_csv`: Emit the table as tab-delimited rows
 

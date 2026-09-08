@@ -46,7 +46,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize line endings to LF so the per-line field regexes are reliable.
 - `replace_regex_multiline`: Nullable union field ['null', T]: emit a JSON Schema property with a [type, 'null'] union. The scalar type is tagged @T@ for the type map below.

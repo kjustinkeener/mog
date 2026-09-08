@@ -31,7 +31,7 @@ id,name
 2,Bo
 ```
 
-## Pipeline
+## Steps
 
 - `yaml_to_json`: Parse the YAML list into a compact JSON array.
 - `json_to_csv`: Flatten the JSON array into CSV.

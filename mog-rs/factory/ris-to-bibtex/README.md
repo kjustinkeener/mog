@@ -52,7 +52,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: JOUR -> article
 - `replace_regex_multiline`: BOOK -> book

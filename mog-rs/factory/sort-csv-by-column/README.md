@@ -32,7 +32,7 @@ alice,30,nyc
 carol,40,la
 ```
 
-## Pipeline
+## Steps
 
 - `sort_lines`
 

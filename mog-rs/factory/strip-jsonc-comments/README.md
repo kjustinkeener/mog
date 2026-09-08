@@ -37,7 +37,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Remove /* block */ comments
 - `replace_regex_multiline`: Remove full-line // comments

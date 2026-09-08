@@ -34,7 +34,7 @@ alice@example.com,bob@example.com,Hello
 carol@example.com,dave@example.com,Meeting
 ```
 
-## Pipeline
+## Steps
 
 - `records_to_columns`: Pivot each header block into a CSV row
 

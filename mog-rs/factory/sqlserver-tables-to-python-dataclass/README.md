@@ -64,7 +64,7 @@ class CsgenOrders:
 
 _(... 14 more line(s))_
 
-## Pipeline
+## Steps
 
 - `run_mog`: Strip SSMS server noise (SET ANSI_NULLS, object banners, ON [PRIMARY]).
 - `replace`: Remove SQL Server opening bracket quotes.

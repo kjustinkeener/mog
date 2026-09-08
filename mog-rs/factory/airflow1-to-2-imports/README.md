@@ -32,7 +32,7 @@ from airflow.hooks.base import BaseHook
 from airflow import DAG
 ```
 
-## Pipeline
+## Steps
 
 - `replace_map`: Rewrite renamed Airflow module paths
 

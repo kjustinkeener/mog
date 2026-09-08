@@ -26,7 +26,7 @@ Output:
 hello world and softhyphen
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Delete zero-width and BOM/soft-hyphen characters
 - `replace_regex`: Turn a non-breaking space into a normal space

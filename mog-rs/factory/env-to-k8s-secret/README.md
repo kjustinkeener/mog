@@ -42,7 +42,7 @@ data:
   QUOTED: aGVsbG8gd29ybGQ=
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Drop comment lines (# ...).
 - `remove_empty_lines`: Drop blank lines.

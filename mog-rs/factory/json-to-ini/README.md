@@ -36,7 +36,7 @@ host = localhost
 port = 8080
 ```
 
-## Pipeline
+## Steps
 
 - `json_to_toml`: Serialize JSON as TOML
 - `toml_to_ini`: Convert the TOML to INI

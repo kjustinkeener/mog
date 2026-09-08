@@ -34,7 +34,7 @@ LOG_LEVEL=debug
 FEATURE_ENABLED=true
 ```
 
-## Pipeline
+## Steps
 
 - `to_upper`: Uppercase the key (left of =)
 - `replace`: Dots to underscores in the key

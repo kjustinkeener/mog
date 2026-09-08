@@ -64,7 +64,7 @@ RUN npm ci
 
 _(... 5 more line(s))_
 
-## Pipeline
+## Steps
 
 - `flag_matching`: FROM with neither a tag nor a digest
 - `flag_matching`: FROM not pinned to an immutable digest

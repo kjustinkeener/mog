@@ -32,7 +32,7 @@ COLOUR
 the colour red
 ```
 
-## Pipeline
+## Steps
 
 - `smart_case_replace`: Replace 'color' with 'colour', preserving case
 

@@ -30,7 +30,7 @@ tabbed
 flush
 ```
 
-## Pipeline
+## Steps
 
 - `trim_whitespace_left`: Remove leading whitespace
 

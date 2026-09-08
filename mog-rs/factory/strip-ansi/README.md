@@ -38,7 +38,7 @@ array[0] = x[1] literal brackets stay
 cursor stuff gone
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Strip CSI sequences (SGR colors, cursor moves, clears)
 - `replace_regex`: Strip OSC sequences (window/title), terminated by BEL or ST

@@ -30,7 +30,7 @@ Jane,Smith,London
 John,Doe,Paris
 ```
 
-## Pipeline
+## Steps
 
 - `cut_fields`: Emit columns in the order 2, 1, 3
 

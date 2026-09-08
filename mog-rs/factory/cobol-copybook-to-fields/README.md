@@ -44,7 +44,7 @@ level,name,pic,type
 05,CUST-FLAGS,X(4),text
 ```
 
-## Pipeline
+## Steps
 
 - `keep_lines_matching`: Only lines with a PIC clause (drops group items and comments)
 - `replace_regex_multiline`: level NAME PIC clause. -> level,NAME,pic

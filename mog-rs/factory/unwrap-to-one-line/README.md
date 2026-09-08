@@ -28,7 +28,7 @@ Output:
 This paragraph was hard wrapped across three lines.
 ```
 
-## Pipeline
+## Steps
 
 - `trim_and_eol_to_space`: Trim each line, join with spaces
 

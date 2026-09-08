@@ -31,7 +31,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `json_delete`: Delete metadata.token
 

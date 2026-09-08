@@ -29,7 +29,7 @@ def main():
     print("hello")
 ```
 
-## Pipeline
+## Steps
 
 - `insert_if_absent`: Add the SPDX header unless it is already present
 

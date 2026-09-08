@@ -44,7 +44,7 @@ CREATE TABLE `users` (
 SELECT CAST(id AS STRING) FROM `users`;
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`: Rewrite expr::TYPE to CAST(expr AS TYPE) (BigQuery has no ::). Run before requoting.
 - `run_mog`: DuckDB "id" identifiers to BigQuery `id` backticks.

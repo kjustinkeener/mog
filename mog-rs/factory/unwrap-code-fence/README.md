@@ -30,7 +30,7 @@ def hello():
     print("hi")
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Drop lines that are a ``` fence
 

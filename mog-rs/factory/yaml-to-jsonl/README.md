@@ -30,7 +30,7 @@ Output:
 {"id":2,"name":"Bob"}
 ```
 
-## Pipeline
+## Steps
 
 - `yaml_to_json`: Parse YAML into a JSON array
 - `json_to_jsonl`: Emit one object per line

@@ -30,7 +30,7 @@ user_3e85f808902dba78,2024-01-01,login
 user_9b7d3cda87eb00e8,2024-01-02,logout
 ```
 
-## Pipeline
+## Steps
 
 - `hash_field`: Hash column 1 to a 16-char prefixed token, salted for stability
 

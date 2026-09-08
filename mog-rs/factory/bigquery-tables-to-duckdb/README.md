@@ -58,7 +58,7 @@ CREATE TABLE customers
 -- TODO(mog): dropped BigQuery table OPTIONS (labels / expiration / require_partition_filter)
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF.
 - `replace_regex`: Drop the trailing table OPTIONS(...) block.

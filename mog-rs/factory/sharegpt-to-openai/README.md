@@ -28,7 +28,7 @@ Output:
 {"messages":[{"role":"system","content":"Be terse."},{"role":"user","content":"Hi"},{"role":"assistant","content":"Hello"}]}
 ```
 
-## Pipeline
+## Steps
 
 - `json_rename`: conversations -> messages
 - `json_rename`: from -> role

@@ -36,7 +36,7 @@ Output:
 ]
 ```
 
-## Pipeline
+## Steps
 
 - `jsonl_to_json`: Collect the lines into one JSON array.
 

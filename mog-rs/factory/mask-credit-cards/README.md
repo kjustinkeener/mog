@@ -28,7 +28,7 @@ Paid with [CARD] today.
 Card [CARD] on file. Order #12345.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Replace 16-digit card-shaped numbers with a placeholder
 

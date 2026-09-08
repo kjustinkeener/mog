@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS customers
 ;
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`
 - `replace_regex`

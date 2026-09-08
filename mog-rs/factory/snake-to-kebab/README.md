@@ -32,7 +32,7 @@ a-b-c-d
 _leading-kept
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Underscore between alphanumerics -> hyphen (pass 1)
 - `replace_regex`: Again, to catch adjacent segments the first pass skipped

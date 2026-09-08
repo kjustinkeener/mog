@@ -36,7 +36,7 @@ Output:
 }
 ```
 
-## Pipeline
+## Steps
 
 - `json_pretty`: Re-serialize with 2-space indentation
 

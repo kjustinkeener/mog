@@ -51,7 +51,7 @@ CREATE TABLE products (
 )
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`
 - `flag_matching`

@@ -64,7 +64,7 @@ ENGINE = MergeTree
 
 _(... 10 more line(s))_
 
-## Pipeline
+## Steps
 
 - `run_mog`: Remove pg_dump plumbing (banners, \restrict, SET block, object banners), keep CREATE/ALTER. Normalizes to LF.
 - `replace`: Drop the public. schema qualifier; ClickHouse tables live in a database, not a schema.

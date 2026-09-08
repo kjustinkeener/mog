@@ -30,7 +30,7 @@ r pieces so an embedding model can index them and a retriever can find the most
 find the most relevant passages at query time.
 ```
 
-## Pipeline
+## Steps
 
 - `chunk_text`: Split into ~80-char chunks with 15 overlap
 

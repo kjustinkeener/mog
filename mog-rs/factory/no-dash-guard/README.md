@@ -28,7 +28,7 @@ plain ascii - all good
 nothing exotic here
 ```
 
-## Pipeline
+## Steps
 
 - `assert`: No Unicode dash may survive
 

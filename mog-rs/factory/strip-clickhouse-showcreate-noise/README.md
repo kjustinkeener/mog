@@ -64,7 +64,7 @@ CREATE TABLE ch2pg_orders
 
 _(... 9 more line(s))_
 
-## Pipeline
+## Steps
 
 - `eol_lf`: Normalize to LF so every later regex is reliable.
 - `replace`: Drop backtick identifier quoting (ClickHouse quotes every column name).

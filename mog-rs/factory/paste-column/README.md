@@ -30,7 +30,7 @@ bob,U-002
 carol,U-003
 ```
 
-## Pipeline
+## Steps
 
 - `paste_column`: Append the matching id from the ids source as a comma-separated column
 

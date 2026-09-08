@@ -30,7 +30,7 @@ once
 flush
 ```
 
-## Pipeline
+## Steps
 
 - `outdent`: Remove up to 4 leading spaces
 

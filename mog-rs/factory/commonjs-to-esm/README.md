@@ -32,7 +32,7 @@ export const run = function () {};
 export default main;
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex_multiline`: const { a } = require('x')  ->  import { a } from 'x'
 - `replace_regex_multiline`: const x = require('x')  ->  import x from 'x'

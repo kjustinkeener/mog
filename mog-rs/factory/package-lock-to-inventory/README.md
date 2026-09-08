@@ -52,7 +52,7 @@ left-pad,1.3.0,,true,false
 tar-fs,2.1.1,codeload.github.com,false,true
 ```
 
-## Pipeline
+## Steps
 
 - `json_minify`: Parse the whole lockfile as one JSON value and re-serialize it compactly. This validates the JSON and gives the later steps a canonical, whitespace-free form.
 - `json_extract`: Pull out the top-level `packages` map as raw JSON, discarding the lockfile header (name, version, lockfileVersion, requires). A v1 lockfile with no `packages` map yields nothing here.

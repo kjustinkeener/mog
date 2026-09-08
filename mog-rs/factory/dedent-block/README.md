@@ -30,7 +30,7 @@ def foo():
 # done
 ```
 
-## Pipeline
+## Steps
 
 - `dedent`: Remove the common leading indent
 

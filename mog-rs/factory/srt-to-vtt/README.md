@@ -38,7 +38,7 @@ Hello world
 Second line
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Drop the numeric cue-index lines
 - `replace_regex`: Timestamps: comma decimal -> dot decimal

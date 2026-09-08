@@ -55,7 +55,7 @@ CREATE TABLE orders (
 -- TODO(mog): SQLite cannot ALTER-add a PRIMARY KEY; fold it into the CREATE TABLE
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`
 - `replace`

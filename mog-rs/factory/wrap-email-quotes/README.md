@@ -35,7 +35,7 @@ also long enough that it needs wrapping across a
 few lines at the chosen width.
 ```
 
-## Pipeline
+## Steps
 
 - `wrap_text`: Wrap each paragraph to the width, carrying any quote/comment prefix
 

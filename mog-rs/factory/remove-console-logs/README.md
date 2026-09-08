@@ -32,7 +32,7 @@ doWork(x);
 return x;
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Drop lines that are a console.* call
 

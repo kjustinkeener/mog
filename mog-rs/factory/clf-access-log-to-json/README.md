@@ -28,7 +28,7 @@ Output:
 {"ip":"10.0.0.5","timestamp":"10/Oct/2023:13:56:01 +0000","method":"POST","path":"/api/login","protocol":"HTTP/1.1","status":"401","size":"512","referer":"","user_agent":""}
 ```
 
-## Pipeline
+## Steps
 
 - `access_log_to_csv`: Parse the log lines into a CSV table
 - `csv_to_json`: Turn the CSV rows into a JSON array of objects

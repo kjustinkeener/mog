@@ -28,7 +28,7 @@ Contact [EMAIL] or [EMAIL] today.
 No address on this line.
 ```
 
-## Pipeline
+## Steps
 
 - `replace_regex`: Replace email addresses with a placeholder
 

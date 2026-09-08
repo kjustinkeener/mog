@@ -29,7 +29,7 @@ Output:
 [{"id":1,"name":"Ada","active":true},{"id":2,"name":"Bo, Jr","active":false},{"id":3,"name":"Cy","active":true}]
 ```
 
-## Pipeline
+## Steps
 
 - `csv_to_json`: Read the CSV into a typed JSON array.
 

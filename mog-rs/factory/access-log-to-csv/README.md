@@ -29,7 +29,7 @@ ip,timestamp,method,path,protocol,status,size,referer,user_agent
 10.0.0.2,10/Oct/2023:13:55:40 +0000,POST,/api,HTTP/1.1,404,12,-,curl/8.0
 ```
 
-## Pipeline
+## Steps
 
 - `access_log_to_csv`: Parse the access log into CSV.
 

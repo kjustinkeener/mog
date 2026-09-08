@@ -41,7 +41,7 @@ Standup,20240101T090000Z,20240101T091500Z,Room A
 Review,20240102T100000Z,,
 ```
 
-## Pipeline
+## Steps
 
 - `remove_lines_matching`: Drop the calendar wrapper and per-event BEGIN lines
 - `replace_regex_multiline`: Turn each END:VEVENT into a blank line (a record boundary)

@@ -64,7 +64,7 @@ public class Staff
 
 _(... 29 more line(s))_
 
-## Pipeline
+## Steps
 
 - `run_mog`: Remove pg_dump banners, SET block, restrict directives and object comments.
 - `replace_regex`: Drop CREATE SEQUENCE statements (multi-line, to the first ';').

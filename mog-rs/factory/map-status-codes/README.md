@@ -32,7 +32,7 @@ GET /c 302
 GET /d Server Error
 ```
 
-## Pipeline
+## Steps
 
 - `lookup_replace`: Map 3-digit codes to reason phrases
 

@@ -42,7 +42,7 @@ CREATE TABLE `events` (
 SELECT CAST(id AS STRING) FROM `events`;
 ```
 
-## Pipeline
+## Steps
 
 - `run_mog`: :: -> CAST()
 - `run_mog`: "id" -> `id`

@@ -30,7 +30,7 @@ Dear Bo, welcome.
 Dear Cy, welcome.
 ```
 
-## Pipeline
+## Steps
 
 - `fill_from_list`: Fill each <NAME> from the names list
 

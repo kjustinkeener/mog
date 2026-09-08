@@ -42,7 +42,7 @@ CREATE OR REPLACE TABLE events(
 );
 ```
 
-## Pipeline
+## Steps
 
 - `eol_lf`
 - `replace_regex`
