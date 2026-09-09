@@ -1,0 +1,126 @@
+name: catalog
+
+# Publish a signed engine/Studio catalog release: build the dist engine and the
+# Studio installer, sign engine.json + studio.json, and upload all four JSON
+# files plus both binaries as assets on a `catalog-<version>` GitHub Release.
+# The client reads these from the release "latest/download" prefix (see
+# ENGINE_TRACK_DEFAULT_URL); the mog-market catalog (index.json) is untouched.
+#
+# Manual trigger only: a signed release should be deliberate, and this must not
+# fire on the `v*` tags that drive release.yml's cross-compile.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Catalog version, e.g. 0.1.1 (tag becomes catalog-<version>)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: publish catalog-${{ inputs.version }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            mog-rs
+            studio/src-tauri
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: studio/package-lock.json
+
+      - uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: latest
+
+      # 1. Build the engine (dist profile) and the signing tool in one pass so
+      #    they share the build cache. market-admin reuses the mog library's
+      #    manifest + crypto contract, so the signed JSON can never drift.
+      - name: Build engine + market-admin (dist)
+        working-directory: mog-rs
+        run: cargo build --profile dist --bin mog --bin market-admin
+
+      # 2. Stage the dist engine where Studio's build.rs embeds it, so the
+      #    embedded engine is byte-identical to the standalone download.
+      - name: Stage engine into Studio
+        shell: pwsh
+        run: |
+          $dist = "mog-rs/target/dist/mog.exe"
+          if (-not (Test-Path $dist)) { throw "dist engine not found at $dist" }
+          New-Item -ItemType Directory -Force -Path "studio/src-tauri/binaries" | Out-Null
+          Copy-Item $dist "studio/src-tauri/binaries/mog-dist.exe" -Force
+          "MOG_DIST_EXE=$((Resolve-Path $dist).Path)" >> $env:GITHUB_ENV
+          "MOG_STUDIO_BUILD_DATE=$(Get-Date -Format 'yyyy-MM-dd')" >> $env:GITHUB_ENV
+
+      # 3. Build Studio (embeds the staged engine). build:wasm first: the
+      #    frontend imports the gitignored regex-wasm module.
+      - name: Build Studio installer
+        working-directory: studio
+        run: |
+          npm ci
+          npm run build:wasm
+          npm run build
+          npx tauri build --no-bundle
+
+      # 4. Sign engine.json + studio.json, pointing at the release asset URLs.
+      #    The signing key secret is written to a temp file and passed as @path,
+      #    never on the command line or in logs.
+      - name: Sign manifests
+        shell: pwsh
+        env:
+          MARKET_SIGNING_KEY: ${{ secrets.MARKET_SIGNING_KEY }}
+        run: |
+          if (-not $env:MARKET_SIGNING_KEY) { throw "MARKET_SIGNING_KEY secret is not set on this repo" }
+          $keyFile = Join-Path $env:RUNNER_TEMP "market-sign-key.txt"
+          Set-Content -Path $keyFile -Value $env:MARKET_SIGNING_KEY -NoNewline
+          $reg = Join-Path $env:RUNNER_TEMP "registry"
+          New-Item -ItemType Directory -Force -Path $reg | Out-Null
+          $urlBase = "https://github.com/${{ github.repository }}/releases/latest/download"
+          $admin = "mog-rs/target/dist/market-admin.exe"
+          $engine = "mog-rs/target/dist/mog.exe"
+          $studio = "studio/src-tauri/target/release/mog-studio.exe"
+          try {
+            & $admin engine --version "${{ inputs.version }}" `
+              --platform "windows-x86_64=$engine" --url-base $urlBase `
+              --sign-key "@$keyFile" --out $reg
+            if ($LASTEXITCODE -ne 0) { throw "engine.json signing failed" }
+            & $admin studio --version "${{ inputs.version }}" `
+              --platform "windows-x86_64=$studio" --url-base $urlBase `
+              --sign-key "@$keyFile" --out $reg
+            if ($LASTEXITCODE -ne 0) { throw "studio.json signing failed" }
+          } finally {
+            Remove-Item $keyFile -Force -ErrorAction SilentlyContinue
+          }
+          # Gather every release asset into one dir for a clean upload glob.
+          $stage = Join-Path $env:RUNNER_TEMP "assets"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item $engine (Join-Path $stage "mog.exe") -Force
+          Copy-Item $studio (Join-Path $stage "mog-studio.exe") -Force
+          Copy-Item (Join-Path $reg "engine.json")     $stage -Force
+          Copy-Item (Join-Path $reg "engine.json.sig") $stage -Force
+          Copy-Item (Join-Path $reg "studio.json")     $stage -Force
+          Copy-Item (Join-Path $reg "studio.json.sig") $stage -Force
+          "ASSET_DIR=$($stage.Replace('\','/'))" >> $env:GITHUB_ENV
+
+      # 5. Publish the release. make_latest keeps latest/download resolving here.
+      #    NOT a v* tag, so release.yml's cross-compile does not fire.
+      - name: Publish catalog release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: catalog-${{ inputs.version }}
+          name: catalog-${{ inputs.version }}
+          make_latest: "true"
+          files: ${{ env.ASSET_DIR }}/*
