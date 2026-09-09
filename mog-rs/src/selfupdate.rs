@@ -24,7 +24,9 @@ use crate::market_index::{self, sha256_hex};
 /// One platform's binary in the engine manifest.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnginePlatform {
-    /// Registry-relative path to the binary (its download location).
+    /// Download location of the binary: either registry-relative (resolved
+    /// against the catalog base URL) or an absolute http(s) URL (a GitHub Release
+    /// asset), which the client fetches directly.
     pub path: String,
     /// SHA-256 (hex) of the binary bytes.
     pub sha256: String,
@@ -73,9 +75,19 @@ fn join(base: &str, rel: &str) -> String {
 
 /// Fetch bytes from the registry: HTTP(S) via ureq, or a local filesystem path
 /// (the latter makes end-to-end testing trivial and doubles as a private mirror).
+///
+/// A `rel` that is itself an absolute http(s) URL is fetched directly, ignoring
+/// `base`. That lets a manifest point a platform binary at its real host (a
+/// GitHub Release asset on the engine repo) while the catalog base URL serves
+/// only the signed JSON. Relative `rel`s (manifests, the mog index) keep
+/// resolving against `base`.
 fn fetch_bytes(base: &str, rel: &str) -> Result<Vec<u8>> {
-    if is_http(base) {
-        let url = join(base, rel);
+    if is_http(rel) || is_http(base) {
+        let url = if is_http(rel) {
+            rel.to_string()
+        } else {
+            join(base, rel)
+        };
         let resp = ureq::get(&url)
             .call()
             .map_err(|e| anyhow!("GET {url}: {e}"))?;

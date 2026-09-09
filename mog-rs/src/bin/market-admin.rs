@@ -44,8 +44,11 @@ enum Cmd {
         generated_at: Option<String>,
     },
     /// Build and sign `engine.json`: the per-platform engine binaries that
-    /// `mog update` self-replaces from. Each `--platform` is copied into
-    /// `<out>/bin/` and hashed; the client verifies that hash before swapping.
+    /// `mog update` self-replaces from. Each `--platform` local binary is hashed;
+    /// the client verifies that hash before swapping. With `--url-base` the
+    /// manifest points at that absolute host (a GitHub Release on the engine repo)
+    /// and no binary is written into `<out>`; without it the binary is copied into
+    /// `<out>/bin/` and referenced relative to the catalog base URL.
     Engine {
         /// Published version string (display only; the hash is the freshness check).
         #[arg(long)]
@@ -54,17 +57,22 @@ enum Cmd {
         /// `windows-x86_64=./dist/mog.exe`. Repeatable, one per platform.
         #[arg(long = "platform", value_name = "KEY=PATH")]
         platforms: Vec<String>,
+        /// Absolute base URL the binaries are hosted at (e.g. a GitHub Release
+        /// download prefix). When set, the manifest path is `<url-base>/<filename>`
+        /// and nothing is copied into `<out>/bin/`.
+        #[arg(long)]
+        url_base: Option<String>,
         /// Signing key: base64, or `@path` to a file containing it.
         #[arg(long)]
         sign_key: String,
-        /// Output dir for `engine.json` + `engine.json.sig` + `bin/`.
+        /// Output dir for `engine.json` + `engine.json.sig` (+ `bin/` unless `--url-base`).
         #[arg(long)]
         out: PathBuf,
     },
     /// Build and sign `studio.json`: the per-platform Studio binaries that
     /// `mog install studio` downloads. Same shape as `engine`; publish it beside
     /// the engine manifest (CI order: build dist mog.exe, embed it into Studio,
-    /// then publish both). Each `--platform` is copied into `<out>/bin/` and hashed.
+    /// then publish both). `--url-base` behaves as for `engine`.
     Studio {
         /// Published version string (display only; the hash is the freshness check).
         #[arg(long)]
@@ -73,29 +81,40 @@ enum Cmd {
         /// `windows-x86_64=./MogStudio/.../mog-studio.exe`. Repeatable.
         #[arg(long = "platform", value_name = "KEY=PATH")]
         platforms: Vec<String>,
+        /// Absolute base URL the binaries are hosted at (see `engine --url-base`).
+        #[arg(long)]
+        url_base: Option<String>,
         /// Signing key: base64, or `@path` to a file containing it.
         #[arg(long)]
         sign_key: String,
-        /// Output dir for `studio.json` + `studio.json.sig` + `bin/`.
+        /// Output dir for `studio.json` + `studio.json.sig` (+ `bin/` unless `--url-base`).
         #[arg(long)]
         out: PathBuf,
     },
 }
 
 /// Build + sign a per-platform binary manifest (`engine.json` / `studio.json`).
-/// Copies each `KEY=PATH` binary into `<out>/bin/`, hashes it, and writes the
-/// signed `<name>.json` (+ `.sig`). Shared by the `engine` and `studio` commands
-/// so their format can never drift.
+/// Hashes each `KEY=PATH` binary and writes the signed `<name>.json` (+ `.sig`).
+/// With `url_base` the manifest path is `<url_base>/<filename>` (the binary is
+/// hosted elsewhere, e.g. a GitHub Release); without it the binary is copied into
+/// `<out>/bin/` and referenced relative to the catalog base URL. Shared by the
+/// `engine` and `studio` commands so their format can never drift.
 fn publish_manifest(
     name: &str,
     version: String,
     platforms: &[String],
+    url_base: Option<&str>,
     sign_key: &str,
     out: &std::path::Path,
 ) -> Result<()> {
     let sk = read_sign_key(sign_key)?;
-    let bin_dir = out.join("bin");
-    std::fs::create_dir_all(&bin_dir)?;
+    std::fs::create_dir_all(out)?;
+    // Only materialize <out>/bin when hosting the binaries in the catalog repo.
+    // With --url-base the binaries live elsewhere (a GitHub Release), so <out>
+    // holds signed JSON only.
+    if url_base.is_none() {
+        std::fs::create_dir_all(out.join("bin"))?;
+    }
     let mut map = std::collections::BTreeMap::new();
     for spec in platforms {
         let (key, src) = spec
@@ -109,15 +128,18 @@ fn publish_manifest(
             .file_name()
             .map(|f| f.to_string_lossy().to_string())
             .unwrap_or_else(|| format!("{name}-{key}"));
-        let rel = format!("bin/{fname}");
-        std::fs::write(out.join(&rel), &bytes)?;
-        map.insert(
-            key.to_string(),
-            EnginePlatform {
-                path: rel,
-                sha256: sha,
-            },
-        );
+        let path = match url_base {
+            // Absolute host: the binary is published as a release asset named
+            // `fname`; the client fetches this URL directly, ignoring the base.
+            Some(base) => format!("{}/{}", base.trim_end_matches('/'), fname),
+            // Catalog-relative: copy the binary in beside the manifest.
+            None => {
+                let rel = format!("bin/{fname}");
+                std::fs::write(out.join(&rel), &bytes)?;
+                rel
+            }
+        };
+        map.insert(key.to_string(), EnginePlatform { path, sha256: sha });
     }
     let manifest = EngineManifest {
         version,
@@ -196,15 +218,31 @@ fn main() -> Result<()> {
         Cmd::Engine {
             version,
             platforms,
+            url_base,
             sign_key,
             out,
-        } => publish_manifest("engine", version, &platforms, &sign_key, &out)?,
+        } => publish_manifest(
+            "engine",
+            version,
+            &platforms,
+            url_base.as_deref(),
+            &sign_key,
+            &out,
+        )?,
         Cmd::Studio {
             version,
             platforms,
+            url_base,
             sign_key,
             out,
-        } => publish_manifest("studio", version, &platforms, &sign_key, &out)?,
+        } => publish_manifest(
+            "studio",
+            version,
+            &platforms,
+            url_base.as_deref(),
+            &sign_key,
+            &out,
+        )?,
     }
     Ok(())
 }

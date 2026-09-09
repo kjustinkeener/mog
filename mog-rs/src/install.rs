@@ -370,14 +370,23 @@ fn resolve_pubkey() -> Result<ed25519_dalek::VerifyingKey> {
 
 /// Fetch bytes from the registry: HTTP(S) via ureq, or a local filesystem path
 /// (mirrors `selfupdate::fetch_bytes`; the local case makes E2E testing trivial).
+///
+/// An absolute http(s) `rel` is fetched directly, ignoring `base`, so a manifest
+/// can point the Studio binary at a GitHub Release asset while the catalog base
+/// URL serves only signed JSON. Relative `rel`s resolve against `base`.
 fn fetch_bytes(base: &str, rel: &str) -> Result<Vec<u8>> {
-    let is_http = base.starts_with("http://") || base.starts_with("https://");
-    if is_http {
-        let url = format!(
-            "{}/{}",
-            base.trim_end_matches('/'),
-            rel.trim_start_matches('/')
-        );
+    let rel_is_http = rel.starts_with("http://") || rel.starts_with("https://");
+    let base_is_http = base.starts_with("http://") || base.starts_with("https://");
+    if rel_is_http || base_is_http {
+        let url = if rel_is_http {
+            rel.to_string()
+        } else {
+            format!(
+                "{}/{}",
+                base.trim_end_matches('/'),
+                rel.trim_start_matches('/')
+            )
+        };
         let resp = ureq::get(&url)
             .call()
             .map_err(|e| anyhow!("GET {url}: {e}"))?;
