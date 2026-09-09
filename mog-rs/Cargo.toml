@@ -49,6 +49,9 @@ base64 = "0.22"
 urlencoding = "2"
 similar = "2"
 include_dir = "0.7"
+# Deflate for the packed factory bundle (see src/factory_pack.rs); the same
+# encode/decode module is shared with build.rs via [build-dependencies] below.
+flate2 = "1"
 toml = "0.8"
 # Store marketplace: content hashing + ed25519 index signing/verification.
 sha2 = "0.10"
@@ -63,6 +66,12 @@ self-replace = "1"
 # converters). In the default build (footprint is light: pulls only thiserror at
 # runtime). Exact-pinned because it is pre-1.0 (API churn).
 polyglot-sql = { version = "=0.9.2" }
+
+# build.rs packs the factory bundle by sharing src/factory_pack.rs, which needs
+# the same deflate + SHA-256 keystream crates at build time.
+[build-dependencies]
+flate2 = "1"
+sha2 = "0.10"
 
 [dev-dependencies]
 assert_cmd = "2"

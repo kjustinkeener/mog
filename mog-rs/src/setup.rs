@@ -22,13 +22,15 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Context, Result};
-use include_dir::{include_dir, Dir};
+use include_dir::Dir;
 use serde_json::{json, Value};
 
 /// The mog set embedded at build time (scripts + their fixture siblings),
-/// assembled under `mog-rs/factory/` in the repo tree. Written out to
-/// `<root>/mogs/market/` on setup (the repo dir name is kept to minimize churn).
-static FACTORY_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/factory");
+/// assembled under `mog-rs/factory/` in the repo tree, then packed by build.rs
+/// (compressed + obfuscated) so its realistic secret-shaped fixtures do not ship
+/// as plaintext. Decoded and written out to `<root>/mogs/market/` on setup. See
+/// `factory_pack` for the format; the packing is obfuscation, not secrecy.
+static FACTORY_PACK: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/factory.pack"));
 
 /// Options for [`run`], mapped from the CLI flags. `--mog-dir` and `--json` are
 /// global CLI flags, threaded in here as `mog_dir` / `json`.
@@ -111,7 +113,7 @@ fn bootstrap_store(opts: &SetupOptions) -> Result<Value> {
     }
 
     let mut factory_files: Vec<String> = Vec::new();
-    write_embedded(&FACTORY_DIR, &market, opts.print, &mut factory_files)?;
+    write_pack(FACTORY_PACK, &market, opts.print, &mut factory_files)?;
 
     // Write the embedded factory dashboard templates at the outer root, so users
     // can see/copy them (the renderer also has them embedded as a fallback).
@@ -150,6 +152,31 @@ fn write_no_reports(opts: &SetupOptions) -> Result<Value> {
         "reports": false,
         "wrote": !opts.print,
     }))
+}
+
+/// Decode the packed factory bundle and write every file under `dest_root`,
+/// overwriting existing files. Mirrors [`write_embedded`]'s reporting: collects
+/// destination paths, and under `print` records paths but writes nothing. The
+/// decoded bytes are byte-identical to the original `factory/` files.
+fn write_pack(
+    packed: &[u8],
+    dest_root: &Path,
+    print: bool,
+    written: &mut Vec<String>,
+) -> Result<()> {
+    for (rel, contents) in crate::factory_pack::decode(packed) {
+        let dest = dest_root.join(&rel);
+        written.push(dest.display().to_string());
+        if !print {
+            if let Some(parent) = dest.parent() {
+                std::fs::create_dir_all(parent)
+                    .with_context(|| format!("failed to create '{}'", parent.display()))?;
+            }
+            std::fs::write(&dest, &contents)
+                .with_context(|| format!("failed to write '{}'", dest.display()))?;
+        }
+    }
+    Ok(())
 }
 
 /// Recursively write every file in an embedded [`Dir`] under `dest_root`,

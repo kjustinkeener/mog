@@ -888,6 +888,7 @@ dependencies = [
  "ed25519-dalek",
  "encoding_rs",
  "fancy-regex",
+ "flate2",
  "glob",
  "hex",
  "include_dir",

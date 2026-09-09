@@ -8,6 +8,7 @@ pub mod descriptors;
 pub mod docgen;
 pub mod encoding;
 pub mod engine;
+pub(crate) mod factory_pack;
 pub mod install;
 pub mod interpolate;
 pub mod library;
