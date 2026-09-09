@@ -48,19 +48,23 @@ pub fn run(root: Option<&Path>, opts: &Options) -> Result<i32> {
     };
 
     // --- engine ---
+    // The engine track (engine.json + binaries) is hosted apart from the catalog
+    // (GitHub Releases, not mog-market Pages), so it resolves via its own URL.
     let engine = if opts.no_engine {
         None
     } else if opts.check {
-        let st = crate::selfupdate::check(&base)?;
+        let engine_base = crate::market_client::engine_track_url()?;
+        let st = crate::selfupdate::check(&engine_base)?;
         Some(EngineReport {
             update_available: st.update_available,
             applied: false,
             version: st.version,
         })
     } else {
-        let st = crate::selfupdate::check(&base)?;
+        let engine_base = crate::market_client::engine_track_url()?;
+        let st = crate::selfupdate::check(&engine_base)?;
         let applied = if st.update_available {
-            crate::selfupdate::apply(&base)?
+            crate::selfupdate::apply(&engine_base)?
         } else {
             false
         };

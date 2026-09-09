@@ -174,9 +174,11 @@ pub fn install_studio(print: bool, json_out: bool) -> Result<i32> {
         let _ = run_installed_setup(&exe, false, print)?;
     }
 
-    let base = crate::market_client::market_base_url().context(
-        "`mog install studio` needs a registry URL (set MOG_MARKET_URL or use a build with a \
-         default registry); Studio is fetched over the internet",
+    // studio.json + the Studio binary are release assets on the engine track
+    // (GitHub Releases), not the mog-market catalog; resolve accordingly.
+    let base = crate::market_client::engine_track_url().context(
+        "`mog install studio` needs an engine track URL (set MOG_ENGINE_TRACK_URL or use a build \
+         with a default track); Studio is fetched over the internet",
     )?;
     let plat = fetch_studio_platform(&base)?;
 

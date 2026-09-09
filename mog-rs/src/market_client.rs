@@ -20,8 +20,17 @@ use serde::Serialize;
 use crate::market_index::{self, Index, IndexEntry, Revocations};
 
 /// Default registry base, compiled in; overridable with `MOG_MARKET_URL`. Empty
-/// until the public registry exists.
+/// until the public registry exists. This serves the mog catalog only
+/// (`index.json`); the engine/Studio update track lives on `ENGINE_TRACK_DEFAULT_URL`.
 pub const MARKET_DEFAULT_URL: &str = "https://kjustinkeener.github.io/mog-market/";
+
+/// Default engine/Studio update track, compiled in; overridable with
+/// `MOG_ENGINE_TRACK_URL`. The signed `engine.json` / `studio.json` (+ `.sig`) and
+/// the binaries they point at are published as GitHub Release assets on the engine
+/// repo, NOT in the mog-market catalog (market hosts mogs/fixtures only). The
+/// `latest/download/` prefix always resolves to the newest published release.
+pub const ENGINE_TRACK_DEFAULT_URL: &str =
+    "https://github.com/kjustinkeener/mog/releases/latest/download/";
 
 /// Cap on CLI search/list results (context economy, spec section 9).
 const RESULT_CAP: usize = 25;
@@ -39,6 +48,21 @@ pub fn market_base_url() -> Result<String> {
         return Ok(MARKET_DEFAULT_URL.to_string());
     }
     bail!("no marketplace URL configured (set MOG_MARKET_URL, or build with MARKET_DEFAULT_URL)")
+}
+
+/// Resolve the engine/Studio update track base: `MOG_ENGINE_TRACK_URL` else the
+/// compiled-in `ENGINE_TRACK_DEFAULT_URL`. Kept separate from `market_base_url` so
+/// the binaries can be hosted apart from the catalog (Releases vs Pages).
+pub fn engine_track_url() -> Result<String> {
+    if let Ok(u) = std::env::var("MOG_ENGINE_TRACK_URL") {
+        if !u.trim().is_empty() {
+            return Ok(u.trim().to_string());
+        }
+    }
+    if !ENGINE_TRACK_DEFAULT_URL.is_empty() {
+        return Ok(ENGINE_TRACK_DEFAULT_URL.to_string());
+    }
+    bail!("no engine track URL configured (set MOG_ENGINE_TRACK_URL, or build with ENGINE_TRACK_DEFAULT_URL)")
 }
 
 /// The verifying key to check the catalog with: `MOG_MARKET_PUBKEY` (for a mirror
