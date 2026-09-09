@@ -105,8 +105,8 @@ unless you pass its named override. mog is provided as-is, without warranty (see
 
 Mogs are the most welcome contribution, and each one self-verifies through a
 golden test fixture. See [CONTRIBUTING.md](CONTRIBUTING.md) for the two
-contribution lanes (mogs and the engine) and [ROADMAP.md](ROADMAP.md) for the
-project's scope and non-goals.
+contribution lanes (mogs and the engine), including the project's scope and
+non-goals.
 
 ## License
 

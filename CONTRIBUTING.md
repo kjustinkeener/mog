@@ -48,12 +48,26 @@ Please also make sure a mog:
 ### 2. The engine (`mog-rs/src/`): maintainer-led
 
 The engine's scope is intentionally narrow, and its direction is set by the
-maintainer (see [ROADMAP.md](ROADMAP.md), especially the non-goals). Bug fixes
-with a failing test are always welcome. For anything larger, a new action, a
-flag, or a behavior change, please open an issue to discuss it first rather than
-sending an unsolicited large PR. Most "mog should also do X" requests are better
-served by composing existing actions or by a mog; the roadmap explains what
-the engine will and will not grow to do.
+maintainer. Bug fixes with a failing test are always welcome. For anything
+larger, a new action, a flag, or a behavior change, please open an issue to
+discuss it first rather than sending an unsolicited large PR. Most "mog should
+also do X" requests are better served by composing existing actions or by a mog.
+
+These are deliberate non-goals, not "not yet":
+
+- No embedded AI, network calls, or non-determinism in the default engine. The
+  same input and script always produce the same output.
+- Not a query language. The format readers transform text; structural
+  reordering or deep document rewriting the way `jq` or a real parser would is
+  out, and mog flags what it cannot safely handle rather than fake it.
+- No plugin system, custom/external/WASM actions, or scripting language.
+  Extensibility is composition of built-in actions, which keeps every run
+  auditable and the binary small.
+- No enterprise surface (private registry, policy engine, access control, audit
+  subsystem, telemetry) and no distributed or cluster execution. Mog is a local
+  single-binary tool.
+- Not a general-purpose editor or IDE; `mog --schema` covers editor validation
+  and there is no language server.
 
 ## Development
 
