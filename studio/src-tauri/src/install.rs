@@ -107,13 +107,22 @@ pub fn setup_state() -> SetupState {
 
 /// Perform the install. Returns the installed Studio exe path for the frontend to
 /// relaunch. `desktop_shortcut` adds a Desktop `.lnk` in addition to Start Menu.
+///
+/// `async` + `spawn_blocking`: `do_install` is all blocking std::fs / Command work.
+/// A plain sync `#[tauri::command]` runs on the main thread and freezes the webview
+/// event loop for the whole install (the card cannot be dragged, nothing repaints).
+/// Offloading to the blocking pool keeps the window live while it runs.
 #[tauri::command]
-pub fn perform_install(
+pub async fn perform_install(
     desktop_shortcut: bool,
     register_mcp: bool,
     add_to_path: bool,
 ) -> Result<String, String> {
-    do_install(desktop_shortcut, register_mcp, add_to_path).map(|p| p.display().to_string())
+    tauri::async_runtime::spawn_blocking(move || {
+        do_install(desktop_shortcut, register_mcp, add_to_path).map(|p| p.display().to_string())
+    })
+    .await
+    .map_err(|e| format!("install task panicked: {e}"))?
 }
 
 /// Open a URL in the user's default browser (Windows `start`). Used by the
@@ -216,15 +225,21 @@ fn do_install(
     //    point, and reporting a hard failure would leave the user with a
     //    complete install they were told to distrust (and, if the Add/Remove
     //    write is the thing that failed, no obvious way to remove it).
+    //
+    //    Both shortcuts are created in ONE PowerShell process: a cold PowerShell
+    //    spawn is ~240ms, so doing Start-Menu and Desktop separately doubled the
+    //    slowest non-seed phase for no reason.
+    let mut lnks: Vec<PathBuf> = Vec::new();
     if let Some(sm) = start_menu_dir() {
         let _ = std::fs::create_dir_all(&sm);
-        let _ = create_shortcut(&sm.join(format!("{DISPLAY_NAME}.lnk")), &target, &dir);
+        lnks.push(sm.join(format!("{DISPLAY_NAME}.lnk")));
     }
     if desktop_shortcut {
         if let Some(desk) = desktop_dir() {
-            let _ = create_shortcut(&desk.join(format!("{DISPLAY_NAME}.lnk")), &target, &dir);
+            lnks.push(desk.join(format!("{DISPLAY_NAME}.lnk")));
         }
     }
+    let _ = create_shortcuts(&lnks, &target, &dir);
     let _ = register_uninstall(&dir, &target);
 
     Ok(target)
@@ -311,33 +326,41 @@ fn desktop_dir() -> Option<PathBuf> {
     std::env::var_os("USERPROFILE").map(|p| PathBuf::from(p).join("Desktop"))
 }
 
+/// Create every `.lnk` in `lnks` in a SINGLE PowerShell process (one COM object
+/// reused). A cold PowerShell spawn is ~240ms, so batching Start-Menu + Desktop
+/// into one invocation halves the shortcut phase when both are requested.
 #[cfg(windows)]
-fn create_shortcut(lnk: &Path, target: &Path, working_dir: &Path) -> Result<(), String> {
+fn create_shortcuts(lnks: &[PathBuf], target: &Path, working_dir: &Path) -> Result<(), String> {
+    if lnks.is_empty() {
+        return Ok(());
+    }
     let esc = |p: &Path| p.to_string_lossy().replace('\'', "''");
-    let script = format!(
-        "$w = New-Object -ComObject WScript.Shell; \
-         $s = $w.CreateShortcut('{lnk}'); \
-         $s.TargetPath = '{target}'; \
-         $s.WorkingDirectory = '{wd}'; \
-         $s.IconLocation = '{target},0'; \
-         $s.Description = '{desc}'; \
-         $s.Save()",
-        lnk = esc(lnk),
-        target = esc(target),
-        wd = esc(working_dir),
-        desc = DISPLAY_NAME,
-    );
+    let target = esc(target);
+    let wd = esc(working_dir);
+    let mut script = String::from("$w = New-Object -ComObject WScript.Shell; ");
+    for lnk in lnks {
+        script.push_str(&format!(
+            "$s = $w.CreateShortcut('{lnk}'); \
+             $s.TargetPath = '{target}'; \
+             $s.WorkingDirectory = '{wd}'; \
+             $s.IconLocation = '{target},0'; \
+             $s.Description = '{desc}'; \
+             $s.Save(); ",
+            lnk = esc(lnk),
+            desc = DISPLAY_NAME,
+        ));
+    }
     let mut c = std::process::Command::new("powershell");
     c.args(["-NoProfile", "-NonInteractive", "-Command", &script]);
     hide_window(&mut c);
-    let status = c.status().map_err(|e| format!("create shortcut: {e}"))?;
+    let status = c.status().map_err(|e| format!("create shortcuts: {e}"))?;
     if !status.success() {
-        return Err("creating the shortcut failed".into());
+        return Err("creating the shortcut(s) failed".into());
     }
     Ok(())
 }
 #[cfg(not(windows))]
-fn create_shortcut(_lnk: &Path, _target: &Path, _working_dir: &Path) -> Result<(), String> {
+fn create_shortcuts(_lnks: &[PathBuf], _target: &Path, _working_dir: &Path) -> Result<(), String> {
     Ok(())
 }
 

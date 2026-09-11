@@ -135,8 +135,8 @@
       {#if phase === 'error'}
         <p class="state err">{errMsg}</p>
       {/if}
-      <button class="cta" onclick={install} disabled={busy || !setup.has_engine}>
-        {busy ? 'Installing…' : phase === 'error' ? 'Try again' : 'Install'}
+      <button class="cta" class:busy onclick={install} disabled={busy || !setup.has_engine}>
+        <span class="label">{busy ? 'Installing…' : phase === 'error' ? 'Try again' : 'Install'}</span>
       </button>
     {/if}
 
@@ -380,6 +380,8 @@
   }
 
   .cta {
+    position: relative;
+    overflow: hidden;
     width: 100%;
     margin-top: 12px;
     padding: 12px 18px;
@@ -396,6 +398,10 @@
       filter 0.15s ease,
       box-shadow 0.15s ease;
   }
+  .cta .label {
+    position: relative;
+    z-index: 1;
+  }
   .cta:hover:not(:disabled) {
     filter: brightness(1.06);
     border: none;
@@ -408,6 +414,36 @@
     opacity: 0.6;
     cursor: default;
     box-shadow: none;
+  }
+  /* Indeterminate progress: the install is a single blocking shell-out + 27MB
+     extract with no honest percentage, so the button itself becomes a looping
+     sheen while it runs. The work is off the main thread (spawn_blocking), so
+     this keeps animating and the window stays draggable. */
+  .cta.busy {
+    opacity: 1;
+    color: color-mix(in srgb, #fff 88%, transparent);
+  }
+  .cta.busy::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.35) 50%,
+      transparent 70%
+    );
+    transform: translateX(-100%);
+    animation: cta-sweep 1.1s linear infinite;
+  }
+  @keyframes cta-sweep {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
   }
 
   .state {
