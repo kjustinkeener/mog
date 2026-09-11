@@ -116,6 +116,22 @@ pub fn perform_install(
     do_install(desktop_shortcut, register_mcp, add_to_path).map(|p| p.display().to_string())
 }
 
+/// Open a URL in the user's default browser (Windows `start`). Used by the
+/// installer's "supported agents" doc link; only http(s) URLs are allowed so a
+/// stray value cannot launch an arbitrary program.
+#[tauri::command]
+pub fn open_url(url: String) -> Result<(), String> {
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err("refusing to open a non-http(s) URL".into());
+    }
+    let mut c = std::process::Command::new("cmd");
+    // The empty "" is start's window-title arg, so a quoted URL is not eaten.
+    c.args(["/c", "start", "", &url]);
+    hide_window(&mut c);
+    c.spawn().map_err(|e| format!("open url: {e}"))?;
+    Ok(())
+}
+
 /// Spawn the installed Studio and exit this (loose) process.
 #[tauri::command]
 pub fn launch_installed_and_exit(app: tauri::AppHandle, exe: String) {

@@ -4,6 +4,8 @@
 
   let { setup }: { setup: SetupState } = $props()
 
+  const MCP_DOC_URL = 'https://github.com/kjustinkeener/mog/blob/main/docs/mcp-clients.md'
+
   let desktopShortcut = $state(true)
   let registerMcp = $state(true)
   let addToPath = $state(true)
@@ -38,7 +40,7 @@
   </div>
 
   <p class="lead">
-    Install Mog Studio and the <code>mog</code> engine. No admin needed.
+    Install Mog Studio and the <code>mog</code> engine.
   </p>
 
   <div class="dest">
@@ -57,7 +59,15 @@
   </label>
   <label class="opt">
     <input type="checkbox" bind:checked={registerMcp} disabled={phase === 'installing'} />
-    Register the MCP server (for Claude and other agents)
+    Register the MCP server for
+    <a
+      class="link"
+      href={MCP_DOC_URL}
+      onclick={(e) => {
+        e.preventDefault()
+        invoke('open_url', { url: MCP_DOC_URL })
+      }}>supported agents</a
+    >
   </label>
   <label class="opt">
     <input type="checkbox" bind:checked={desktopShortcut} disabled={phase === 'installing'} />
@@ -118,6 +128,7 @@
   .does li { margin: 2px 0; }
   code { background: var(--panel-2); padding: 0 4px; border-radius: 4px; }
   .opt { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .link { color: var(--accent, #6ea8fe); text-decoration: underline; cursor: pointer; }
   .warn { margin: 0; color: var(--warn); font-size: 12.5px; }
   .err { margin: 0; color: var(--danger); font-size: 12.5px; word-break: break-word; }
   .go {
