@@ -1130,6 +1130,7 @@ pub fn search(root: Option<&Path>, query: &str, json: bool) -> Result<i32> {
 
     let tokens = crate::market::tokenize(query);
     let terms = crate::market::expand_query(&tokens);
+    let mut fuzz = crate::market::FuzzyScorer::new(query);
     let mut scored: Vec<(i32, Row)> = rows
         .into_iter()
         .map(|r| {
@@ -1140,6 +1141,7 @@ pub fn search(root: Option<&Path>, query: &str, json: bool) -> Result<i32> {
                 &r.task_phrases,
                 r.description.as_deref(),
                 &terms,
+                fuzz.as_mut(),
             );
             (s * 2 + i32::from(r.featured), r)
         })

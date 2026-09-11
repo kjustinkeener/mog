@@ -458,17 +458,86 @@ pub(crate) fn expand_query(tokens: &[String]) -> HashMap<String, i32> {
     terms
 }
 
+/// Below this normalized quality a fuzzy match is treated as noise and dropped,
+/// so a typo/subsequence query surfaces near-matches without dragging in junk.
+const FUZZY_MIN_QUALITY: f32 = 0.55;
+/// Lexical (exact/synonym substring) score is multiplied by this before the
+/// fuzzy bonus is added. The max fuzzy bonus (`(1*2 + 1*1) * 3 = 9`) is strictly
+/// below one lexical unit (`10`), so any real substring hit always outranks a
+/// purely fuzzy one; fuzzy only reorders within equal-lexical ties and rescues
+/// entries that had no substring hit at all.
+const LEXICAL_SCALE: i32 = 10;
+
+/// A reusable fuzzy matcher for one search query, blended into `score_fields`.
+/// Holds the parsed pattern plus its self-match score, used to normalize each
+/// haystack score into a 0.0..1.0 quality. `new` returns `None` for an empty or
+/// unscoreable query, in which case scoring stays purely lexical.
+pub(crate) struct FuzzyScorer {
+    matcher: nucleo_matcher::Matcher,
+    pattern: nucleo_matcher::pattern::Pattern,
+    self_score: u32,
+}
+
+impl FuzzyScorer {
+    pub(crate) fn new(query: &str) -> Option<Self> {
+        use nucleo_matcher::pattern::{CaseMatching, Normalization, Pattern};
+        use nucleo_matcher::{Config, Matcher, Utf32Str};
+        let q = query.trim();
+        if q.is_empty() {
+            return None;
+        }
+        let mut matcher = Matcher::new(Config::DEFAULT);
+        let pattern = Pattern::parse(q, CaseMatching::Ignore, Normalization::Smart);
+        let mut buf = Vec::new();
+        let lower = q.to_lowercase();
+        let self_score = pattern.score(Utf32Str::new(&lower, &mut buf), &mut matcher)?;
+        if self_score == 0 {
+            return None;
+        }
+        Some(Self {
+            matcher,
+            pattern,
+            self_score,
+        })
+    }
+
+    /// Normalized fuzzy quality (0.0..1.0) of the query against `hay`, thresholded
+    /// so sub-`FUZZY_MIN_QUALITY` noise reads as 0.
+    fn quality(&mut self, hay: &str) -> f32 {
+        use nucleo_matcher::Utf32Str;
+        if hay.is_empty() {
+            return 0.0;
+        }
+        let mut buf = Vec::new();
+        let s = self
+            .pattern
+            .score(Utf32Str::new(hay, &mut buf), &mut self.matcher)
+            .unwrap_or(0);
+        let q = (s as f32 / self.self_score as f32).min(1.0);
+        if q < FUZZY_MIN_QUALITY {
+            0.0
+        } else {
+            q
+        }
+    }
+}
+
 /// Score name/tags (strong) + description (weak) against the expanded query
 /// terms. OR semantics: any term hit counts; a strong hit is worth double a weak
 /// hit; each is weighted by the term's literal(2)/synonym(1) weight. Shared by
 /// the local `ls` ranker and the marketplace index ranker (`store_client`) so the
 /// two never drift.
+///
+/// When `fuzz` is supplied, a bounded fuzzy bonus (typo/subsequence tolerance) is
+/// blended in below the lexical score (see `LEXICAL_SCALE`): it reorders ties and
+/// rescues no-substring-hit entries without ever overturning a real substring hit.
 pub(crate) fn score_fields(
     name: Option<&str>,
     tags: &[String],
     task_phrases: &[String],
     description: Option<&str>,
     terms: &HashMap<String, i32>,
+    fuzz: Option<&mut FuzzyScorer>,
 ) -> i32 {
     let mut strong = String::new();
     if let Some(name) = name {
@@ -486,25 +555,33 @@ pub(crate) fn score_fields(
         strong.push('\n');
     }
     let weak = description.unwrap_or("").to_lowercase();
-    let mut score = 0;
+    let mut lexical = 0;
     for (term, weight) in terms {
         let in_strong = strong.contains(term.as_str());
         let in_weak = !in_strong && weak.contains(term.as_str());
         if !in_strong && !in_weak {
             continue;
         }
-        score += weight * if in_strong { 2 } else { 1 };
+        lexical += weight * if in_strong { 2 } else { 1 };
+    }
+    let mut score = lexical * LEXICAL_SCALE;
+    if let Some(f) = fuzz {
+        // Mirror the strong(2)/weak(1) field weighting; bounded to < one lexical
+        // unit so a substring hit always wins (see LEXICAL_SCALE).
+        let bonus = f.quality(&strong) * 2.0 + f.quality(&weak);
+        score += (bonus * 3.0).round() as i32;
     }
     score
 }
 
-fn score_entry(entry: &Entry, terms: &HashMap<String, i32>) -> i32 {
+fn score_entry(entry: &Entry, terms: &HashMap<String, i32>, fuzz: Option<&mut FuzzyScorer>) -> i32 {
     score_fields(
         entry.name.as_deref(),
         &entry.tags,
         &entry.task_phrases,
         entry.description.as_deref(),
         terms,
+        fuzz,
     )
 }
 
@@ -534,9 +611,10 @@ pub fn ls(lib_root: Option<&Path>, filter: &LsFilter, json: bool) -> Result<i32>
         let tokens = tokenize(query);
         if !tokens.is_empty() {
             let terms = expand_query(&tokens);
+            let mut fuzz = FuzzyScorer::new(query);
             let mut scored: Vec<(&Entry, i32)> = selected
                 .iter()
-                .map(|e| (*e, score_entry(e, &terms)))
+                .map(|e| (*e, score_entry(e, &terms, fuzz.as_mut())))
                 .filter(|(_, s)| *s > 0)
                 .collect();
             scored.sort_by_key(|b| std::cmp::Reverse(b.1));

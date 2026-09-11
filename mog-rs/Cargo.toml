@@ -48,6 +48,9 @@ anyhow = "1"
 base64 = "0.22"
 urlencoding = "2"
 similar = "2"
+# Fuzzy matcher (the matcher half of nucleo, no picker UI) for typo/subsequence
+# tolerance in market search, blended under the exact/synonym substring score.
+nucleo-matcher = "0.3"
 include_dir = "0.7"
 # Deflate for the packed factory bundle (see src/factory_pack.rs); the same
 # encode/decode module is shared with build.rs via [build-dependencies] below.
