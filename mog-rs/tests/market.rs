@@ -48,7 +48,15 @@ const UPPER_MOG: &str = r#"{ "steps": [ { "action": "to_upper" } ] }"#;
 fn mog() -> Command {
     let mut c = Command::cargo_bin("mog").expect("mog binary builds");
     // These tests exercise the LOCAL library; keep them offline and deterministic.
-    c.env_remove("MOG_MARKET_URL")
+    // The binary ships a compiled-in MARKET_DEFAULT_URL (the live Pages catalog),
+    // so merely unsetting MOG_MARKET_URL would let the real remote catalog merge
+    // in. Point it instead at an empty local dir (no index.json), which the client
+    // treats as an unreachable catalog and falls back to the local library alone.
+    // Tests that want a real remote override MOG_MARKET_URL themselves via .env().
+    let empty = std::env::temp_dir().join("mog-market-tests-empty-catalog");
+    let _ = fs::create_dir_all(&empty);
+    let _ = fs::remove_file(empty.join("index.json"));
+    c.env("MOG_MARKET_URL", &empty)
         .env_remove("MOG_MARKET_PUBKEY");
     c
 }
@@ -175,21 +183,31 @@ fn list_orders_factory_by_seeded_popularity() {
         names.first().map(String::as_str),
         Some("dbt-model-from-raw-sql")
     );
-    // download_count is surfaced for factory recipes and ordered non-increasing.
-    let counts: Vec<u64> = v["results"]
+    // Only seeded factory mogs carry a download_count; unseeded ones omit the
+    // field by design (popularity() returns None when there is nothing to count).
+    // So the counted rows lead, are non-increasing, and once the counts run out
+    // they do not reappear.
+    let counts: Vec<Option<u64>> = v["results"]
         .as_array()
         .unwrap()
         .iter()
-        .map(|r| {
-            r["download_count"]
-                .as_u64()
-                .expect("factory rows carry download_count")
-        })
+        .map(|r| r["download_count"].as_u64())
         .collect();
+    let present: Vec<u64> = counts.iter().flatten().copied().collect();
     assert!(
-        counts.windows(2).all(|w| w[0] >= w[1]),
-        "list is popularity-descending"
+        !present.is_empty(),
+        "seeded factory rows carry download_count"
     );
+    assert!(
+        present.windows(2).all(|w| w[0] >= w[1]),
+        "counted rows are popularity-descending"
+    );
+    if let Some(first_none) = counts.iter().position(Option::is_none) {
+        assert!(
+            counts[first_none..].iter().all(Option::is_none),
+            "counted rows sort ahead of uncounted ones"
+        );
+    }
 }
 
 #[test]
