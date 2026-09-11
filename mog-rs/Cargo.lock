@@ -907,6 +907,7 @@ dependencies = [
  "similar",
  "tempfile",
  "toml 0.8.23",
+ "toml_edit",
  "ureq",
  "urlencoding",
  "winreg",

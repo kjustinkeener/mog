@@ -16,6 +16,7 @@ config files:
 | Claude Desktop | `%APPDATA%\Claude\claude_desktop_config.json` (Windows) |
 | Cursor | `~/.cursor/mcp.json` |
 | Windsurf | `~/.codeium/windsurf/mcp_config.json` |
+| OpenAI Codex CLI | `~/.codex/config.toml` (TOML `[mcp_servers.mog]`) |
 
 A bare `mog mcp install` registers the one client it detects; with several
 present it lists them and writes nothing unless you pass `--client <id>` or
@@ -40,9 +41,10 @@ JSON clients (most) use an `mcpServers` map:
 }
 ```
 
-### OpenAI Codex CLI
+### Other TOML clients
 
-Codex reads TOML at `~/.codex/config.toml`. Add:
+OpenAI Codex CLI is auto-registered (see the table above). For any other client
+that reads TOML at a path mog does not know, the `[mcp_servers.mog]` block is:
 
 ```toml
 [mcp_servers.mog]
@@ -54,4 +56,4 @@ MOG_HOME = "C:\\Users\\you\\AppData\\Roaming\\mog"
 ```
 
 `mog mcp install` prints your exact command path (run it once to copy the
-ready-made block). Auto-registration for Codex is planned.
+ready-made block).

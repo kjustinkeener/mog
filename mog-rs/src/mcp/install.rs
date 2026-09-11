@@ -37,7 +37,18 @@ const CLIENTS: &[Client] = &[
         id: "windsurf",
         label: "Windsurf",
     },
+    Client {
+        id: "openai-codex",
+        label: "OpenAI Codex",
+    },
 ];
+
+/// Codex keeps its MCP servers in TOML (`[mcp_servers.mog]`), not the JSON
+/// `mcpServers` map every other known client uses. This gates the format branch
+/// in `install_one` / `uninstall_one`.
+fn uses_toml(id: &str) -> bool {
+    id == "openai-codex"
+}
 
 fn find_client(id: &str) -> Option<&'static Client> {
     CLIENTS.iter().find(|c| c.id == id)
@@ -104,6 +115,7 @@ fn client_config_path(id: &str) -> Option<PathBuf> {
                 .join("windsurf")
                 .join("mcp_config.json"),
         ),
+        "openai-codex" => Some(home.join(".codex").join("config.toml")),
         _ => None,
     }
 }
@@ -233,6 +245,11 @@ fn install_one(client: &Client, exe: &Path, home: &Option<PathBuf>) -> Result<Ou
 
     let path = client_config_path(client.id)
         .ok_or_else(|| anyhow!("no known config path for {} on this platform", client.label))?;
+
+    if uses_toml(client.id) {
+        return install_one_toml(client, &path, exe, home);
+    }
+
     let mut cfg = read_config(&path)?;
     let block = registration_block(exe, home);
     // Ensure mcpServers is an object, then set/replace `mog` (idempotent).
@@ -292,6 +309,11 @@ fn uninstall_one(client: &Client) -> Result<Outcome> {
             note: Some("no config file".into()),
         });
     }
+
+    if uses_toml(client.id) {
+        return uninstall_one_toml(client, &path);
+    }
+
     let mut cfg = read_config(&path)?;
     let mut removed = false;
     if let Some(servers) = cfg.get_mut("mcpServers").and_then(Value::as_object_mut) {
@@ -314,6 +336,115 @@ fn uninstall_one(client: &Client) -> Result<Outcome> {
             Some("no `mog` registration found".into())
         },
     })
+}
+
+/// Register with a TOML-config client (Codex): set/replace the `[mcp_servers.mog]`
+/// table with `toml_edit` so the rest of the user's hand-edited file (comments,
+/// ordering, spacing) survives untouched. Idempotent.
+fn install_one_toml(
+    client: &Client,
+    path: &Path,
+    exe: &Path,
+    home: &Option<PathBuf>,
+) -> Result<Outcome> {
+    use toml_edit::{value, Array, DocumentMut, Item, Table};
+
+    let text = if path.exists() {
+        std::fs::read_to_string(path)
+            .map_err(|e| anyhow!("could not read {}: {e}", path.display()))?
+    } else {
+        String::new()
+    };
+    let mut doc = text
+        .parse::<DocumentMut>()
+        .map_err(|e| anyhow!("{} is not valid TOML: {e}", path.display()))?;
+
+    let existed = doc
+        .get("mcp_servers")
+        .and_then(Item::as_table_like)
+        .map(|t| t.contains_key("mog"))
+        .unwrap_or(false);
+
+    let mut mog = Table::new();
+    mog["command"] = value(exe.to_string_lossy().into_owned());
+    let mut args = Array::new();
+    args.push("mcp");
+    mog["args"] = value(args);
+    if let Some(home) = home {
+        let mut env = Table::new();
+        env["MOG_HOME"] = value(home.to_string_lossy().into_owned());
+        mog["env"] = Item::Table(env);
+    }
+
+    // Ensure `mcp_servers` is a real (implicit) table so the assignment renders as
+    // a `[mcp_servers.mog]` header block, not an inline `mcp_servers = { ... }`.
+    if !doc.contains_key("mcp_servers") {
+        let mut parent = Table::new();
+        parent.set_implicit(true);
+        doc.insert("mcp_servers", Item::Table(parent));
+    }
+    let servers = doc["mcp_servers"]
+        .as_table_mut()
+        .ok_or_else(|| anyhow!("{}: mcp_servers is present but not a table", path.display()))?;
+    servers.insert("mog", Item::Table(mog));
+
+    write_toml(path, &doc)?;
+    Ok(Outcome {
+        client: client.id,
+        action: if existed {
+            "updated".into()
+        } else {
+            "added".into()
+        },
+        path: Some(path.display().to_string()),
+        note: None,
+    })
+}
+
+/// Unregister from a TOML-config client: remove only the `[mcp_servers.mog]`
+/// table, leaving any other servers and the file's formatting in place. Idempotent.
+fn uninstall_one_toml(client: &Client, path: &Path) -> Result<Outcome> {
+    use toml_edit::{DocumentMut, Item};
+
+    let text = std::fs::read_to_string(path)
+        .map_err(|e| anyhow!("could not read {}: {e}", path.display()))?;
+    let mut doc = text
+        .parse::<DocumentMut>()
+        .map_err(|e| anyhow!("{} is not valid TOML: {e}", path.display()))?;
+
+    let removed = doc
+        .get_mut("mcp_servers")
+        .and_then(Item::as_table_like_mut)
+        .map(|t| t.remove("mog").is_some())
+        .unwrap_or(false);
+
+    if removed {
+        write_toml(path, &doc)?;
+    }
+    Ok(Outcome {
+        client: client.id,
+        action: if removed {
+            "removed".into()
+        } else {
+            "skipped".into()
+        },
+        path: Some(path.display().to_string()),
+        note: if removed {
+            None
+        } else {
+            Some("no `mog` registration found".into())
+        },
+    })
+}
+
+fn write_toml(path: &Path, doc: &toml_edit::DocumentMut) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| anyhow!("could not create {}: {e}", parent.display()))?;
+    }
+    std::fs::write(path, doc.to_string())
+        .map_err(|e| anyhow!("could not write {}: {e}", path.display()))?;
+    Ok(())
 }
 
 /// The manual paste block, always printed as a fallback.

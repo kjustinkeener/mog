@@ -56,6 +56,11 @@ include_dir = "0.7"
 # encode/decode module is shared with build.rs via [build-dependencies] below.
 flate2 = "1"
 toml = "0.8"
+# Format-preserving TOML editor for auto-registering with OpenAI Codex CLI, whose
+# MCP config (~/.codex/config.toml) is a user-hand-edited file. Plain `toml`
+# round-trips would discard the user's comments, ordering, and spacing; toml_edit
+# sets/removes only the [mcp_servers.mog] table and leaves the rest byte-stable.
+toml_edit = "0.22"
 # Store marketplace: content hashing + ed25519 index signing/verification.
 sha2 = "0.10"
 ed25519-dalek = { version = "2", features = ["rand_core"] }

@@ -248,6 +248,110 @@ fn preview_without_a_script_is_an_error() {
     assert!(err["message"].as_str().unwrap().contains("no script"));
 }
 
+/// Run `mog mcp <install|uninstall> --client openai-codex --json` with HOME (and,
+/// on Windows, USERPROFILE) pointed at `home`, and MOG_HOME fixed so the written
+/// env block is deterministic. Returns the child's stdout.
+fn run_codex(verb: &str, home: &std::path::Path, mog_home: &std::path::Path) -> String {
+    let exe = env!("CARGO_BIN_EXE_mog");
+    let out = Command::new(exe)
+        .args(["mcp", verb, "--client", "openai-codex", "--json"])
+        .env("HOME", home)
+        .env("USERPROFILE", home)
+        .env("MOG_HOME", mog_home)
+        .stdin(Stdio::null())
+        .output()
+        .expect("run mog mcp install/uninstall");
+    assert!(
+        out.status.success(),
+        "mog mcp {verb} failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8_lossy(&out.stdout).into_owned()
+}
+
+#[test]
+fn codex_register_writes_toml_table_and_is_idempotent() {
+    let home = tempfile::tempdir().expect("temp HOME");
+    let mog_home = tempfile::tempdir().expect("temp MOG_HOME");
+    let cfg = home.path().join(".codex").join("config.toml");
+
+    run_codex("install", home.path(), mog_home.path());
+    assert!(cfg.exists(), "config.toml should be created");
+
+    let doc: Value = toml::from_str(&std::fs::read_to_string(&cfg).unwrap())
+        .expect("written file is valid TOML");
+    assert_eq!(
+        doc["mcp_servers"]["mog"]["command"],
+        env!("CARGO_BIN_EXE_mog")
+    );
+    assert_eq!(doc["mcp_servers"]["mog"]["args"][0], "mcp");
+    assert_eq!(
+        doc["mcp_servers"]["mog"]["env"]["MOG_HOME"],
+        Value::String(mog_home.path().to_string_lossy().into_owned())
+    );
+
+    // Second install: still exactly one [mcp_servers.mog], reported as "updated".
+    let out = run_codex("install", home.path(), mog_home.path());
+    let summary: Value = serde_json::from_str(&out).expect("install json");
+    assert_eq!(summary["installed"][0]["action"], "updated");
+    let text = std::fs::read_to_string(&cfg).unwrap();
+    assert_eq!(
+        text.matches("[mcp_servers.mog]").count(),
+        1,
+        "table must not be duplicated:\n{text}"
+    );
+}
+
+#[test]
+fn codex_register_preserves_surrounding_toml() {
+    let home = tempfile::tempdir().expect("temp HOME");
+    let mog_home = tempfile::tempdir().expect("temp MOG_HOME");
+    let dir = home.path().join(".codex");
+    std::fs::create_dir_all(&dir).unwrap();
+    let cfg = dir.join("config.toml");
+    // A hand-edited file with a comment and an unrelated server.
+    std::fs::write(
+        &cfg,
+        "# my codex config\nmodel = \"o3\"\n\n[mcp_servers.other]\ncommand = \"other\"\n",
+    )
+    .unwrap();
+
+    run_codex("install", home.path(), mog_home.path());
+    let text = std::fs::read_to_string(&cfg).unwrap();
+    assert!(text.contains("# my codex config"), "comment lost:\n{text}");
+    assert!(text.contains("model = \"o3\""), "top key lost:\n{text}");
+    assert!(
+        text.contains("[mcp_servers.other]"),
+        "other server lost:\n{text}"
+    );
+    assert!(text.contains("[mcp_servers.mog]"), "mog not added:\n{text}");
+}
+
+#[test]
+fn codex_uninstall_removes_only_mog_table() {
+    let home = tempfile::tempdir().expect("temp HOME");
+    let mog_home = tempfile::tempdir().expect("temp MOG_HOME");
+    let dir = home.path().join(".codex");
+    std::fs::create_dir_all(&dir).unwrap();
+    let cfg = dir.join("config.toml");
+    std::fs::write(&cfg, "[mcp_servers.other]\ncommand = \"other\"\n").unwrap();
+
+    run_codex("install", home.path(), mog_home.path());
+    let out = run_codex("uninstall", home.path(), mog_home.path());
+    let summary: Value = serde_json::from_str(&out).expect("uninstall json");
+    assert_eq!(summary["uninstalled"][0]["action"], "removed");
+
+    let doc: Value = toml::from_str(&std::fs::read_to_string(&cfg).unwrap()).unwrap();
+    assert!(
+        doc["mcp_servers"].get("mog").is_none(),
+        "mog table should be gone"
+    );
+    assert!(
+        doc["mcp_servers"]["other"].is_object(),
+        "unrelated server must survive"
+    );
+}
+
 #[test]
 fn preview_refuses_both_script_forms() {
     let resps = drive(&[json!({
