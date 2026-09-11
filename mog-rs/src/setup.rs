@@ -164,18 +164,33 @@ fn write_pack(
     print: bool,
     written: &mut Vec<String>,
 ) -> Result<()> {
-    for (rel, contents) in crate::factory_pack::decode(packed) {
-        let dest = dest_root.join(&rel);
+    use rayon::prelude::*;
+
+    let files: Vec<(PathBuf, Vec<u8>)> = crate::factory_pack::decode(packed)
+        .into_iter()
+        .map(|(rel, contents)| (dest_root.join(rel), contents))
+        .collect();
+    for (dest, _) in &files {
         written.push(dest.display().to_string());
-        if !print {
+    }
+    if print {
+        return Ok(());
+    }
+    // The factory pack is ~1400 small independent files, and writing them one at
+    // a time is the slowest phase of an install (disk + AV scan per file). The
+    // writes are independent, so fan them out; concurrent create_dir_all on a
+    // shared parent is fine (AlreadyExists is treated as success).
+    files
+        .par_iter()
+        .try_for_each(|(dest, contents)| -> Result<()> {
             if let Some(parent) = dest.parent() {
                 std::fs::create_dir_all(parent)
                     .with_context(|| format!("failed to create '{}'", parent.display()))?;
             }
-            std::fs::write(&dest, &contents)
+            std::fs::write(dest, contents)
                 .with_context(|| format!("failed to write '{}'", dest.display()))?;
-        }
-    }
+            Ok(())
+        })?;
     Ok(())
 }
 

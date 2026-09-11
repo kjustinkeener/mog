@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { invoke } from '@tauri-apps/api/core'
+  import { listen } from '@tauri-apps/api/event'
   import { getCurrentWindow } from '@tauri-apps/api/window'
   import type { SetupState } from './main'
 
@@ -23,7 +24,38 @@
   let shining = $state(false)
   let lastShine = 0
 
+  // Determinate progress. `progressPct` is the displayed fill (eased toward
+  // `targetPct` every frame); `progressMsg` is the engine's live output line.
+  let progressPct = $state(0)
+  let progressMsg = $state('')
+  let targetPct = 0
+  let rampTimer: ReturnType<typeof setInterval> | undefined
+  let raf: number | undefined
+
   const busy = $derived(phase === 'installing')
+
+  function stopRamp() {
+    if (rampTimer) {
+      clearInterval(rampTimer)
+      rampTimer = undefined
+    }
+  }
+  // The engine phase (30 -> 85) is one opaque subprocess, so ease the bar across
+  // that band on a time estimate rather than freezing at 30. The real 85 event
+  // stops the ramp; we never claim past 82 until it lands.
+  function startEngineRamp() {
+    targetPct = Math.max(targetPct, 30)
+    stopRamp()
+    rampTimer = setInterval(() => {
+      if (targetPct < 82) targetPct += 0.8
+      else stopRamp()
+    }, 45)
+  }
+  function animate() {
+    progressPct += (targetPct - progressPct) * 0.14
+    if (targetPct >= 100 && 100 - progressPct < 0.4) progressPct = 100
+    raf = requestAnimationFrame(animate)
+  }
 
   // The installer window is transparent so the card floats with its own rounded
   // frame, but app.css paints a solid body behind it. Clear the backgrounds for
@@ -34,7 +66,26 @@
     ) as HTMLElement[]
     const prev = els.map((e) => e.style.background)
     for (const e of els) e.style.background = 'transparent'
-    return () => els.forEach((e, i) => (e.style.background = prev[i]))
+
+    const unlisten = listen<{ pct: number | null; label: string }>('install-progress', (e) => {
+      const { pct, label } = e.payload
+      if (label) progressMsg = label
+      if (pct != null) {
+        if (pct === 30) startEngineRamp()
+        else {
+          stopRamp()
+          targetPct = pct
+        }
+      }
+    })
+    animate()
+
+    return () => {
+      els.forEach((e, i) => (e.style.background = prev[i]))
+      unlisten.then((f) => f())
+      stopRamp()
+      if (raf) cancelAnimationFrame(raf)
+    }
   })
 
   function close() {
@@ -62,6 +113,9 @@
     if (busy) return
     phase = 'installing'
     errMsg = ''
+    progressPct = 0
+    targetPct = 0
+    progressMsg = ''
     try {
       const exe = await invoke<string>('perform_install', {
         desktopShortcut,
@@ -136,8 +190,20 @@
         <p class="state err">{errMsg}</p>
       {/if}
       <button class="cta" class:busy onclick={install} disabled={busy || !setup.has_engine}>
-        <span class="label">{busy ? 'Installing…' : phase === 'error' ? 'Try again' : 'Install'}</span>
+        {#if busy}
+          <span class="fill" style="width:{progressPct}%"></span>
+        {/if}
+        <span class="label"
+          >{busy
+            ? `Installing… ${Math.round(progressPct)}%`
+            : phase === 'error'
+              ? 'Try again'
+              : 'Install'}</span
+        >
       </button>
+      {#if busy && progressMsg}
+        <p class="outline" title={progressMsg}>{progressMsg}</p>
+      {/if}
     {/if}
 
     <div class="foot">
@@ -415,35 +481,36 @@
     cursor: default;
     box-shadow: none;
   }
-  /* Indeterminate progress: the install is a single blocking shell-out + 27MB
-     extract with no honest percentage, so the button itself becomes a looping
-     sheen while it runs. The work is off the main thread (spawn_blocking), so
-     this keeps animating and the window stays draggable. */
+  /* Determinate progress: the button itself is the bar. It stays fully lit while
+     installing (disabled but not dimmed), the engine's live output shows below,
+     and the fill width is driven by real phase events. */
+  /* The install darkens the base and the fill lights the completed portion, so
+     the boundary between them reads as a progress edge over the brand gradient. */
   .cta.busy {
     opacity: 1;
-    color: color-mix(in srgb, #fff 88%, transparent);
+    background:
+      linear-gradient(color-mix(in srgb, #000 22%, transparent), color-mix(in srgb, #000 22%, transparent)),
+      var(--brand-grad-strong);
   }
-  .cta.busy::after {
-    content: '';
+  .fill {
     position: absolute;
-    inset: 0;
+    left: 0;
+    top: 0;
+    bottom: 0;
     z-index: 0;
-    background: linear-gradient(
-      100deg,
-      transparent 30%,
-      rgba(255, 255, 255, 0.35) 50%,
-      transparent 70%
-    );
-    transform: translateX(-100%);
-    animation: cta-sweep 1.1s linear infinite;
+    background: var(--brand-grad-strong);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent);
   }
-  @keyframes cta-sweep {
-    from {
-      transform: translateX(-100%);
-    }
-    to {
-      transform: translateX(100%);
-    }
+
+  .outline {
+    margin: 6px 0 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
   }
 
   .state {

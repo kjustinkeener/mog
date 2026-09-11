@@ -114,15 +114,29 @@ pub fn setup_state() -> SetupState {
 /// Offloading to the blocking pool keeps the window live while it runs.
 #[tauri::command]
 pub async fn perform_install(
+    app: tauri::AppHandle,
     desktop_shortcut: bool,
     register_mcp: bool,
     add_to_path: bool,
 ) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        do_install(desktop_shortcut, register_mcp, add_to_path).map(|p| p.display().to_string())
+        let emit = |pct: Option<u32>, label: &str| {
+            use tauri::Emitter as _;
+            let _ = app.emit("install-progress", Progress { pct, label: label.into() });
+        };
+        do_install(desktop_shortcut, register_mcp, add_to_path, &emit).map(|p| p.display().to_string())
     })
     .await
     .map_err(|e| format!("install task panicked: {e}"))?
+}
+
+/// One progress tick for the installer card: an optional determinate percentage
+/// (phase boundaries set it; streamed engine lines leave it `None` and only
+/// update the label) plus a human label shown as live output.
+#[derive(Clone, Serialize)]
+struct Progress {
+    pct: Option<u32>,
+    label: String,
 }
 
 /// Open a URL in the user's default browser (Windows `start`). Used by the
@@ -156,7 +170,8 @@ pub fn launch_installed_and_exit(app: tauri::AppHandle, exe: String) {
 
 /// `mog-studio.exe --silent`: install headlessly for scripted use, then exit.
 pub fn run_silent() {
-    match do_install(false, true, true) {
+    let emit = |_pct: Option<u32>, _label: &str| {};
+    match do_install(false, true, true, &emit) {
         Ok(p) => println!("Mog Studio installed to {}", p.display()),
         Err(e) => {
             eprintln!("install failed: {e}");
@@ -203,7 +218,9 @@ fn do_install(
     desktop_shortcut: bool,
     register_mcp: bool,
     add_to_path: bool,
+    emit: &(dyn Fn(Option<u32>, &str) + Sync),
 ) -> Result<PathBuf, String> {
+    emit(Some(2), "Preparing...");
     let dir = install_dir().ok_or("could not determine an install dir (LOCALAPPDATA unset)")?;
     std::fs::create_dir_all(&dir).map_err(|e| format!("create install dir: {e}"))?;
 
@@ -213,12 +230,18 @@ fn do_install(
     if !same_file(&src, &target) {
         std::fs::copy(&src, &target).map_err(|e| format!("copy studio exe: {e}"))?;
     }
+    emit(Some(10), "Copied Studio");
 
     // 2. Extract the embedded engine beside Studio.
     let engine = extract_engine(&dir)?;
+    emit(Some(22), "Extracted the mog engine");
 
-    // 3. Let the engine do PATH / library / MCP / engine ARP (windowless).
-    run_engine_install(&engine, register_mcp, add_to_path)?;
+    // 3. Let the engine do PATH / library / MCP / engine ARP (windowless). This
+    //    is the long phase (the ~1400-file library seed); its stdout is streamed
+    //    back as live output, and the frontend eases the bar across this band.
+    emit(Some(30), "Installing engine (PATH, library, MCP)...");
+    run_engine_install(&engine, register_mcp, add_to_path, emit)?;
+    emit(Some(85), "Engine installed");
 
     // 4. Studio's own shortcut(s) + Add/Remove entry. Everything below is
     //    best-effort on purpose: the product is installed and working at this
@@ -239,8 +262,10 @@ fn do_install(
             lnks.push(desk.join(format!("{DISPLAY_NAME}.lnk")));
         }
     }
+    emit(Some(90), "Creating shortcuts");
     let _ = create_shortcuts(&lnks, &target, &dir);
     let _ = register_uninstall(&dir, &target);
+    emit(Some(100), "Done");
 
     Ok(target)
 }
@@ -267,7 +292,15 @@ fn extract_engine(dir: &Path) -> Result<PathBuf, String> {
 
 /// Run `<install_dir>\mog.exe install` windowless, so the engine provisions PATH,
 /// the mog library, MCP registration, and its own Add/Remove entry.
-fn run_engine_install(engine: &Path, register_mcp: bool, add_to_path: bool) -> Result<(), String> {
+fn run_engine_install(
+    engine: &Path,
+    register_mcp: bool,
+    add_to_path: bool,
+    emit: &(dyn Fn(Option<u32>, &str) + Sync),
+) -> Result<(), String> {
+    use std::io::{BufRead as _, BufReader};
+    use std::process::Stdio;
+
     let mut c = std::process::Command::new(engine);
     c.arg("install");
     if !register_mcp {
@@ -276,10 +309,27 @@ fn run_engine_install(engine: &Path, register_mcp: bool, add_to_path: bool) -> R
     if !add_to_path {
         c.arg("--no-path");
     }
+    // Capture stdout so the engine's own progress lines stream onto the card as
+    // live output; merge stderr in so nothing it reports is lost.
+    c.stdout(Stdio::piped());
+    c.stderr(Stdio::piped());
     hide_window(&mut c);
-    let status = c
-        .status()
+    let mut child = c
+        .spawn()
         .map_err(|e| format!("run '{} install': {e}", engine.display()))?;
+    if let Some(out) = child.stdout.take() {
+        for line in BufReader::new(out).lines().map_while(Result::ok) {
+            let line = line.trim();
+            // Leave pct None: this band's fill is eased on the frontend; here we
+            // only surface what the engine is doing.
+            if !line.is_empty() {
+                emit(None, line);
+            }
+        }
+    }
+    let status = child
+        .wait()
+        .map_err(|e| format!("wait '{} install': {e}", engine.display()))?;
     if !status.success() {
         return Err(format!(
             "'{} install' exited with {status} (engine provisioning failed)",
