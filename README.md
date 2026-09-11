@@ -9,6 +9,35 @@ regex replace, plus line/whitespace/case/EOL transforms, all in one ordered pass
 mog is a **cross-platform command-line tool for batch-processing files**. The
 engine and CLI live in [`mog-rs/`](mog-rs) (Rust).
 
+## Install
+
+Prebuilt Windows binaries are published as assets on each
+[`catalog-*` release](https://github.com/kjustinkeener/mog/releases/latest).
+
+- **Desktop app (easiest):** download **`mog-studio.exe`** and run it. It bundles
+  the engine, so there is nothing else to install.
+- **Command-line engine:** download **`mog.exe`**, then run `mog install` once to
+  add it to your PATH, register the MCP server, and create shortcuts:
+
+  ```
+  mog install
+  ```
+
+Stable direct links (always resolve to the current release):
+
+```
+https://github.com/kjustinkeener/mog/releases/latest/download/mog.exe
+https://github.com/kjustinkeener/mog/releases/latest/download/mog-studio.exe
+```
+
+After that, the engine keeps itself current with `mog update`, and `mog install
+studio` fetches or refreshes the desktop app; both verify what they download
+against a signed manifest. On first run Windows SmartScreen may warn because the
+executables are not yet Authenticode-signed: choose "More info" then "Run anyway".
+
+To build from source instead (any platform Rust supports), see Quick start below.
+Package-manager distribution of the CLI (winget, scoop, `cargo install`) is planned.
+
 ## Quick start
 
 ```
@@ -89,8 +118,9 @@ Tauri + Svelte over the same Rust engine.
 
 ## Requirements
 
-Rust (stable). Prebuilt binaries for Linux, macOS, and Windows are attached to
-tagged releases via CI.
+Rust (stable) to build from source. Prebuilt binaries are currently published for
+Windows (x86-64) only, as assets on `catalog-*` releases; the engine itself builds
+on Linux and macOS from source, and prebuilt binaries for those are not yet shipped.
 
 ## Safety
 

@@ -1,7 +1,7 @@
 {
   "name": "mogstudio",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Desktop workbench for the Mog text-transform engine.",
   "license": "MIT",
   "author": "Justin Keener",
