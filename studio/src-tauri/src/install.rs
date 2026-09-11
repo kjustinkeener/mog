@@ -108,8 +108,12 @@ pub fn setup_state() -> SetupState {
 /// Perform the install. Returns the installed Studio exe path for the frontend to
 /// relaunch. `desktop_shortcut` adds a Desktop `.lnk` in addition to Start Menu.
 #[tauri::command]
-pub fn perform_install(desktop_shortcut: bool) -> Result<String, String> {
-    do_install(desktop_shortcut).map(|p| p.display().to_string())
+pub fn perform_install(
+    desktop_shortcut: bool,
+    register_mcp: bool,
+    add_to_path: bool,
+) -> Result<String, String> {
+    do_install(desktop_shortcut, register_mcp, add_to_path).map(|p| p.display().to_string())
 }
 
 /// Spawn the installed Studio and exit this (loose) process.
@@ -125,7 +129,7 @@ pub fn launch_installed_and_exit(app: tauri::AppHandle, exe: String) {
 
 /// `mog-studio.exe --silent`: install headlessly for scripted use, then exit.
 pub fn run_silent() {
-    match do_install(false) {
+    match do_install(false, true, true) {
         Ok(p) => println!("Mog Studio installed to {}", p.display()),
         Err(e) => {
             eprintln!("install failed: {e}");
@@ -168,7 +172,11 @@ pub fn run_uninstall() {
 
 // ---- The install itself -------------------------------------------------------
 
-fn do_install(desktop_shortcut: bool) -> Result<PathBuf, String> {
+fn do_install(
+    desktop_shortcut: bool,
+    register_mcp: bool,
+    add_to_path: bool,
+) -> Result<PathBuf, String> {
     let dir = install_dir().ok_or("could not determine an install dir (LOCALAPPDATA unset)")?;
     std::fs::create_dir_all(&dir).map_err(|e| format!("create install dir: {e}"))?;
 
@@ -183,7 +191,7 @@ fn do_install(desktop_shortcut: bool) -> Result<PathBuf, String> {
     let engine = extract_engine(&dir)?;
 
     // 3. Let the engine do PATH / library / MCP / engine ARP (windowless).
-    run_engine_install(&engine)?;
+    run_engine_install(&engine, register_mcp, add_to_path)?;
 
     // 4. Studio's own shortcut(s) + Add/Remove entry. Everything below is
     //    best-effort on purpose: the product is installed and working at this
@@ -226,9 +234,15 @@ fn extract_engine(dir: &Path) -> Result<PathBuf, String> {
 
 /// Run `<install_dir>\mog.exe install` windowless, so the engine provisions PATH,
 /// the mog library, MCP registration, and its own Add/Remove entry.
-fn run_engine_install(engine: &Path) -> Result<(), String> {
+fn run_engine_install(engine: &Path, register_mcp: bool, add_to_path: bool) -> Result<(), String> {
     let mut c = std::process::Command::new(engine);
     c.arg("install");
+    if !register_mcp {
+        c.arg("--no-mcp");
+    }
+    if !add_to_path {
+        c.arg("--no-path");
+    }
     hide_window(&mut c);
     let status = c
         .status()

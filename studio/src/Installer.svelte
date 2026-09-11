@@ -5,6 +5,8 @@
   let { setup }: { setup: SetupState } = $props()
 
   let desktopShortcut = $state(true)
+  let registerMcp = $state(true)
+  let addToPath = $state(true)
   let phase = $state<'idle' | 'installing' | 'error'>('idle')
   let errMsg = $state('')
 
@@ -14,6 +16,8 @@
     try {
       const exe = await invoke<string>('perform_install', {
         desktopShortcut,
+        registerMcp,
+        addToPath,
       })
       // Hand off to the installed copy; this window closes.
       await invoke('launch_installed_and_exit', { exe })
@@ -34,7 +38,7 @@
   </div>
 
   <p class="lead">
-    Install Mog Studio and the <code>mog</code> engine for your account.
+    Install Mog Studio and the <code>mog</code> engine. No admin needed.
   </p>
 
   <div class="dest">
@@ -43,11 +47,18 @@
   </div>
 
   <ul class="does">
-    <li>Adds <code>mog</code> to your PATH and registers the MCP server</li>
     <li>Seeds the mog library</li>
     <li>Creates a Start-Menu shortcut</li>
   </ul>
 
+  <label class="opt">
+    <input type="checkbox" bind:checked={addToPath} disabled={phase === 'installing'} />
+    Add <code>mog</code> to your PATH (run it from any terminal)
+  </label>
+  <label class="opt">
+    <input type="checkbox" bind:checked={registerMcp} disabled={phase === 'installing'} />
+    Register the MCP server (for Claude and other agents)
+  </label>
   <label class="opt">
     <input type="checkbox" bind:checked={desktopShortcut} disabled={phase === 'installing'} />
     Add a Desktop shortcut

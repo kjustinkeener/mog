@@ -100,12 +100,16 @@ fn place_self(dir: &Path, print: bool) -> Result<PathBuf> {
 
 /// `mog install` (bare): provision the engine. Copies self into the install dir,
 /// adds it to PATH, seeds the library + registers MCP, and writes the ARP entry.
-pub fn install_engine(no_mcp: bool, print: bool, json_out: bool) -> Result<i32> {
+pub fn install_engine(no_mcp: bool, no_path: bool, print: bool, json_out: bool) -> Result<i32> {
     let dir = install_dir()
         .ok_or_else(|| anyhow!("could not determine an install dir (LOCALAPPDATA unset)"))?;
     let exe = place_self(&dir, print)?;
 
-    let path_added = add_to_user_path(&dir, print)?;
+    let path_added = if no_path {
+        false
+    } else {
+        add_to_user_path(&dir, print)?
+    };
     let arp = write_arp_entry(&dir, &exe, print)?;
 
     // Seed library + register MCP by running the INSTALLED binary's `mog setup`,
@@ -123,7 +127,7 @@ pub fn install_engine(no_mcp: bool, print: bool, json_out: bool) -> Result<i32> 
     if json_out {
         println!("{}", serde_json::to_string_pretty(&summary)?);
     } else {
-        print_engine_human(&dir, &exe, path_added, print);
+        print_engine_human(&dir, &exe, path_added, no_path, print);
     }
     Ok(0)
 }
@@ -291,14 +295,16 @@ pub fn uninstall(print: bool, json_out: bool) -> Result<i32> {
     Ok(0)
 }
 
-fn print_engine_human(dir: &Path, exe: &Path, path_added: bool, print: bool) {
+fn print_engine_human(dir: &Path, exe: &Path, path_added: bool, no_path: bool, print: bool) {
     if print {
         println!("mog install (dry run: nothing written or run)");
     } else {
         println!("mog installed to {}", dir.display());
     }
     println!("  engine: {}", exe.display());
-    if path_added {
+    if no_path {
+        println!("  PATH: skipped (--no-path); run mog by full path or add it yourself");
+    } else if path_added {
         println!(
             "  PATH: added {} (open a NEW terminal to pick it up)",
             dir.display()

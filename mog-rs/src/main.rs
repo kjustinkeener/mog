@@ -364,6 +364,9 @@ enum Command {
         /// Skip the MCP server registration (engine install only).
         #[arg(long = "no-mcp")]
         no_mcp: bool,
+        /// Skip adding the install dir to your PATH (engine install only).
+        #[arg(long = "no-path")]
+        no_path: bool,
         /// Dry run: report every action, write and run nothing.
         #[arg(long)]
         print: bool,
@@ -1005,9 +1008,10 @@ fn run_subcommand(cmd: &Command, cli: &Cli) -> Result<i32> {
         Command::Install {
             target,
             no_mcp,
+            no_path,
             print,
         } => match target {
-            None => mog::install::install_engine(*no_mcp, *print, json),
+            None => mog::install::install_engine(*no_mcp, *no_path, *print, json),
             Some(InstallTarget::Studio {
                 print: studio_print,
             }) => mog::install::install_studio(*print || *studio_print, json),
