@@ -60,6 +60,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
+          # Not "latest": the signed catalog-<version> release (catalog.yml, same
+          # tag) is what releases/latest/download must resolve to, so this
+          # standalone-binary release must never claim latest and win the race.
+          make_latest: false
           files: |
             mog-rs/mog-*.tar.gz
             mog-rs/mog-*.zip

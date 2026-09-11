@@ -1,6 +1,6 @@
 [package]
 name = "mog"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Deterministic batch text-transform engine and CLI: reusable .mog find/replace pipelines with preview and backup."
 license = "MIT"

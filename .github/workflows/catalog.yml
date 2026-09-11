@@ -6,18 +6,23 @@ name: catalog
 # The client reads these from the release "latest/download" prefix (see
 # ENGINE_TRACK_DEFAULT_URL); the mog-market catalog (index.json) is untouched.
 #
-# Manual trigger only: a signed release should be deliberate, and this must not
-# fire on the `v*` tags that drive release.yml's cross-compile.
+# Tag-driven (plus manual): pushing a `v*` tag builds and publishes the signed
+# catalog for that version, and `workflow_dispatch` can still run it by hand with
+# an explicit version. release.yml also fires on `v*` but publishes the standalone
+# engine binaries as a NON-latest release, so the `catalog-<version>` release here
+# stays the one `releases/latest/download/` resolves to (no ordering race).
 #
 # Key hygiene: signing is isolated in its own `release` job that uses ONLY
 # first-party (actions/*) steps, so the decrypted signing key never shares a
 # runner with a third-party action. The `build` job carries all the third-party
 # actions (pinned to commit SHAs) and never sees the secret.
 on:
+  push:
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       version:
-        description: "Catalog version, e.g. 0.1.1 (tag becomes catalog-<version>)"
+        description: "Catalog version, e.g. 0.1.2 (tag becomes catalog-<version>)"
         required: true
         type: string
 
@@ -95,7 +100,7 @@ jobs:
           retention-days: 1
 
   release:
-    name: sign + publish catalog-${{ inputs.version }}
+    name: sign + publish catalog
     needs: build
     runs-on: windows-latest
     # First-party actions only in this job: the signing key is decrypted here and
@@ -105,6 +110,16 @@ jobs:
         with:
           name: bins
           path: bins
+
+      # Resolve the catalog version from the dispatch input, else the pushed
+      # `v*` tag with the leading `v` stripped.
+      - name: Resolve version
+        shell: pwsh
+        run: |
+          $v = "${{ inputs.version }}"
+          if (-not $v) { $v = "${{ github.ref_name }}" -replace '^v', '' }
+          if (-not $v) { throw "no version: neither a dispatch input nor a v* tag" }
+          "VERSION=$v" >> $env:GITHUB_ENV
 
       # 5. Sign engine.json + studio.json, pointing at the release asset URLs.
       #    The signing key secret is written to a temp file and passed as @path,
@@ -124,11 +139,11 @@ jobs:
           $engine = "bins/mog.exe"
           $studio = "bins/mog-studio.exe"
           try {
-            & $admin engine --version "${{ inputs.version }}" `
+            & $admin engine --version "$env:VERSION" `
               --platform "windows-x86_64=$engine" --url-base $urlBase `
               --sign-key "@$keyFile" --out $reg
             if ($LASTEXITCODE -ne 0) { throw "engine.json signing failed" }
-            & $admin studio --version "${{ inputs.version }}" `
+            & $admin studio --version "$env:VERSION" `
               --platform "windows-x86_64=$studio" --url-base $urlBase `
               --sign-key "@$keyFile" --out $reg
             if ($LASTEXITCODE -ne 0) { throw "studio.json signing failed" }
@@ -146,17 +161,18 @@ jobs:
           "ASSET_DIR=$stage" >> $env:GITHUB_ENV
 
       # 6. Publish via the gh CLI (preinstalled; no third-party action). --latest
-      #    keeps latest/download resolving here. NOT a v* tag, so release.yml's
-      #    cross-compile does not fire.
+      #    keeps latest/download resolving to this signed catalog release;
+      #    release.yml's standalone-binary release is published make_latest:false,
+      #    so it never contests "latest" no matter which workflow finishes first.
       - name: Publish catalog release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $assets = Get-ChildItem $env:ASSET_DIR -File | ForEach-Object { $_.FullName }
-          gh release create "catalog-${{ inputs.version }}" $assets `
+          gh release create "catalog-$env:VERSION" $assets `
             --repo "${{ github.repository }}" `
-            --title "catalog-${{ inputs.version }}" `
-            --notes "Signed engine + Studio catalog build ${{ inputs.version }}." `
+            --title "catalog-$env:VERSION" `
+            --notes "Signed engine + Studio catalog build $env:VERSION." `
             --latest
           if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
