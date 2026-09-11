@@ -10,6 +10,10 @@
   const DOCS_URL = `${REPO}/tree/main/docs`
   const LICENSE_URL = `${REPO}/blob/main/LICENSE`
   const MCP_DOC_URL = `${REPO}/blob/main/docs/mcp-clients.md`
+  // Placeholder product page; live at release. Email matches the sibling apps.
+  const SITE_URL = 'https://fasterdb.com/software/mog/'
+  const EMAIL_URL = 'mailto:gofast@fasterdb.com'
+  const strip = (u: string) => u.replace(/^https?:\/\//, '').replace(/\/$/, '')
 
   let desktopShortcut = $state(true)
   let registerMcp = $state(true)
@@ -17,6 +21,7 @@
   let phase = $state<'idle' | 'installing' | 'done' | 'error'>('idle')
   let errMsg = $state('')
   let shining = $state(false)
+  let lastShine = 0
 
   const busy = $derived(phase === 'installing')
 
@@ -42,10 +47,13 @@
     invoke('open_url', { url }).catch(() => {})
   }
 
-  // Easter egg: a single subtle shimmer sweep across the brand hero. Guarded so a
-  // mid-sweep click does not restart it. No sparks/physics: this is a serious app.
+  // Easter egg: a single subtle shimmer sweep across the brand hero on hover.
+  // Debounced 5s so crossing the hero repeatedly does not strobe it. No
+  // sparks/physics: this is a serious app.
   function shimmer() {
-    if (shining) return
+    const now = Date.now()
+    if (shining || now - lastShine < 5000) return
+    lastShine = now
     shining = true
     setTimeout(() => (shining = false), 900)
   }
@@ -77,7 +85,7 @@
 
     <!-- pointer-events off so this block drags; the hero turns them back on. -->
     <div class="top">
-      <button class="hero" onclick={shimmer} aria-label="Mog">
+      <button class="hero" onmouseenter={shimmer} aria-label="Mog">
         <span class="ring"></span>
         <img class="logo" src="/favicon.svg" alt="" />
         <span class="shine" class:go={shining}></span>
@@ -91,11 +99,6 @@
       <code class="path" title={setup.install_dir}>{setup.install_dir}</code>
     </div>
 
-    <ul class="does">
-      <li>Seeds the mog library</li>
-      <li>Creates a Start-Menu shortcut</li>
-    </ul>
-
     <div class="opts">
       <label class="opt">
         <input type="checkbox" bind:checked={addToPath} disabled={busy} />
@@ -108,6 +111,7 @@
           <button
             type="button"
             class="inlink"
+            title={MCP_DOC_URL}
             onclick={(e) => {
               e.preventDefault()
               open(MCP_DOC_URL)
@@ -137,14 +141,20 @@
     {/if}
 
     <div class="foot">
-      <div class="links">
-        <button class="flink" onclick={() => open(DOCS_URL)}>Docs</button>
-        <span class="dot">·</span>
-        <button class="flink" onclick={() => open(REPO)}>GitHub</button>
-        <span class="dot">·</span>
-        <button class="flink" onclick={() => open(LICENSE_URL)}>License</button>
-      </div>
       <div class="fver">v{setup.version} · {setup.build_date}</div>
+      <div class="linkrow">
+        <button class="flink" onclick={() => open(REPO)} title={REPO}>GitHub</button>
+        <span class="dot">·</span>
+        <button class="flink" onclick={() => open(DOCS_URL)} title={DOCS_URL}>Docs</button>
+        <span class="dot">·</span>
+        <button class="flink" onclick={() => open(LICENSE_URL)} title={LICENSE_URL}>Licence</button>
+      </div>
+      <button class="flink wide" onclick={() => open(SITE_URL)} title={SITE_URL}
+        >{strip(SITE_URL)}</button
+      >
+      <button class="flink wide" onclick={() => open(EMAIL_URL)} title={EMAIL_URL}
+        >gofast@fasterdb.com</button
+      >
     </div>
   </div>
 </div>
@@ -224,7 +234,7 @@
     border-radius: 50%;
     background: transparent;
     box-shadow: none;
-    cursor: pointer;
+    cursor: default;
     display: grid;
     place-items: center;
     overflow: hidden;
@@ -232,10 +242,6 @@
   .hero:hover {
     background: transparent;
     border: none;
-  }
-  .hero:active {
-    transform: scale(0.97);
-    transition: transform 0.1s ease;
   }
   .ring {
     position: absolute;
@@ -323,24 +329,12 @@
     word-break: break-all;
   }
 
-  .does {
-    align-self: stretch;
-    margin: 12px 0 4px;
-    padding-left: 18px;
-    color: var(--muted);
-    font-size: 12.5px;
-    text-align: left;
-  }
-  .does li {
-    margin: 2px 0;
-  }
-
   .opts {
     width: 100%;
     display: flex;
     flex-direction: column;
     gap: 9px;
-    margin: 6px 0 4px;
+    margin: 14px 0 4px;
   }
   .opt {
     display: flex;
@@ -395,7 +389,7 @@
     font-weight: 600;
     color: #fff;
     background: var(--brand-grad-strong);
-    box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 40%, transparent);
+    box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 20%, transparent);
     cursor: pointer;
     transition:
       transform 0.08s ease,
@@ -405,7 +399,7 @@
   .cta:hover:not(:disabled) {
     filter: brightness(1.06);
     border: none;
-    box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 52%, transparent);
+    box-shadow: 0 0 26px color-mix(in srgb, var(--accent) 26%, transparent);
   }
   .cta:active:not(:disabled) {
     transform: translateY(1px);
@@ -449,10 +443,13 @@
     font-size: 11px;
     color: var(--muted);
   }
-  .links {
+  .linkrow {
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+  .dot {
+    opacity: 0.5;
   }
   .flink {
     padding: 0;
@@ -461,18 +458,23 @@
     box-shadow: none;
     font: inherit;
     font-size: 11px;
+    line-height: 1.5;
     color: var(--accent-strong);
     cursor: pointer;
+  }
+  .flink.wide {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .flink:hover {
     background: none;
     border: none;
     text-decoration: underline;
   }
-  .dot {
-    opacity: 0.5;
-  }
   .fver {
     font-size: 11px;
+    margin-bottom: 2px;
   }
 </style>

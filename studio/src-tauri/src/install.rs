@@ -117,12 +117,14 @@ pub fn perform_install(
 }
 
 /// Open a URL in the user's default browser (Windows `start`). Used by the
-/// installer's "supported agents" doc link; only http(s) URLs are allowed so a
-/// stray value cannot launch an arbitrary program.
+/// installer's footer links; only http(s) and mailto URLs are allowed, and a URL
+/// with whitespace is refused, so a stray value cannot launch an arbitrary program.
 #[tauri::command]
 pub fn open_url(url: String) -> Result<(), String> {
-    if !(url.starts_with("https://") || url.starts_with("http://")) {
-        return Err("refusing to open a non-http(s) URL".into());
+    let scheme_ok =
+        url.starts_with("https://") || url.starts_with("http://") || url.starts_with("mailto:");
+    if !scheme_ok || url.split_whitespace().count() != 1 {
+        return Err("refusing to open a non-http(s)/mailto URL".into());
     }
     let mut c = std::process::Command::new("cmd");
     // The empty "" is start's window-title arg, so a quoted URL is not eaten.
