@@ -18,9 +18,10 @@ const target = document.getElementById('app')!
 
 async function boot() {
   initTheme()
+  const isInstaller = window.location.hash === '#installer'
   try {
     const s = await invoke<SetupState>('setup_state')
-    if (s.needs_setup) {
+    if (isInstaller || s.needs_setup) {
       return mount(Installer, { target, props: { setup: s } })
     }
   } catch {
