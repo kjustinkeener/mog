@@ -85,7 +85,7 @@ sha2 = "0.10"
 assert_cmd = "2"
 predicates = "3"
 tempfile = "3"
-criterion = "0.5"
+criterion = "0.8"
 
 # Phase 4 baseline: measure where whole-file processing actually hurts before
 # touching the engine. `cargo bench` runs it; harness = false hands main() to
