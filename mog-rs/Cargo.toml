@@ -32,7 +32,7 @@ serde_yaml = "0.9"
 # single-line parser by design.
 csv = "1"
 # Lightweight read-only XML parser for the xml_to_json reader.
-roxmltree = "0.20"
+roxmltree = "0.21"
 fancy-regex = "0.14"
 # Linear-time regex engine. Used as the fast path for patterns with no fancy
 # features (backreferences / lookaround); fancy-regex is a backtracking engine
