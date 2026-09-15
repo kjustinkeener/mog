@@ -416,7 +416,7 @@ enum McpAction {
     },
 }
 
-/// The `mog market` verbs (spec: store-marketplace-spec.md section 9).
+/// The `mog market` verbs.
 #[derive(Subcommand, Debug, Clone)]
 enum MarketAction {
     /// Ranked search of the catalog for a task.

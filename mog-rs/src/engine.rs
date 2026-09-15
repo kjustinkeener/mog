@@ -348,7 +348,7 @@ pub fn execute_with_library_sources_observed(
 /// Optional resource bounds for one apply. All off by default, so a trusted
 /// large-file run is never interrupted; enable them for untrusted input (e.g. a
 /// sandboxed store apply, or reviewing a submitted mog). Engine hardening
-/// H2/H3 (store-marketplace-spec.md section 2.2).
+/// H2/H3.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct RunLimits {
     /// Reject input larger than this many bytes (H3). None = unlimited.

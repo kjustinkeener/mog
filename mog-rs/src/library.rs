@@ -135,8 +135,7 @@ pub fn resolve_script(
 /// paths, rooted paths, and any `..` traversal. Store mogs reference their
 /// children by name only, so a `run_mog` / `for_each_block` target must stay
 /// within the base directory or the library. Top-level `mog -m <path>` is
-/// unaffected; only child (composed) resolution is confined. Engine hardening H1
-/// (store-marketplace-spec.md section 2.2).
+/// unaffected; only child (composed) resolution is confined. Engine hardening H1.
 pub fn ensure_confined(name: &Path) -> Result<()> {
     if name.is_absolute() || name.has_root() {
         bail!(
