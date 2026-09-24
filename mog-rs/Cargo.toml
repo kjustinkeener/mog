@@ -60,7 +60,7 @@ toml = "0.8"
 # MCP config (~/.codex/config.toml) is a user-hand-edited file. Plain `toml`
 # round-trips would discard the user's comments, ordering, and spacing; toml_edit
 # sets/removes only the [mcp_servers.mog] table and leaves the rest byte-stable.
-toml_edit = "0.22"
+toml_edit = "0.25"
 # Store marketplace: content hashing + ed25519 index signing/verification.
 sha2 = "0.10"
 ed25519-dalek = { version = "2", features = ["rand_core"] }
