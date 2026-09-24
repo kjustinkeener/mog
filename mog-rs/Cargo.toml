@@ -55,7 +55,7 @@ include_dir = "0.7"
 # Deflate for the packed factory bundle (see src/factory_pack.rs); the same
 # encode/decode module is shared with build.rs via [build-dependencies] below.
 flate2 = "1"
-toml = "0.8"
+toml = "1.1"
 # Format-preserving TOML editor for auto-registering with OpenAI Codex CLI, whose
 # MCP config (~/.codex/config.toml) is a user-hand-edited file. Plain `toml`
 # round-trips would discard the user's comments, ordering, and spacing; toml_edit
