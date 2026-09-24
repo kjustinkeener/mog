@@ -4,9 +4,9 @@ A desktop GUI for the Mog text-transform engine. Build, preview, and run `.mog`
 pipelines with a schema-driven form for every action, a live diff, and batch runs
 across many files.
 
-**Windows only.** The installer, the Add/Remove Programs entry and the PATH
-handling are all Windows-specific, and rendering uses the Edge WebView2 runtime
-that ships with Windows.
+Mog Studio runs natively on Windows and Linux. Windows releases are portable
+`.exe` installers; Linux releases use the system WebKitGTK runtime and are
+distributed as standard Tauri bundles such as `.deb` and AppImage.
 
 ![Mog Studio browsing the mog marketplace](docs/screenshot.png)
 
@@ -64,8 +64,10 @@ library). The binary is resolved in this order:
 ## Prerequisites
 
 - Node.js and npm.
-- Rust >= 1.77.2 with the MSVC toolchain (`x86_64-pc-windows-msvc`).
-- WebView2 runtime on Windows (preinstalled on current Windows 11).
+- Rust >= 1.77.2. Windows builds need the MSVC toolchain
+  (`x86_64-pc-windows-msvc`); Linux builds use the host toolchain.
+- WebView2 runtime on Windows (preinstalled on current Windows 11), or the
+  WebKitGTK / GTK3 development packages on Linux.
 - For the regex tester: `wasm-pack` and the `wasm32-unknown-unknown` target.
 
   ```bash
@@ -85,8 +87,13 @@ after changing anything under `regex-wasm/`).
 ```bash
 npm install
 npm run build:wasm
-npm run tauri dev
+MOG_BIN=/path/to/mog npm run tauri dev
 ```
+
+On Linux, build the engine first with `cargo build --bin mog` in `mog-rs/`, then
+set `MOG_BIN` to its resulting `target/debug/mog` path. For a release bundle,
+build the Linux engine and pass it as `MOG_DIST_BIN`; the normal Tauri bundler
+will produce the platform's package formats.
 
 ## Checks
 
@@ -95,7 +102,7 @@ npm run check
 npm run build
 ```
 
-## Build a shippable exe
+## Build release packages
 
 A plain `npm run tauri build` produces a Studio build with **no embedded engine**:
 it runs against an engine found on the machine, and its installer card will refuse
@@ -108,9 +115,10 @@ end, but it lives outside this repository, so a fresh clone reproduces it manual
    (or point `MOG_DIST_EXE` at it; `build.rs` honours either).
 3. `npm run build` then `npx tauri build --no-bundle` in `studio/`.
 
-The result is `studio/src-tauri/target/release/mog-studio.exe`, the single-file
-installer. Signed release manifests are emitted separately by the `market-admin`
-binary (`engine` and `studio` subcommands).
+On Linux, build `mog-rs/target/dist/mog`, set `MOG_DIST_BIN` to that path, then
+run `npx tauri build`. This produces the configured Linux bundles. Signed release
+manifests are emitted separately by the `market-admin` binary (`engine` and
+`studio` subcommands).
 
 ## License
 

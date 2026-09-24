@@ -29,25 +29,45 @@ use serde::Serialize;
 
 /// The gzip-compressed dist `mog.exe`, embedded at build time. Empty in dev
 /// builds that had no engine to embed (see `build.rs`).
-const ENGINE_GZ: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/mog.exe.gz"));
+const ENGINE_GZ: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/", env!("MOG_ENGINE_GZ")));
 
 /// The install dir: `%LOCALAPPDATA%\mog`, shared with the engine so `mog.exe` and
 /// `mog-studio.exe` live side by side. Matches `mog::install::install_dir()`.
 const APP_DIR: &str = "mog";
 /// Studio's own executable name inside the install dir.
+#[cfg(windows)]
 const STUDIO_EXE: &str = "mog-studio.exe";
+#[cfg(not(windows))]
+const STUDIO_EXE: &str = "mog-studio";
 /// The engine executable name (what we extract and what the ARP shortcut targets).
+#[cfg(windows)]
 const ENGINE_EXE: &str = "mog.exe";
+#[cfg(not(windows))]
+const ENGINE_EXE: &str = "mog";
 /// Display name on the card, the shortcut, and Add/Remove Programs.
 const DISPLAY_NAME: &str = "Mog Studio";
 /// Studio's Add/Remove Programs subkey (the engine uses `mog`; this is separate).
+#[cfg(windows)]
 const ARP_KEY: &str = "mog-studio";
 
 /// `%LOCALAPPDATA%\mog`, the per-user install dir. `None` if LOCALAPPDATA is unset.
 pub fn install_dir() -> Option<PathBuf> {
-    std::env::var_os("LOCALAPPDATA")
-        .filter(|v| !v.is_empty())
-        .map(|base| PathBuf::from(base).join(APP_DIR))
+    #[cfg(windows)]
+    {
+        std::env::var_os("LOCALAPPDATA")
+            .filter(|v| !v.is_empty())
+            .map(|base| PathBuf::from(base).join(APP_DIR))
+    }
+    #[cfg(not(windows))]
+    {
+        std::env::var_os("XDG_DATA_HOME")
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+            .or_else(|| {
+                std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/share"))
+            })
+            .map(|base| base.join(APP_DIR))
+    }
 }
 
 /// The installed Studio path (`<install_dir>\mog-studio.exe`).
@@ -57,7 +77,7 @@ fn installed_studio(dir: &Path) -> PathBuf {
 
 /// Are we running from inside the install dir (i.e. already installed)?
 /// Canonicalizes both sides so casing / `..` / short-path forms don't false-miss.
-fn is_installed() -> bool {
+pub fn is_installed() -> bool {
     match (std::env::current_exe(), install_dir()) {
         (Ok(cur), Some(dir)) => {
             let cur = cur.canonicalize().unwrap_or(cur);
@@ -72,7 +92,7 @@ fn is_installed() -> bool {
 /// install dir. False in dev (so `cargo tauri dev` isn't interrupted) and once
 /// installed.
 pub fn needs_setup() -> bool {
-    !cfg!(debug_assertions) && !is_installed()
+    cfg!(windows) && !cfg!(debug_assertions) && !is_installed()
 }
 
 // ---- Frontend command surface -------------------------------------------------
@@ -122,9 +142,16 @@ pub async fn perform_install(
     tauri::async_runtime::spawn_blocking(move || {
         let emit = |pct: Option<u32>, label: &str| {
             use tauri::Emitter as _;
-            let _ = app.emit("install-progress", Progress { pct, label: label.into() });
+            let _ = app.emit(
+                "install-progress",
+                Progress {
+                    pct,
+                    label: label.into(),
+                },
+            );
         };
-        do_install(desktop_shortcut, register_mcp, add_to_path, &emit).map(|p| p.display().to_string())
+        do_install(desktop_shortcut, register_mcp, add_to_path, &emit)
+            .map(|p| p.display().to_string())
     })
     .await
     .map_err(|e| format!("install task panicked: {e}"))?
@@ -149,9 +176,25 @@ pub fn open_url(url: String) -> Result<(), String> {
     if !scheme_ok || url.split_whitespace().count() != 1 {
         return Err("refusing to open a non-http(s)/mailto URL".into());
     }
-    let mut c = std::process::Command::new("cmd");
-    // The empty "" is start's window-title arg, so a quoted URL is not eaten.
-    c.args(["/c", "start", "", &url]);
+    #[cfg(windows)]
+    let mut c = {
+        let mut command = std::process::Command::new("cmd");
+        // The empty "" is start's window-title arg, so a quoted URL is not eaten.
+        command.args(["/c", "start", "", &url]);
+        command
+    };
+    #[cfg(target_os = "macos")]
+    let mut c = {
+        let mut command = std::process::Command::new("open");
+        command.arg(&url);
+        command
+    };
+    #[cfg(all(not(windows), not(target_os = "macos")))]
+    let mut c = {
+        let mut command = std::process::Command::new("xdg-open");
+        command.arg(&url);
+        command
+    };
     hide_window(&mut c);
     c.spawn().map_err(|e| format!("open url: {e}"))?;
     Ok(())
@@ -477,6 +520,7 @@ fn register_uninstall(_dir: &Path, _exe: &Path) -> Result<(), String> {
 }
 
 /// Total bytes of everything in the install dir, for `EstimatedSize`.
+#[cfg(windows)]
 fn dir_size(dir: &Path) -> u64 {
     let Ok(entries) = std::fs::read_dir(dir) else {
         return 0;
@@ -493,6 +537,7 @@ fn dir_size(dir: &Path) -> u64 {
 
 /// Today as the `YYYYMMDD` string Add/Remove Programs expects. Computed from the
 /// epoch directly rather than pulling in a date crate for one field.
+#[cfg(windows)]
 fn install_date_stamp() -> String {
     let secs = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -503,6 +548,7 @@ fn install_date_stamp() -> String {
 }
 
 /// Days since 1970-01-01 to a calendar date (Howard Hinnant's civil_from_days).
+#[cfg(windows)]
 fn civil_from_days(z: i64) -> (i64, u32, u32) {
     let z = z + 719_468;
     let era = z.div_euclid(146_097);

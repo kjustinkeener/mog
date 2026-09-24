@@ -195,6 +195,7 @@ export interface UpdateResult {
   check: boolean;
   mogs: UpdatePlan | null;
   engine: { update_available: boolean; applied: boolean; version: string } | null;
+  studio?: { version?: string } | string | null;
 }
 
 /** Sync marketplace recipes (by content hash) and, unless marketOnly, self-replace

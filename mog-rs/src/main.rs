@@ -387,6 +387,9 @@ enum InstallTarget {
     /// Download and install the Studio GUI from the registry (requires internet),
     /// wired to the installed mog.exe next to it.
     Studio {
+        /// Check the signed manifest against the installed Studio binary without writing.
+        #[arg(long)]
+        check: bool,
         /// Dry run: report every action, download and write nothing.
         #[arg(long)]
         print: bool,
@@ -1013,8 +1016,9 @@ fn run_subcommand(cmd: &Command, cli: &Cli) -> Result<i32> {
         } => match target {
             None => mog::install::install_engine(*no_mcp, *no_path, *print, json),
             Some(InstallTarget::Studio {
+                check,
                 print: studio_print,
-            }) => mog::install::install_studio(*print || *studio_print, json),
+            }) => mog::install::install_studio(*check, *print || *studio_print, json),
         },
         Command::Uninstall { print } => mog::install::uninstall(*print, json),
         Command::Report { template, out } => run_report_command(template, out.as_deref(), cli),

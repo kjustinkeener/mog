@@ -411,7 +411,32 @@ pub fn mog_update(check: bool, market_only: bool, prune: bool) -> Result<Value, 
     if !out.status.success() {
         return Err(stderr_message(&out.stderr));
     }
-    serde_json::from_slice(&out.stdout).map_err(|e| format!("could not parse update JSON: {e}"))
+    let mut result: Value =
+        serde_json::from_slice(&out.stdout).map_err(|e| format!("could not parse update JSON: {e}"))?;
+    // A packaged Studio lives beside the engine in the per-user install directory.
+    // Refresh it from the same signed release manifest after a successful update.
+    if crate::install::is_installed() {
+        let mut studio_cmd = Command::new(mog_bin());
+        studio_cmd.args(["install", "studio"]);
+        if check {
+            studio_cmd.arg("--check");
+        }
+        studio_cmd.arg("--json");
+        let studio = studio_cmd
+            .output()
+            .map_err(|e| format!("failed to update Studio ({e})"))?;
+        if !studio.status.success() {
+            return Err(stderr_message(&studio.stderr));
+        }
+        if let Value::Object(map) = &mut result {
+            map.insert(
+                "studio".to_string(),
+                serde_json::from_slice(&studio.stdout)
+                    .unwrap_or_else(|_| Value::String("updated; restart Studio to use it".into())),
+            );
+        }
+    }
+    Ok(result)
 }
 
 // -- Convergence panels (5c): test / flag-check / batch-impact -----------------

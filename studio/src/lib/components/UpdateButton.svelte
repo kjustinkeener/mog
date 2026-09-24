@@ -68,6 +68,9 @@
         {#if plan.engine?.applied}
           Engine updated to {plan.engine.version} (restart to use it).
         {/if}
+        {#if plan.studio}
+          Studio updated (restart to use it).
+        {/if}
         {#if rc === 0 && !plan.engine?.applied}Already up to date.{/if}
       </span>
     {/if}

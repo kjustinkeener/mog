@@ -34,7 +34,10 @@ const APP: &str = "mog";
 /// The display name shown in Add/Remove Programs and on shortcuts.
 const DISPLAY_NAME: &str = "Mog";
 /// The Studio binary's filename inside the install dir.
+#[cfg(windows)]
 const STUDIO_EXE: &str = "mog-studio.exe";
+#[cfg(not(windows))]
+const STUDIO_EXE: &str = "mog-studio";
 
 /// The per-user install dir for binaries: `%LOCALAPPDATA%\mog` on Windows, or
 /// `$XDG_DATA_HOME/mog` (`~/.local/share/mog`) elsewhere. `None` when no base is
@@ -164,7 +167,7 @@ fn run_installed_setup(exe: &Path, no_mcp: bool, print: bool) -> Result<serde_js
 
 /// `mog install studio`: download the Studio GUI from the registry and install it
 /// beside the engine, with a Start-Menu shortcut. Requires internet.
-pub fn install_studio(print: bool, json_out: bool) -> Result<i32> {
+pub fn install_studio(check: bool, print: bool, json_out: bool) -> Result<i32> {
     let dir = install_dir()
         .ok_or_else(|| anyhow!("could not determine an install dir (LOCALAPPDATA unset)"))?;
     // Ensure the engine is present first (so Studio has its sibling mog.exe).
@@ -187,6 +190,23 @@ pub fn install_studio(print: bool, json_out: bool) -> Result<i32> {
     let plat = fetch_studio_platform(&base)?;
 
     let dest = dir.join(STUDIO_EXE);
+    let installed = std::fs::read(&dest)
+        .ok()
+        .map(|bytes| sha256_hex(&bytes))
+        .map(|hash| hash == plat.sha256)
+        .unwrap_or(false);
+    if check {
+        let summary = json!({
+            "check": true,
+            "installed": installed,
+            "update_available": !installed,
+            "version": plat.version,
+        });
+        if json_out {
+            println!("{}", serde_json::to_string_pretty(&summary)?);
+        }
+        return Ok(0);
+    }
     if print {
         println!("would download Studio {} -> {}", plat.path, dest.display());
     } else {
@@ -200,6 +220,13 @@ pub fn install_studio(print: bool, json_out: bool) -> Result<i32> {
             );
         }
         std::fs::write(&dest, &bytes).with_context(|| format!("write '{}'", dest.display()))?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut permissions = std::fs::metadata(&dest)?.permissions();
+            permissions.set_mode(0o755);
+            std::fs::set_permissions(&dest, permissions)?;
+        }
     }
 
     let shortcut = create_start_menu_shortcut(DISPLAY_NAME, &dest, &dir, print)?;
@@ -653,36 +680,109 @@ fn schedule_dir_delete(dir: &Path) -> Result<()> {
     Ok(())
 }
 
-// ---- Non-Windows stubs (this is a Windows product; keep it cross-compiling) ---
+// ---- Linux / other Unix desktop integration -----------------------------------
 
 #[cfg(not(windows))]
-fn add_to_user_path(_dir: &Path, _print: bool) -> Result<bool> {
-    Ok(false)
+fn local_bin_dir() -> Option<PathBuf> {
+    std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local").join("bin"))
 }
+
 #[cfg(not(windows))]
-fn remove_from_user_path(_dir: &Path, _print: bool) -> Result<bool> {
-    Ok(false)
+fn add_to_user_path(dir: &Path, print: bool) -> Result<bool> {
+    use std::os::unix::fs::symlink;
+
+    let bin =
+        local_bin_dir().ok_or_else(|| anyhow!("HOME unset; cannot create ~/.local/bin/mog"))?;
+    let link = bin.join("mog");
+    let target = dir.join("mog");
+    if link.exists() {
+        return Ok(false);
+    }
+    if !print {
+        std::fs::create_dir_all(&bin).with_context(|| format!("create '{}'", bin.display()))?;
+        symlink(&target, &link)
+            .with_context(|| format!("link '{}' -> '{}'", link.display(), target.display()))?;
+    }
+    Ok(true)
 }
+
+#[cfg(not(windows))]
+fn remove_from_user_path(dir: &Path, print: bool) -> Result<bool> {
+    let Some(bin) = local_bin_dir() else {
+        return Ok(false);
+    };
+    let link = bin.join("mog");
+    let target = dir.join("mog");
+    let Ok(actual) = std::fs::read_link(&link) else {
+        return Ok(false);
+    };
+    if actual != target {
+        return Ok(false);
+    }
+    if !print {
+        std::fs::remove_file(&link).with_context(|| format!("remove '{}'", link.display()))?;
+    }
+    Ok(true)
+}
+
 #[cfg(not(windows))]
 fn write_arp_entry(_dir: &Path, _exe: &Path, _print: bool) -> Result<serde_json::Value> {
-    Ok(json!({ "wrote": false, "note": "Add/Remove Programs is Windows-only" }))
+    Ok(json!({ "wrote": false, "note": "Linux packages are removed by their package manager" }))
 }
 #[cfg(not(windows))]
 fn remove_arp_entry(_print: bool) -> Result<bool> {
     Ok(false)
 }
+
+#[cfg(not(windows))]
+fn applications_dir() -> Option<PathBuf> {
+    std::env::var_os("XDG_DATA_HOME")
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+        .or_else(|| std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/share")))
+        .map(|base| base.join("applications"))
+}
+
+#[cfg(not(windows))]
+fn desktop_entry_path() -> Option<PathBuf> {
+    applications_dir().map(|dir| dir.join("mog-studio.desktop"))
+}
+
 #[cfg(not(windows))]
 fn create_start_menu_shortcut(
     _name: &str,
-    _target: &Path,
-    _working_dir: &Path,
-    _print: bool,
+    target: &Path,
+    working_dir: &Path,
+    print: bool,
 ) -> Result<String> {
-    Ok(String::new())
+    let entry = desktop_entry_path()
+        .ok_or_else(|| anyhow!("HOME unset; cannot create desktop launcher"))?;
+    if !print {
+        let parent = entry.parent().expect("desktop entry has a parent");
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("create '{}'", parent.display()))?;
+        let contents = format!(
+            "[Desktop Entry]\nType=Application\nName=Mog Studio\nExec={}\nPath={}\nTerminal=false\nCategories=Development;Utility;\n",
+            target.display(),
+            working_dir.display(),
+        );
+        std::fs::write(&entry, contents).with_context(|| format!("write '{}'", entry.display()))?;
+    }
+    Ok(entry.display().to_string())
 }
+
 #[cfg(not(windows))]
-fn remove_start_menu_shortcut(_name: &str, _print: bool) -> Result<bool> {
-    Ok(false)
+fn remove_start_menu_shortcut(_name: &str, print: bool) -> Result<bool> {
+    let Some(entry) = desktop_entry_path() else {
+        return Ok(false);
+    };
+    if !entry.exists() {
+        return Ok(false);
+    }
+    if !print {
+        std::fs::remove_file(&entry).with_context(|| format!("remove '{}'", entry.display()))?;
+    }
+    Ok(true)
 }
 #[cfg(not(windows))]
 fn schedule_dir_delete(dir: &Path) -> Result<()> {
