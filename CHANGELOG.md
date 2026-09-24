@@ -8,6 +8,8 @@ breaking under strict semver; those are called out explicitly.
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-09-23
+
 ### Changed
 
 - `mog market list` and `mog market show` are now backed by a freshness-checked
@@ -18,6 +20,11 @@ breaking under strict semver; those are called out explicitly.
   automatically whenever a mog is added, removed, or edited (its fingerprint is
   the mog count plus the newest mog mtime); a stale or corrupt index is
   ignored and recomputed, and a read-only library simply runs uncached.
+
+### Added
+
+- Studio now supports installing and updating Mog on Linux, alongside the
+  existing Windows workflow.
 
 ## [0.1.0] - 2026-08-26
 
