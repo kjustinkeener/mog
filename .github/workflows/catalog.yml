@@ -106,7 +106,7 @@ jobs:
     # First-party actions only in this job: the signing key is decrypted here and
     # must not share the runner with any third-party action.
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: bins
           path: bins
