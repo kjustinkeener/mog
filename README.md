@@ -1,5 +1,7 @@
 # Mog
 
+<img src="docs/img/mog-studio.png" alt="Mog Studio browsing the Mog Marketplace of recipes, with a tag list" width="560">
+
 Mog scripts repeatable text search/replace pipelines. Instead of a series of
 one-off find/replaces, you author a **`.mog` file** (a JSON list of ordered
 steps) and run it over one or many files. Think of it as **`sed` with a
